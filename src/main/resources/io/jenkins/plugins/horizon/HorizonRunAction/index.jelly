@@ -6096,22 +6096,52 @@
                         background: rgba(239, 68, 68, 0.3);
                         color: #ffffff;
                     }
-                    .replay-shortcut-hint {
-                        font-size: 0.75rem;
-                        color: #64748b;
+                    .replay-modal-footer {
+                        padding: 0.85rem 1.5rem 0.75rem 1.5rem;
+                        background: #1e293b;
+                        border-top: 1px solid #334155;
                         display: flex;
-                        align-items: center;
-                        gap: 0.4rem;
-                        margin-right: 0.5rem;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        gap: 1rem;
                     }
-                    .replay-shortcut-hint kbd {
+                    .replay-footer-left,
+                    .replay-footer-right {
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 0.65rem;
+                    }
+                    .replay-btn-wrapper {
+                        display: inline-flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 0.35rem;
+                    }
+                    .replay-btn-wrapper .btn-modal-cancel,
+                    .replay-btn-wrapper .btn-modal-submit {
+                        margin: 0;
+                    }
+                    .replay-key-subtext {
+                        font-size: 0.68rem;
+                        color: #64748b;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        line-height: 1;
+                        min-height: 16px;
+                        user-select: none;
+                    }
+                    .replay-key-subtext kbd {
                         background: #0f172a;
                         border: 1px solid #334155;
                         border-radius: 4px;
-                        padding: 0.1rem 0.35rem;
-                        font-family: inherit;
-                        font-size: 0.7rem;
+                        padding: 0.12rem 0.38rem;
+                        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                        font-size: 0.65rem;
+                        font-weight: 500;
                         color: #94a3b8;
+                        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+                        letter-spacing: 0.02em;
                     }
                     .horizon-modal-footer {
                         padding: 1rem 1.5rem;
@@ -6801,27 +6831,36 @@
                             </div>
                             <div id="replay-validation-banner" class="replay-validation-banner" style="display:none;" role="region" aria-live="polite"></div>
                         </div>
-                        <div class="horizon-modal-footer">
-                            <div style="margin-right:auto; display:flex; align-items:center; gap:0.5rem;">
-                                <button id="btn-validate-replay" type="button" class="btn-modal-cancel" style="display:inline-flex; align-items:center; gap:0.4rem;" onclick="validateReplayScript(true)">
-                                    <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                    <span>Validate Syntax</span>
-                                </button>
-                                <a href="${jobBase}pipeline-syntax/" target="_blank" rel="noopener noreferrer" class="btn-modal-cancel" style="display:inline-flex; align-items:center; gap:0.4rem; text-decoration:none;" title="Open Jenkins Pipeline Snippet Generator in a new tab">
-                                    <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                                    <span>Snippet Generator</span>
-                                </a>
+                        <div class="horizon-modal-footer replay-modal-footer">
+                            <div class="replay-footer-left">
+                                <div class="replay-btn-wrapper">
+                                    <button id="btn-validate-replay" type="button" class="btn-modal-cancel" style="display:inline-flex; align-items:center; gap:0.4rem;" onclick="validateReplayScript(true)">
+                                        <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                        <span>Validate Syntax</span>
+                                    </button>
+                                    <div class="replay-key-subtext"><kbd id="replay-kbd-validate">Ctrl+S</kbd></div>
+                                </div>
+                                <div class="replay-btn-wrapper">
+                                    <a href="${jobBase}pipeline-syntax/" target="_blank" rel="noopener noreferrer" class="btn-modal-cancel" style="display:inline-flex; align-items:center; gap:0.4rem; text-decoration:none;" title="Open Jenkins Pipeline Snippet Generator in a new tab">
+                                        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        <span>Snippet Generator</span>
+                                    </a>
+                                    <div class="replay-key-subtext" style="opacity: 0.65; font-size: 0.62rem; color: #64748b;">new tab</div>
+                                </div>
                             </div>
-                            <div class="replay-shortcut-hint">
-                                <span><kbd>Ctrl+S</kbd> Validate</span>
-                                <span>&#8226;</span>
-                                <span><kbd>Ctrl+Enter</kbd> Replay</span>
+                            <div class="replay-footer-right">
+                                <div class="replay-btn-wrapper">
+                                    <button class="btn-modal-cancel" onclick="closeReplayModal()">Cancel</button>
+                                    <div class="replay-key-subtext"><kbd>Esc</kbd></div>
+                                </div>
+                                <div class="replay-btn-wrapper">
+                                    <button id="btn-submit-replay" class="btn-modal-submit" onclick="submitReplayRun()">
+                                        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                        Run Replay
+                                    </button>
+                                    <div class="replay-key-subtext"><kbd id="replay-kbd-replay">Ctrl+Enter</kbd></div>
+                                </div>
                             </div>
-                            <button class="btn-modal-cancel" onclick="closeReplayModal()">Cancel</button>
-                            <button id="btn-submit-replay" class="btn-modal-submit" onclick="submitReplayRun()">
-                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                Run Replay
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -11850,6 +11889,12 @@
                         editor.value = "// No original Jenkinsfile script captured for this run.";
                     }
                     modal.classList.add('active');
+                    var isMac = (navigator.platform &amp;&amp; navigator.platform.toUpperCase().indexOf('MAC') &gt;= 0);
+                    var modKey = isMac ? '⌘' : 'Ctrl';
+                    var kbdVal = document.getElementById('replay-kbd-validate');
+                    if (kbdVal) kbdVal.innerText = modKey + '+S';
+                    var kbdRep = document.getElementById('replay-kbd-replay');
+                    if (kbdRep) kbdRep.innerText = modKey + '+Enter';
                     updateReplayGutter();
                     if (!editor._gutterScrollAttached) {
                         editor.addEventListener('scroll', function() {
