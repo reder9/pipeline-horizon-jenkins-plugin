@@ -742,16 +742,72 @@ public class PipelineGraphAnalyzer {
             }
         }
 
-        // Git SCM details
+        // Branch extraction (Multibranch or Git)
+        if (summary.getBranch() == null && run.getParent().getParent() instanceof org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject) {
+            summary.setBranch(run.getParent().getDisplayName());
+        }
+
+        // Git SCM details & ChangeLog
+        int changeCount = 0;
         for (ChangeLogSet<? extends ChangeLogSet.Entry> changeSet : run.getChangeSets()) {
             for (ChangeLogSet.Entry entry : changeSet) {
+                changeCount++;
                 if (summary.getCommitSha() == null && entry.getCommitId() != null) {
                     summary.setCommitSha(entry.getCommitId());
                 }
                 if (summary.getCommitMessage() == null && entry.getMsg() != null) {
                     summary.setCommitMessage(entry.getMsg());
                 }
+                if (summary.getCommitAuthor() == null && entry.getAuthor() != null) {
+                    summary.setCommitAuthor(entry.getAuthor().getDisplayName());
+                }
             }
+        }
+        summary.setChangeSetCount(changeCount);
+
+        // Fallback Git action extraction if commit SHA or branch not found from ChangeLog
+        if (summary.getCommitSha() == null || summary.getBranch() == null) {
+            for (hudson.model.Action a : run.getAllActions()) {
+                if (a != null && a.getClass().getName().contains("BuildData")) {
+                    try {
+                        Object rev = a.getClass().getMethod("getLastBuiltRevision").invoke(a);
+                        if (rev != null) {
+                            if (summary.getCommitSha() == null) {
+                                Object sha = rev.getClass().getMethod("getSha1String").invoke(rev);
+                                if (sha != null) {
+                                    summary.setCommitSha(String.valueOf(sha));
+                                }
+                            }
+                            if (summary.getBranch() == null) {
+                                java.util.Collection<?> branches = (java.util.Collection<?>) rev.getClass().getMethod("getBranches").invoke(rev);
+                                if (branches != null && !branches.isEmpty()) {
+                                    Object firstBranch = branches.iterator().next();
+                                    if (firstBranch != null) {
+                                        Object bName = firstBranch.getClass().getMethod("getName").invoke(firstBranch);
+                                        if (bName != null) {
+                                            String branchStr = String.valueOf(bName);
+                                            // strip remote prefix like "refs/remotes/origin/"
+                                            int lastSlash = branchStr.lastIndexOf('/');
+                                            summary.setBranch(lastSlash >= 0 ? branchStr.substring(lastSlash + 1) : branchStr);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Throwable ignored) {
+                    }
+                }
+            }
+        }
+
+        // Culprits
+        try {
+            for (hudson.model.User u : run.getCulprits()) {
+                if (u != null) {
+                    summary.getCulprits().add(u.getDisplayName());
+                }
+            }
+        } catch (Throwable ignored) {
         }
     }
 

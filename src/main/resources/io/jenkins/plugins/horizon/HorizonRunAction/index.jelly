@@ -4652,6 +4652,83 @@
                         text-decoration: underline;
                     }
 
+                    /* ANSI Terminal Color Support */
+                    .ansi-bold { font-weight: 700; }
+                    .ansi-dim { opacity: 0.65; }
+                    .ansi-italic { font-style: italic; }
+                    .ansi-underline { text-decoration: underline; }
+                    .ansi-fg-black { color: #64748b; }
+                    .ansi-fg-red { color: #f87171; }
+                    .ansi-fg-green { color: #4ade80; }
+                    .ansi-fg-yellow { color: #facc15; }
+                    .ansi-fg-blue { color: #60a5fa; }
+                    .ansi-fg-magenta { color: #c084fc; }
+                    .ansi-fg-cyan { color: #38bdf8; }
+                    .ansi-fg-white { color: #f8fafc; }
+                    .ansi-fg-bright-black { color: #94a3b8; }
+                    .ansi-fg-bright-red { color: #ef4444; }
+                    .ansi-fg-bright-green { color: #22c55e; }
+                    .ansi-fg-bright-yellow { color: #eab308; }
+                    .ansi-fg-bright-blue { color: #3b82f6; }
+                    .ansi-fg-bright-magenta { color: #a855f7; }
+                    .ansi-fg-bright-cyan { color: #06b6d4; }
+                    .ansi-fg-bright-white { color: #ffffff; }
+                    .ansi-bg-black { background-color: #0f172a; }
+                    .ansi-bg-red { background-color: rgba(239, 68, 68, 0.3); }
+                    .ansi-bg-green { background-color: rgba(34, 197, 94, 0.3); }
+                    .ansi-bg-yellow { background-color: rgba(234, 179, 8, 0.3); }
+                    .ansi-bg-blue { background-color: rgba(59, 130, 246, 0.3); }
+                    .ansi-bg-magenta { background-color: rgba(168, 85, 247, 0.3); }
+                    .ansi-bg-cyan { background-color: rgba(6, 182, 212, 0.3); }
+                    .ansi-bg-white { background-color: rgba(248, 250, 252, 0.3); }
+
+                    /* Live Tail Auto-Scroll Button */
+                    .inline-log-btn.live-tail-active {
+                        background: rgba(34, 197, 94, 0.15) !important;
+                        border-color: rgba(34, 197, 94, 0.4) !important;
+                        color: #4ade80 !important;
+                    }
+                    .inline-log-btn.live-tail-paused {
+                        background: rgba(234, 179, 8, 0.15) !important;
+                        border-color: rgba(234, 179, 8, 0.4) !important;
+                        color: #facc15 !important;
+                    }
+                    .live-tail-dot {
+                        width: 7px;
+                        height: 7px;
+                        border-radius: 50%;
+                        background: currentColor;
+                        display: inline-block;
+                        animation: liveTailPulse 1.4s infinite;
+                    }
+                    @keyframes liveTailPulse {
+                        0%, 100% { opacity: 1; transform: scale(1); }
+                        50% { opacity: 0.3; transform: scale(0.8); }
+                    }
+
+                    /* Commit and SCM Meta Tags */
+                    .commit-branch-tag {
+                        display: inline-flex;
+                        align-items: center;
+                        background: rgba(56, 189, 248, 0.14);
+                        border: 1px solid rgba(56, 189, 248, 0.3);
+                        color: #38bdf8;
+                        border-radius: 4px;
+                        padding: 1px 6px;
+                        font-family: ui-monospace, monospace;
+                        font-size: 0.75rem;
+                        font-weight: 600;
+                    }
+                    .commit-sha-code {
+                        font-family: ui-monospace, monospace;
+                        font-size: 0.75rem;
+                        background: rgba(255, 255, 255, 0.08);
+                        border: 1px solid rgba(255, 255, 255, 0.15);
+                        padding: 1px 5px;
+                        border-radius: 4px;
+                        color: #f1f5f9;
+                    }
+
                     /* Light Theme Overrides */
                     .horizon-container:not(.theme-dark) .stage-header-banner.status-success {
                         background: #ecfdf5;
@@ -6251,6 +6328,9 @@
 
                             <!-- Compact Utility Controls -->
                             <div class="horizon-utility-group" role="toolbar" aria-label="View and tools">
+                                <button id="btn-share-markdown" class="horizon-btn" onclick="copyRunMarkdownSummary()" title="Copy formatted Markdown summary for Slack / Jira / GitHub" aria-label="Copy formatted Markdown summary">
+                                    <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share
+                                </button>
                                 <button id="btn-screen-mode" class="horizon-btn" onclick="toggleScreenMode()" title="Toggle Fullscreen Canvas or Embedded Jenkins view" aria-label="Toggle Fullscreen Canvas or Embedded Jenkins view">
                                     <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 4v16"/><path d="M15 4v16"/></svg> Embedded
                                 </button>
@@ -6277,6 +6357,10 @@
                         <div class="meta-item" id="meta-queue-item" style="display:none;" title="Time spent waiting in the Jenkins build queue before executor allocation">
                             <span class="meta-label">Queue Wait</span>
                             <span class="meta-value" id="meta-queue-wait">--</span>
+                        </div>
+                        <div class="meta-item" id="meta-commit-item" style="display:none;" title="Git commit SHA, branch, and author">
+                            <span class="meta-label">Commit / Branch</span>
+                            <span class="meta-value" id="meta-commit">--</span>
                         </div>
                         <div class="meta-item">
                             <span class="meta-label">Triggered By</span>
@@ -6718,10 +6802,16 @@
                             <div id="replay-validation-banner" class="replay-validation-banner" style="display:none;" role="region" aria-live="polite"></div>
                         </div>
                         <div class="horizon-modal-footer">
-                            <button id="btn-validate-replay" type="button" class="btn-modal-cancel" style="margin-right:auto; display:inline-flex; align-items:center; gap:0.4rem;" onclick="validateReplayScript(true)">
-                                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                <span>Validate Syntax</span>
-                            </button>
+                            <div style="margin-right:auto; display:flex; align-items:center; gap:0.5rem;">
+                                <button id="btn-validate-replay" type="button" class="btn-modal-cancel" style="display:inline-flex; align-items:center; gap:0.4rem;" onclick="validateReplayScript(true)">
+                                    <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                    <span>Validate Syntax</span>
+                                </button>
+                                <a href="${jobBase}pipeline-syntax/" target="_blank" rel="noopener noreferrer" class="btn-modal-cancel" style="display:inline-flex; align-items:center; gap:0.4rem; text-decoration:none;" title="Open Jenkins Pipeline Snippet Generator in a new tab">
+                                    <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    <span>Snippet Generator</span>
+                                </a>
+                            </div>
                             <div class="replay-shortcut-hint">
                                 <span><kbd>Ctrl+S</kbd> Validate</span>
                                 <span>&#8226;</span>
@@ -7530,6 +7620,7 @@
                                 if (!pollTimer) {
                                     pollTimer = setInterval(fetchGraph, 3000);
                                 }
+                                pollActiveStepLogs();
                             } else {
                                 document.getElementById('refresh-indicator').innerText = "Finished";
                                 if (pollTimer) {
@@ -7647,7 +7738,36 @@
                         }
                     }
 
-                    document.getElementById('meta-cause').innerText = (data.causes &amp;&amp; data.causes.length) ? data.causes[0] : "Direct trigger";
+                    var commitItem = document.getElementById('meta-commit-item');
+                    var commitEl = document.getElementById('meta-commit');
+                    if (commitItem &amp;&amp; commitEl) {
+                        if (data.commitSha || data.branch) {
+                            var commitHtml = '';
+                            if (data.branch) {
+                                commitHtml += '&lt;span class="commit-branch-tag" title="Branch: ' + escapeHtml(data.branch) + '"&gt;&lt;svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:3px;"&gt;&lt;line x1="6" y1="3" x2="6" y2="15"/&gt;&lt;circle cx="18" cy="6" r="3"/&gt;&lt;circle cx="6" cy="18" r="3"/&gt;&lt;path d="M18 9a9 9 0 0 1-9 9"/&gt;&lt;/svg&gt;' + escapeHtml(data.branch) + '&lt;/span&gt; ';
+                            }
+                            if (data.commitSha) {
+                                var shortSha = data.commitSha.length &gt; 7 ? data.commitSha.substring(0, 7) : data.commitSha;
+                                var tip = 'Commit: ' + data.commitSha;
+                                if (data.commitAuthor) tip += ' by ' + data.commitAuthor;
+                                if (data.commitMessage) tip += '\n' + data.commitMessage;
+                                commitHtml += '&lt;code class="commit-sha-code" title="' + escapeHtml(tip) + '"&gt;' + escapeHtml(shortSha) + '&lt;/code&gt;';
+                            }
+                            if (data.commitAuthor) {
+                                commitHtml += ' &lt;span style="font-size:0.75rem; color:#94a3b8;" title="Commit author: ' + escapeHtml(data.commitAuthor) + '"&gt;(' + escapeHtml(data.commitAuthor) + ')&lt;/span&gt;';
+                            }
+                            commitEl.innerHTML = commitHtml;
+                            commitItem.style.display = 'flex';
+                        } else {
+                            commitItem.style.display = 'none';
+                        }
+                    }
+
+                    var causeText = (data.causes &amp;&amp; data.causes.length) ? data.causes[0] : "Direct trigger";
+                    if (data.culprits &amp;&amp; data.culprits.length &gt; 0) {
+                        causeText += " (Culprits: " + data.culprits.join(", ") + ")";
+                    }
+                    document.getElementById('meta-cause').innerText = causeText;
                     
                     var agentsContainer = document.getElementById('meta-agents');
                     if (agentsContainer) {
@@ -10497,6 +10617,7 @@
                         html += '&lt;/div&gt;';
                         html += '&lt;div class="inline-log-actions"&gt;';
                         html += '&lt;span class="inline-log-line-count" id="log-count-' + step.id + '"&gt;0 lines&lt;/span&gt;';
+                        html += '&lt;button class="inline-log-btn live-tail-btn live-tail-active" id="btn-tail-step-' + step.id + '" onclick="toggleStepLiveTail(\'' + step.id + '\')" title="Toggle auto-following live log stream"&gt;&lt;span class="live-tail-dot"&gt;&lt;/span&gt;&lt;span id="label-tail-step-' + step.id + '"&gt;Live Tail&lt;/span&gt;&lt;/button&gt;';
                         html += '&lt;button class="inline-log-btn" id="btn-share-step-' + step.id + '" onclick="copyCurrentDeepLink(\'step\', \'' + step.id + '\')" title="Copy direct link to this step / line"&gt;';
                         html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/&gt;&lt;path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/&gt;&lt;/svg&gt;';
                         html += '&lt;span id="btn-share-label-' + step.id + '"&gt;Share Step&lt;/span&gt;';
@@ -10606,13 +10727,233 @@
                     return '';
                 }
 
-                function formatLogLineText(lineText) {
-                    if (!lineText) return '';
-                    var escaped = escapeHtml(lineText);
+                var ANSI_COLOR_MAP = {
+                    30: 'ansi-fg-black',
+                    31: 'ansi-fg-red',
+                    32: 'ansi-fg-green',
+                    33: 'ansi-fg-yellow',
+                    34: 'ansi-fg-blue',
+                    35: 'ansi-fg-magenta',
+                    36: 'ansi-fg-cyan',
+                    37: 'ansi-fg-white',
+                    90: 'ansi-fg-bright-black',
+                    91: 'ansi-fg-bright-red',
+                    92: 'ansi-fg-bright-green',
+                    93: 'ansi-fg-bright-yellow',
+                    94: 'ansi-fg-bright-blue',
+                    95: 'ansi-fg-bright-magenta',
+                    96: 'ansi-fg-bright-cyan',
+                    97: 'ansi-fg-bright-white',
+                    40: 'ansi-bg-black',
+                    41: 'ansi-bg-red',
+                    42: 'ansi-bg-green',
+                    43: 'ansi-bg-yellow',
+                    44: 'ansi-bg-blue',
+                    45: 'ansi-bg-magenta',
+                    46: 'ansi-bg-cyan',
+                    47: 'ansi-bg-white'
+                };
+
+                function formatLogUrls(escapedText) {
                     var urlRegex = /(https?:\/\/[^\s"'&lt;&gt;]+)/g;
-                    return escaped.replace(urlRegex, function(url) {
+                    return escapedText.replace(urlRegex, function(url) {
                         return '&lt;a href="' + url + '" target="_blank" rel="noopener noreferrer" class="log-inline-link" onclick="event.stopPropagation();"&gt;' + url + '&lt;/a&gt;';
                     });
+                }
+
+                function parseAnsiToHtml(text) {
+                    if (!text) return '';
+                    if (text.indexOf('\u001b') === -1 &amp;&amp; text.indexOf('\x1b') === -1) {
+                        return formatLogUrls(escapeHtml(text));
+                    }
+
+                    var cleaned = text.replace(/[\u001b\x1b]\[[0-9;]*[a-zA-Z]/g, function(match) {
+                        return match.endsWith('m') ? match : '';
+                    });
+
+                    var parts = cleaned.split(/([\u001b\x1b]\[[0-9;]*m)/g);
+                    var html = '';
+                    var openSpans = 0;
+
+                    for (var i = 0; i &lt; parts.length; i++) {
+                        var part = parts[i];
+                        if (!part) continue;
+
+                        if (part.startsWith('\u001b[') || part.startsWith('\x1b[')) {
+                            var codesStr = part.slice(2, -1);
+                            if (!codesStr || codesStr === '0') {
+                                while (openSpans &gt; 0) {
+                                    html += '&lt;/span&gt;';
+                                    openSpans--;
+                                }
+                                continue;
+                            }
+                            var codes = codesStr.split(';').map(function(c) { return parseInt(c, 10); });
+                            var classes = [];
+                            var style = '';
+
+                            for (var c = 0; c &lt; codes.length; c++) {
+                                var code = codes[c];
+                                if (code === 0) {
+                                    while (openSpans &gt; 0) {
+                                        html += '&lt;/span&gt;';
+                                        openSpans--;
+                                    }
+                                } else if (code === 1) {
+                                    classes.push('ansi-bold');
+                                } else if (code === 2) {
+                                    classes.push('ansi-dim');
+                                } else if (code === 3) {
+                                    classes.push('ansi-italic');
+                                } else if (code === 4) {
+                                    classes.push('ansi-underline');
+                                } else if (ANSI_COLOR_MAP[code]) {
+                                    classes.push(ANSI_COLOR_MAP[code]);
+                                } else if (code === 38 &amp;&amp; c + 4 &lt; codes.length &amp;&amp; codes[c + 1] === 2) {
+                                    var r = codes[c + 2], g = codes[c + 3], b = codes[c + 4];
+                                    style += 'color: rgb(' + r + ',' + g + ',' + b + ');';
+                                    c += 4;
+                                } else if (code === 48 &amp;&amp; c + 4 &lt; codes.length &amp;&amp; codes[c + 1] === 2) {
+                                    var br = codes[c + 2], bg = codes[c + 3], bb = codes[c + 4];
+                                    style += 'background-color: rgb(' + br + ',' + bg + ',' + bb + ');';
+                                    c += 4;
+                                }
+                            }
+
+                            if (classes.length &gt; 0 || style) {
+                                var spanAttrs = '';
+                                if (classes.length &gt; 0) spanAttrs += ' class="' + classes.join(' ') + '"';
+                                if (style) spanAttrs += ' style="' + style + '"';
+                                html += '&lt;span' + spanAttrs + '&gt;';
+                                openSpans++;
+                            }
+                        } else {
+                            html += formatLogUrls(escapeHtml(part));
+                        }
+                    }
+
+                    while (openSpans &gt; 0) {
+                        html += '&lt;/span&gt;';
+                        openSpans--;
+                    }
+                    return html;
+                }
+
+                function formatLogLineText(lineText) {
+                    if (!lineText) return '';
+                    return parseAnsiToHtml(lineText);
+                }
+
+                var activeLiveTailSteps = {};
+
+                function toggleStepLiveTail(stepId) {
+                    var isCurrentlyActive = (activeLiveTailSteps[stepId] !== false);
+                    setStepLiveTailState(stepId, !isCurrentlyActive);
+                    if (!isCurrentlyActive) {
+                        var term = document.getElementById('terminal-' + stepId);
+                        if (term) term.scrollTop = term.scrollHeight;
+                    }
+                }
+
+                function setStepLiveTailState(stepId, isActive) {
+                    activeLiveTailSteps[stepId] = isActive;
+                    var btn = document.getElementById('btn-tail-step-' + stepId);
+                    var label = document.getElementById('label-tail-step-' + stepId);
+                    if (!btn || !label) return;
+                    if (isActive) {
+                        btn.className = 'inline-log-btn live-tail-btn live-tail-active';
+                        label.innerText = 'Live Tail';
+                        btn.title = 'Live Tail active \u2014 auto-scrolling to bottom (scroll up to pause)';
+                    } else {
+                        btn.className = 'inline-log-btn live-tail-btn live-tail-paused';
+                        label.innerText = 'Tail: Paused';
+                        btn.title = 'Live Tail paused \u2014 click or scroll to bottom to resume';
+                    }
+                }
+
+                function pollActiveStepLogs() {
+                    if (!graphData || !graphData.building) return;
+                    var expandedItems = document.querySelectorAll('.step-accordion-item.expanded');
+                    if (!expandedItems || expandedItems.length === 0) return;
+
+                    expandedItems.forEach(function(item) {
+                        var idAttr = item.id;
+                        if (!idAttr) return;
+                        var stepId = idAttr.replace('step-item-', '');
+                        if (!stepId) return;
+
+                        fetch(horizonBaseUrl + 'apiLog?nodeId=' + encodeURIComponent(stepId))
+                            .then(function(res) { return res.text(); })
+                            .then(function(newText) {
+                                if (newText &amp;&amp; stepLogsCache[stepId] !== newText) {
+                                    var term = document.getElementById('terminal-' + stepId);
+                                    var wasTail = (activeLiveTailSteps[stepId] !== false);
+                                    stepLogsCache[stepId] = newText;
+                                    renderStepLogLines(stepId, newText, null);
+                                    if (term &amp;&amp; wasTail) {
+                                        term.scrollTop = term.scrollHeight;
+                                    }
+                                }
+                            })
+                            .catch(function() {});
+                    });
+                }
+
+                function copyRunMarkdownSummary() {
+                    if (!graphData) return;
+                    var result = (graphData.result || 'UNKNOWN').toUpperCase();
+                    var symbol = (result === 'SUCCESS') ? '[SUCCESS]' : (result === 'UNSTABLE' ? '[WARN]' : '[FAILED]');
+
+                    var lines = [];
+                    lines.push('*Pipeline Build #' + (graphData.number || '') + ' - ' + symbol + '*');
+                    lines.push('- *Result*: `' + result + '`');
+                    if (graphData.duration) {
+                        var durStr = formatDuration(graphData.duration);
+                        var extraDur = [];
+                        if (graphData.formattedQueueWait) extraDur.push('Queue: ' + graphData.formattedQueueWait);
+                        if (graphData.formattedAgentAllocation) extraDur.push('Agent Alloc: ' + graphData.formattedAgentAllocation);
+                        if (extraDur.length &gt; 0) durStr += ' (' + extraDur.join(', ') + ')';
+                        lines.push('- *Duration*: ' + durStr);
+                    }
+                    if (graphData.branch || graphData.commitSha) {
+                        var scmStr = '';
+                        if (graphData.branch) scmStr += 'Branch `' + graphData.branch + '`';
+                        if (graphData.commitSha) {
+                            scmStr += (scmStr ? ' @ `' : 'Commit `') + graphData.commitSha.substring(0, 7) + '`';
+                        }
+                        if (graphData.commitAuthor) {
+                            scmStr += ' by ' + graphData.commitAuthor;
+                        }
+                        lines.push('- *SCM*: ' + scmStr);
+                    }
+                    if (graphData.causes &amp;&amp; graphData.causes.length &gt; 0) {
+                        lines.push('- *Triggered By*: ' + graphData.causes[0]);
+                    }
+                    if (graphData.failedSteps &gt; 0 || (graphData.stages &amp;&amp; graphData.stages.some(function(s){ return s.status==='FAILED'||s.status==='FAILURE'; }))) {
+                        var failedStage = graphData.stages ? graphData.stages.find(function(s){ return s.status==='FAILED'||s.status==='FAILURE'; }) : null;
+                        if (failedStage) {
+                            lines.push('- *Failed Stage*: `' + failedStage.name + '`');
+                            if (failedStage.error &amp;&amp; failedStage.error.message) {
+                                var cleanErr = failedStage.error.message.split('\n')[0].substring(0, 120);
+                                lines.push('- *Error*: `' + cleanErr + '`');
+                            }
+                        }
+                    }
+                    if (graphData.totalTests &gt; 0) {
+                        lines.push('- *Tests*: ' + (graphData.totalTests - graphData.failedTests - graphData.skippedTests) + ' passed, ' + graphData.failedTests + ' failed, ' + graphData.skippedTests + ' skipped');
+                    }
+                    lines.push('- *Horizon View*: ' + window.location.href.split('#')[0]);
+
+                    var markdownText = lines.join('\n');
+                    if (navigator.clipboard &amp;&amp; navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(markdownText).then(function() {
+                            showToast("Copied Markdown summary to clipboard!", "success");
+                        }).catch(function() {
+                            promptCopyText(markdownText);
+                        });
+                    } else {
+                        promptCopyText(markdownText);
+                    }
                 }
 
                 function renderStepLogLines(stepId, text, initialLineRange) {
@@ -10682,6 +11023,18 @@
                         }, 90);
                     } else {
                         clearLineSelection(false);
+                        var shouldTail = (activeLiveTailSteps[stepId] !== false);
+                        if (shouldTail) {
+                            terminal.scrollTop = terminal.scrollHeight;
+                        }
+                    }
+
+                    if (!terminal._scrollHandlerAttached) {
+                        terminal.addEventListener('scroll', function() {
+                            var atBottom = (terminal.scrollHeight - terminal.scrollTop - terminal.clientHeight &lt;= 30);
+                            setStepLiveTailState(stepId, atBottom);
+                        });
+                        terminal._scrollHandlerAttached = true;
                     }
                 }
 

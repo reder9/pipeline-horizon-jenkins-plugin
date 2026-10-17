@@ -123,6 +123,34 @@ public class RunSummaryModel {
         this.commitMessage = commitMessage;
     }
 
+    private String commitAuthor;
+    private int changeSetCount;
+    private List<String> culprits = new ArrayList<>();
+
+    public String getCommitAuthor() {
+        return commitAuthor;
+    }
+
+    public void setCommitAuthor(String commitAuthor) {
+        this.commitAuthor = commitAuthor;
+    }
+
+    public int getChangeSetCount() {
+        return changeSetCount;
+    }
+
+    public void setChangeSetCount(int changeSetCount) {
+        this.changeSetCount = changeSetCount;
+    }
+
+    public List<String> getCulprits() {
+        return culprits;
+    }
+
+    public void setCulprits(List<String> culprits) {
+        this.culprits = culprits;
+    }
+
     public Map<String, String> getParameters() {
         return parameters;
     }
