@@ -2077,17 +2077,23 @@
                         border-radius: 8px;
                         border: 1px solid #cbd5e1;
                         background-color: #f8fafc;
-                        background-image: radial-gradient(#cbd5e1 1.15px, transparent 1.15px);
-                        background-size: 16px 16px;
+                        background-image: radial-gradient(rgba(148, 163, 184, 0.22) 0.8px, transparent 0.8px);
+                        background-size: 26px 26px;
                         box-shadow: inset 0 1px 4px rgba(15, 23, 42, 0.04);
                         contain: layout paint;
+                    }
+                    .graph-canvas-container.no-grid {
+                        background-image: none !important;
                     }
                     .horizon-container.theme-dark .graph-canvas-container {
                         border-color: #1e293b;
                         background-color: #020617;
-                        background-image: radial-gradient(rgba(51, 65, 85, 0.45) 1px, transparent 1px);
-                        background-size: 16px 16px;
+                        background-image: radial-gradient(rgba(148, 163, 184, 0.08) 0.8px, transparent 0.8px);
+                        background-size: 26px 26px;
                         box-shadow: none;
+                    }
+                    .horizon-container.theme-dark .graph-canvas-container.no-grid {
+                        background-image: none !important;
                     }
 
                     .pipeline-flow {
@@ -2162,21 +2168,26 @@
                     }
 
                     .pipeline-flow.wrap-mode {
-                        overflow-x: hidden !important;
-                        overflow-y: visible !important;
-                        max-height: none !important;
-                        cursor: default;
+                        overflow-x: auto !important;
+                        overflow-y: auto !important;
+                        max-height: 750px !important;
+                        cursor: grab;
+                    }
+                    .pipeline-flow.wrap-mode.is-panning,
+                    .pipeline-flow.wrap-mode.is-panning * {
+                        cursor: grabbing !important;
                     }
                     .pipeline-flow.wrap-mode .pipeline-flow-canvas {
                         margin-top: 0;
                         margin-bottom: 0;
+                        width: 100% !important;
+                        max-width: 100% !important;
                         flex-wrap: wrap;
                         row-gap: 4.25rem;
                         column-gap: 3.5rem;
                         align-items: center;
-                        width: 100% !important;
-                        max-width: 100% !important;
                         box-sizing: border-box;
+                        transform-origin: 0 0;
                     }
 
                     /* Continuous SVG Flow Rails and Connectors */
@@ -2393,6 +2404,14 @@
                     .canvas-tool-btn:active {
                         transform: scale(0.92);
                     }
+                    .canvas-tool-btn.active {
+                        background: rgba(14, 165, 233, 0.15) !important;
+                        color: #0284c7 !important;
+                    }
+                    .horizon-container.theme-dark .canvas-tool-btn.active {
+                        background: rgba(14, 165, 233, 0.25) !important;
+                        color: #38bdf8 !important;
+                    }
                     .canvas-tool-divider {
                         width: 1px;
                         height: 16px;
@@ -2403,10 +2422,20 @@
                         font-size: 0.72rem;
                         font-weight: 700;
                         color: #0f172a;
-                        min-width: 36px;
+                        min-width: 38px;
                         text-align: center;
                         font-variant-numeric: tabular-nums;
                         user-select: none;
+                        cursor: pointer;
+                        padding: 2px 4px;
+                        border-radius: 4px;
+                        transition: background-color 0.15s ease;
+                    }
+                    .canvas-zoom-display:hover {
+                        background: rgba(15, 23, 42, 0.08);
+                    }
+                    .horizon-container.theme-dark .canvas-zoom-display:hover {
+                        background: rgba(255, 255, 255, 0.1);
                     }
 
                     .stage-column {
@@ -6457,7 +6486,7 @@
                             <button class="canvas-tool-btn" onclick="zoomIn()" title="Zoom In (+)" aria-label="Zoom in">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             </button>
-                            <span id="canvas-zoom-display" class="canvas-zoom-display" title="Current zoom level">100%</span>
+                            <span id="canvas-zoom-display" class="canvas-zoom-display" onclick="resetZoom()" title="Current zoom level — Click to reset to 100%, scroll wheel over here to zoom">100%</span>
                             <button class="canvas-tool-btn" onclick="zoomOut()" title="Zoom Out (-)" aria-label="Zoom out">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             </button>
@@ -6469,6 +6498,13 @@
                                 <span style="font-size:0.7rem; font-weight:700;">1:1</span>
                             </button>
                             <span class="canvas-tool-divider" aria-hidden="true"></span>
+                            <button id="canvas-tool-grid-btn" class="canvas-tool-btn" onclick="toggleCanvasGrid()" title="Toggle canvas background dots" aria-label="Toggle canvas background dots">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="5" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="19" cy="5" r="1.5" fill="currentColor"/>
+                                    <circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                                    <circle cx="5" cy="19" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/><circle cx="19" cy="19" r="1.5" fill="currentColor"/>
+                                </svg>
+                            </button>
                             <button id="canvas-tool-layout-btn" class="canvas-tool-btn" onclick="toggleLayoutMode()" title="Switch layout (Canvas Flow / Wrap)" aria-label="Switch layout mode">
                                 <svg id="canvas-tool-layout-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg>
                             </button>
@@ -7003,6 +7039,7 @@
                 if (isNaN(currentZoom) || currentZoom &lt; 0.35 || currentZoom &gt; 1.8) {
                     currentZoom = 1.0;
                 }
+                var userManualZoomApplied = false;
                 var isPanning = false;
                 var dragStartX = 0;
                 var dragStartY = 0;
@@ -7139,8 +7176,40 @@
                     }
                 });
 
+                function toggleCanvasGrid() {
+                    var hideGrid = localStorage.getItem('horizon_hide_grid') === 'true';
+                    hideGrid = !hideGrid;
+                    localStorage.setItem('horizon_hide_grid', hideGrid ? 'true' : 'false');
+                    applyCanvasGridPreference();
+                }
+
+                function applyCanvasGridPreference() {
+                    var hideGrid = localStorage.getItem('horizon_hide_grid') === 'true';
+                    var containers = document.querySelectorAll('.graph-canvas-container');
+                    for (var i = 0; i &lt; containers.length; i++) {
+                        if (hideGrid) {
+                            containers[i].classList.add('no-grid');
+                        } else {
+                            containers[i].classList.remove('no-grid');
+                        }
+                    }
+                    var btn = document.getElementById('canvas-tool-grid-btn');
+                    if (btn) {
+                        if (hideGrid) {
+                            btn.classList.add('active');
+                            btn.title = "Show canvas background dots";
+                            btn.setAttribute('aria-label', "Show canvas background dots");
+                        } else {
+                            btn.classList.remove('active');
+                            btn.title = "Hide canvas background dots";
+                            btn.setAttribute('aria-label', "Hide canvas background dots");
+                        }
+                    }
+                }
+
                 function applyViewPreferences() {
                     applyScreenMode();
+                    applyCanvasGridPreference();
                     var flow = document.getElementById('pipeline-flow');
                     if (flow) {
                         if (currentLayoutMode === 'wrap') {
@@ -7158,8 +7227,9 @@
                         if (!flow.getAttribute('data-wheel-bound')) {
                             flow.setAttribute('data-wheel-bound', 'true');
                             flow.addEventListener('wheel', function(e) {
-                                if (e.ctrlKey) {
+                                if (e.ctrlKey || e.metaKey || e.altKey) {
                                     e.preventDefault();
+                                    userManualZoomApplied = true;
                                     if (e.deltaY &lt; 0) {
                                         zoomIn();
                                     } else {
@@ -7175,6 +7245,25 @@
                                         e.preventDefault();
                                         flow.scrollLeft += e.deltaY;
                                     }
+                                } else if (currentLayoutMode === 'wrap') {
+                                    if (e.shiftKey || Math.abs(e.deltaX) &gt; Math.abs(e.deltaY)) {
+                                        e.preventDefault();
+                                        flow.scrollLeft += (e.shiftKey ? e.deltaY : e.deltaX);
+                                    }
+                                }
+                            }, { passive: false });
+                        }
+
+                        var zoomDisplay = document.getElementById('canvas-zoom-display');
+                        if (zoomDisplay &amp;&amp; !zoomDisplay.getAttribute('data-wheel-bound')) {
+                            zoomDisplay.setAttribute('data-wheel-bound', 'true');
+                            zoomDisplay.addEventListener('wheel', function(e) {
+                                e.preventDefault();
+                                userManualZoomApplied = true;
+                                if (e.deltaY &lt; 0) {
+                                    zoomIn();
+                                } else {
+                                    zoomOut();
                                 }
                             }, { passive: false });
                         }
@@ -7257,6 +7346,7 @@
                     resetFlowSvgDimensions();
                     if (canvas) {
                         canvas.style.transform = 'none';
+                        canvas.style.marginLeft = '0px';
                         canvas.style.marginRight = '0px';
                         canvas.style.marginBottom = '0px';
                     }
@@ -7265,24 +7355,13 @@
                         flow.scrollTop = 0;
                     }
                     applyViewPreferences();
-                    if (mode === 'scroll') {
-                        applyCanvasZoom();
-                        setTimeout(function() {
-                            if (selectedStageId) {
-                                scrollStageIntoPipelineView(selectedStageId, false);
-                            }
-                            drawFlowConnectors();
-                        }, 35);
-                    } else {
-                        updateZoomDisplay();
-                        setTimeout(function() {
-                            if (flow) {
-                                flow.scrollLeft = 0;
-                                flow.scrollTop = 0;
-                            }
-                            drawFlowConnectors();
-                        }, 35);
-                    }
+                    autoFitPipelineGraph(true);
+                    setTimeout(function() {
+                        if (selectedStageId) {
+                            scrollStageIntoPipelineView(selectedStageId, false);
+                        }
+                        drawFlowConnectors();
+                    }, 40);
                 }
 
                 function setDensity(density) {
@@ -7318,76 +7397,141 @@
 
                     resetFlowSvgDimensions();
 
-                    if (currentLayoutMode === 'wrap') {
-                        canvas.style.transform = 'none';
-                        canvas.style.marginRight = '0px';
-                        canvas.style.marginBottom = '0px';
-                        flow.scrollLeft = 0;
-                        updateZoomDisplay();
-                        drawFlowConnectors();
-                        return;
-                    }
-
                     canvas.style.transform = 'none';
+                    canvas.style.marginLeft = '0px';
                     canvas.style.marginRight = '0px';
                     canvas.style.marginBottom = '0px';
 
                     var naturalW = canvas.scrollWidth;
                     var naturalH = canvas.scrollHeight;
+                    var availableW = flow.clientWidth;
 
-                    canvas.style.transform = (currentZoom === 1.0) ? 'none' : 'scale(' + currentZoom + ')';
-                    canvas.style.transformOrigin = 'left center';
+                    if (currentLayoutMode === 'wrap') {
+                        canvas.style.transformOrigin = 'left top';
+                        canvas.style.transform = (currentZoom === 1.0) ? 'none' : 'scale(' + currentZoom + ')';
+                        if (currentZoom &gt; 1.0 &amp;&amp; naturalW &gt; 0) {
+                            canvas.style.marginRight = Math.round(naturalW * (currentZoom - 1)) + 'px';
+                            canvas.style.marginBottom = Math.round(naturalH * (currentZoom - 1)) + 'px';
+                        }
+                    } else {
+                        canvas.style.transformOrigin = 'left center';
+                        canvas.style.transform = (currentZoom === 1.0) ? 'none' : 'scale(' + currentZoom + ')';
 
-                    if (currentZoom !== 1.0 &amp;&amp; naturalW &gt; 0) {
-                        canvas.style.marginRight = (naturalW * (currentZoom - 1)) + 'px';
-                        canvas.style.marginBottom = (naturalH * (currentZoom - 1)) + 'px';
+                        // Check if content is narrower than flow container to center it
+                        var startNode = document.getElementById('terminal-node-start');
+                        var endNode = document.getElementById('terminal-node-end');
+                        var actualSpanW = naturalW;
+                        if (startNode &amp;&amp; endNode) {
+                            var startR = startNode.getBoundingClientRect();
+                            var endR = endNode.getBoundingClientRect();
+                            var span = (endR.right - startR.left) + 32;
+                            if (span &gt; 50) actualSpanW = span;
+                        }
+
+                        var scaledSpanW = actualSpanW * currentZoom;
+                        if (scaledSpanW &lt; availableW - 48) {
+                            var offset = Math.max(0, Math.floor((availableW - scaledSpanW) / 2) - 16);
+                            canvas.style.marginLeft = offset + 'px';
+                        } else {
+                            canvas.style.marginLeft = '0px';
+                        }
+
+                        if (currentZoom &gt; 1.0 &amp;&amp; naturalW &gt; 0) {
+                            canvas.style.marginRight = Math.round(naturalW * (currentZoom - 1)) + 'px';
+                            canvas.style.marginBottom = Math.round(naturalH * (currentZoom - 1)) + 'px';
+                        }
                     }
 
                     updateZoomDisplay();
                     drawFlowConnectors();
                 }
 
-                function setZoom(scale) {
+                function setZoom(scale, isUserManual) {
                     currentZoom = Math.max(0.35, Math.min(1.8, Math.round(scale * 100) / 100));
-                    localStorage.setItem('horizon_canvas_zoom', currentZoom.toString());
+                    if (isUserManual) {
+                        userManualZoomApplied = true;
+                        localStorage.setItem('horizon_canvas_zoom', currentZoom.toString());
+                    }
                     applyCanvasZoom();
                 }
 
                 function zoomIn() {
-                    setZoom(currentZoom + 0.15);
+                    setZoom(currentZoom + 0.15, true);
                 }
 
                 function zoomOut() {
-                    setZoom(currentZoom - 0.15);
+                    setZoom(currentZoom - 0.15, true);
                 }
 
                 function resetZoom() {
-                    setZoom(1.0);
+                    setZoom(1.0, true);
                 }
 
-                function fitFlowToScreen() {
+                function autoFitPipelineGraph(force) {
                     var flow = document.getElementById('pipeline-flow');
                     var canvas = document.getElementById('pipeline-flow-canvas');
                     if (!flow || !canvas) return;
 
                     resetFlowSvgDimensions();
                     canvas.style.transform = 'none';
+                    canvas.style.marginLeft = '0px';
                     canvas.style.marginRight = '0px';
                     canvas.style.marginBottom = '0px';
 
-                    var availableW = flow.clientWidth - 56;
-                    var availableH = flow.clientHeight - 56;
-                    var contentW = canvas.scrollWidth;
-                    var contentH = canvas.scrollHeight;
+                    var availableW = flow.clientWidth - 48;
+                    var availableH = flow.clientHeight - 48;
+                    if (availableW &lt;= 0) availableW = flow.parentElement ? (flow.parentElement.clientWidth - 48) : 900;
+                    if (availableH &lt;= 0) availableH = 450;
 
-                    var scaleW = (contentW &gt; 0 &amp;&amp; availableW &gt; 0) ? (availableW / contentW) : 1.0;
-                    var scaleH = (contentH &gt; 0 &amp;&amp; availableH &gt; 0) ? (availableH / contentH) : 1.0;
+                    var startNode = document.getElementById('terminal-node-start');
+                    var endNode = document.getElementById('terminal-node-end');
+                    var columns = canvas.querySelectorAll('.stage-column');
+                    var colCount = columns.length;
+
+                    var naturalW = canvas.scrollWidth;
+                    var naturalH = canvas.scrollHeight;
+
+                    if (startNode &amp;&amp; endNode &amp;&amp; currentLayoutMode === 'scroll') {
+                        var startR = startNode.getBoundingClientRect();
+                        var endR = endNode.getBoundingClientRect();
+                        var spanW = (endR.right - startR.left) + 40;
+                        if (spanW &gt; 60) {
+                            naturalW = spanW;
+                        }
+                    }
+
+                    var scaleW = (naturalW &gt; 0 &amp;&amp; availableW &gt; 0) ? (availableW / naturalW) : 1.0;
+                    var scaleH = (naturalH &gt; 0 &amp;&amp; availableH &gt; 0) ? (availableH / naturalH) : 1.0;
                     var fitScale = Math.min(scaleW, scaleH);
-                    fitScale = Math.max(0.35, Math.min(1.0, fitScale));
 
-                    setZoom(fitScale);
+                    if (colCount &lt;= 1) {
+                        // Single stage: zoom in prominent up to 1.35x if space permits
+                        fitScale = Math.min(1.35, scaleW);
+                        if (scaleW &gt;= 1.25) {
+                            fitScale = 1.35;
+                        }
+                    } else if (colCount === 2) {
+                        fitScale = Math.min(1.20, fitScale);
+                        if (scaleW &gt;= 1.15) {
+                            fitScale = 1.15;
+                        }
+                    } else if (colCount === 3) {
+                        fitScale = Math.min(1.10, fitScale);
+                    } else {
+                        // Multi-stage pipeline: scale so the entire pipeline fits comfortably
+                        fitScale = Math.min(1.0, fitScale);
+                    }
+
+                    fitScale = Math.max(0.35, Math.min(1.50, Math.round(fitScale * 100) / 100));
+
+                    setZoom(fitScale, false);
                     flow.scrollLeft = 0;
                     flow.scrollTop = 0;
+                }
+
+                function fitFlowToScreen() {
+                    userManualZoomApplied = false;
+                    autoFitPipelineGraph(true);
                 }
 
                 function initFlowPanAndDrag() {
@@ -7414,7 +7558,6 @@
 
                     flow.addEventListener('mousedown', function(e) {
                         if (e.button !== 0) return;
-                        if (currentLayoutMode === 'wrap') return;
 
                         if (e.target.closest('button') || e.target.closest('input') || e.target.closest('a') ||
                             e.target.closest('.stage-artifacts-badge') || e.target.closest('.stage-card-link-btn') ||
@@ -7474,7 +7617,7 @@
                     });
 
                     flow.addEventListener('touchstart', function(e) {
-                        if (e.touches.length === 1 &amp;&amp; currentLayoutMode !== 'wrap') {
+                        if (e.touches.length === 1) {
                             if (e.target.closest('button') || e.target.closest('input') || e.target.closest('a') ||
                                 e.target.closest('.stage-artifacts-badge') || e.target.closest('.stage-card-link-btn') ||
                                 e.target.closest('.stage-card-restart-btn') || e.target.closest('.stage-agent-badge') ||
@@ -9294,7 +9437,12 @@
 
                     flowContainer.innerHTML = html;
                     initFlowPanAndDrag();
-                    applyCanvasZoom();
+                    if (!window._horizonInitialAutoFitDone &amp;&amp; !userManualZoomApplied) {
+                        window._horizonInitialAutoFitDone = true;
+                        autoFitPipelineGraph(false);
+                    } else {
+                        applyCanvasZoom();
+                    }
                     setTimeout(drawFlowConnectors, 25);
 
                     // Re-select stage from URL hash if present, otherwise active or first stage
@@ -9412,10 +9560,6 @@
                     svg.style.width = "0px";
                     svg.style.height = "0px";
 
-                    if (currentLayoutMode === "wrap") {
-                        flow.scrollLeft = 0;
-                    }
-
                     var width = (currentLayoutMode === "wrap")
                         ? Math.max(canvas.clientWidth, canvas.scrollWidth)
                         : Math.max(canvas.scrollWidth, canvas.clientWidth, flow.scrollWidth);
@@ -9426,7 +9570,7 @@
                     svg.style.height = height + "px";
 
                     var canvasRect = canvas.getBoundingClientRect();
-                    var zoom = (currentLayoutMode === "wrap") ? 1.0 : (currentZoom || 1.0);
+                    var zoom = currentZoom || 1.0;
 
                     function getNodeAnchor(el, side, fallbackStatus) {
                         var r = el.getBoundingClientRect();
@@ -9929,23 +10073,19 @@
                     var cardEl = document.getElementById('stage-card-' + stageId);
                     if (!flowContainer || !cardEl) return;
 
-                    if (currentLayoutMode === 'scroll') {
-                        var containerRect = flowContainer.getBoundingClientRect();
-                        var cardRect = cardEl.getBoundingClientRect();
-                        var cardRelativeLeft = (cardRect.left - containerRect.left) + flowContainer.scrollLeft;
-                        var targetScrollLeft = cardRelativeLeft - (flowContainer.clientWidth / 2) + (cardRect.width / 2);
+                    var containerRect = flowContainer.getBoundingClientRect();
+                    var cardRect = cardEl.getBoundingClientRect();
+                    var cardRelativeLeft = (cardRect.left - containerRect.left) + flowContainer.scrollLeft;
+                    var targetScrollLeft = cardRelativeLeft - (flowContainer.clientWidth / 2) + (cardRect.width / 2);
 
-                        var cardRelativeTop = (cardRect.top - containerRect.top) + flowContainer.scrollTop;
-                        var targetScrollTop = cardRelativeTop - (flowContainer.clientHeight / 2) + (cardRect.height / 2);
+                    var cardRelativeTop = (cardRect.top - containerRect.top) + flowContainer.scrollTop;
+                    var targetScrollTop = cardRelativeTop - (flowContainer.clientHeight / 2) + (cardRect.height / 2);
 
-                        flowContainer.scrollTo({
-                            left: Math.max(0, targetScrollLeft),
-                            top: Math.max(0, targetScrollTop),
-                            behavior: (smooth !== false) ? 'smooth' : 'auto'
-                        });
-                    } else {
-                        flowContainer.scrollLeft = 0;
-                    }
+                    flowContainer.scrollTo({
+                        left: Math.max(0, targetScrollLeft),
+                        top: Math.max(0, targetScrollTop),
+                        behavior: (smooth !== false) ? 'smooth' : 'auto'
+                    });
                 }
 
                 function scrollWindowToElement(targetEl, block) {
