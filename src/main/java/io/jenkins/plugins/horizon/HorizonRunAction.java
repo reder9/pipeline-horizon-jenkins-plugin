@@ -3,6 +3,7 @@ package io.jenkins.plugins.horizon;
 import hudson.model.Run;
 import io.jenkins.plugins.horizon.analysis.PipelineGraphAnalyzer;
 import io.jenkins.plugins.horizon.model.RunDetailsModel;
+import io.jenkins.plugins.horizon.util.EncodingUtils;
 import jenkins.model.RunAction2;
 import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.workflow.actions.LogAction;
@@ -525,6 +526,7 @@ public class HorizonRunAction implements RunAction2 {
             }
 
             String targetScript = (script != null && !script.trim().isEmpty()) ? script : replayAction.getOriginalScript();
+            targetScript = EncodingUtils.fixMojibake(targetScript);
             java.util.Map<String, String> loaded = replayAction.getOriginalLoadedScripts();
             if (loaded == null) {
                 loaded = java.util.Collections.emptyMap();
@@ -567,6 +569,8 @@ public class HorizonRunAction implements RunAction2 {
                 }
             }
         }
+
+        script = EncodingUtils.fixMojibake(script);
 
         JSONObject result = new JSONObject();
         if (script == null || script.trim().isEmpty()) {

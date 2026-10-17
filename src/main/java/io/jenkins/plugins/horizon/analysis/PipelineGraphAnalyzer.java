@@ -12,6 +12,7 @@ import io.jenkins.plugins.horizon.model.RunSummaryModel;
 import io.jenkins.plugins.horizon.model.StageModel;
 import io.jenkins.plugins.horizon.model.StepModel;
 import io.jenkins.plugins.horizon.model.TestCaseModel;
+import io.jenkins.plugins.horizon.util.EncodingUtils;
 import org.jenkinsci.plugins.workflow.actions.ArgumentsAction;
 import org.jenkinsci.plugins.workflow.actions.ErrorAction;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
@@ -171,7 +172,7 @@ public class PipelineGraphAnalyzer {
 
                 if (tna != null) {
                     stage.setParallelBranch(true);
-                    stage.setBranchName(tna.getThreadName());
+                    stage.setBranchName(EncodingUtils.fixMojibake(tna.getThreadName()));
                 }
 
                 if (stage.getAgent() != null) {
@@ -525,7 +526,7 @@ public class PipelineGraphAnalyzer {
                     run.getAction(org.jenkinsci.plugins.workflow.cps.replay.ReplayAction.class);
             if (replayAction != null && replayAction.isEnabled()) {
                 details.setReplayEnabled(true);
-                details.setOriginalScript(replayAction.getOriginalScript());
+                details.setOriginalScript(EncodingUtils.fixMojibake(replayAction.getOriginalScript()));
             }
         } catch (Throwable ignored) {
         }
@@ -756,10 +757,10 @@ public class PipelineGraphAnalyzer {
                     summary.setCommitSha(entry.getCommitId());
                 }
                 if (summary.getCommitMessage() == null && entry.getMsg() != null) {
-                    summary.setCommitMessage(entry.getMsg());
+                    summary.setCommitMessage(EncodingUtils.fixMojibake(entry.getMsg()));
                 }
                 if (summary.getCommitAuthor() == null && entry.getAuthor() != null) {
-                    summary.setCommitAuthor(entry.getAuthor().getDisplayName());
+                    summary.setCommitAuthor(EncodingUtils.fixMojibake(entry.getAuthor().getDisplayName()));
                 }
             }
         }
@@ -804,7 +805,7 @@ public class PipelineGraphAnalyzer {
         try {
             for (hudson.model.User u : run.getCulprits()) {
                 if (u != null) {
-                    summary.getCulprits().add(u.getDisplayName());
+                    summary.getCulprits().add(EncodingUtils.fixMojibake(u.getDisplayName()));
                 }
             }
         } catch (Throwable ignored) {
@@ -828,10 +829,11 @@ public class PipelineGraphAnalyzer {
     private static StageModel createStageModel(FlowNode startNode, String stageName, BlockEndNode endNode, String defaultAgent) {
         StageModel stage = new StageModel();
         stage.setId(startNode.getId());
-        stage.setName(stageName);
+        String cleanStageName = EncodingUtils.fixMojibake(stageName);
+        stage.setName(cleanStageName);
         stage.setAgent(defaultAgent);
 
-        if (stageName != null && stageName.toLowerCase(java.util.Locale.ROOT).matches(".*\\boptional\\b.*")) {
+        if (cleanStageName != null && cleanStageName.toLowerCase(java.util.Locale.ROOT).matches(".*\\boptional\\b.*")) {
             stage.setOptional(true);
         }
 
@@ -876,10 +878,10 @@ public class PipelineGraphAnalyzer {
                     || (th.getClass().getName().contains("Interrupted"));
             if (isAborted) {
                 stage.setStatus("ABORTED");
-                stage.setError(th.getMessage() != null ? th.getMessage() : "Stage was aborted");
+                stage.setError(EncodingUtils.fixMojibake(th.getMessage() != null ? th.getMessage() : "Stage was aborted"));
             } else {
                 stage.setStatus("FAILED");
-                stage.setError(th.getMessage() != null ? th.getMessage() : "Stage failed");
+                stage.setError(EncodingUtils.fixMojibake(th.getMessage() != null ? th.getMessage() : "Stage failed"));
             }
         } else if (startNode.isActive()) {
             stage.setStatus("IN_PROGRESS");
@@ -893,8 +895,8 @@ public class PipelineGraphAnalyzer {
     private static StepModel createStepModel(FlowNode node, Map<String, BlockEndNode> startToEndMap, List<FlowNode> allNodes, int nodeIndex) {
         StepModel step = new StepModel();
         step.setId(node.getId());
-        step.setName(node.getDisplayFunctionName());
-        step.setDisplayName(node.getDisplayName());
+        step.setName(EncodingUtils.fixMojibake(node.getDisplayFunctionName()));
+        step.setDisplayName(EncodingUtils.fixMojibake(node.getDisplayName()));
 
         try {
             String argsStr = ArgumentsAction.getStepArgumentsAsString(node);
@@ -921,7 +923,7 @@ public class PipelineGraphAnalyzer {
                 }
             }
             if (argsStr != null && !argsStr.trim().isEmpty()) {
-                step.setArguments(argsStr.trim());
+                step.setArguments(EncodingUtils.fixMojibake(argsStr.trim()));
             }
         } catch (Throwable ignored) {}
 
@@ -965,10 +967,10 @@ public class PipelineGraphAnalyzer {
                     || (th.getClass().getName().contains("Interrupted"));
             if (isAborted) {
                 step.setStatus("ABORTED");
-                step.setError(th.getMessage() != null ? th.getMessage() : "Step was aborted");
+                step.setError(EncodingUtils.fixMojibake(th.getMessage() != null ? th.getMessage() : "Step was aborted"));
             } else {
                 step.setStatus("FAILED");
-                step.setError(th.getMessage() != null ? th.getMessage() : "Step failed");
+                step.setError(EncodingUtils.fixMojibake(th.getMessage() != null ? th.getMessage() : "Step failed"));
             }
         } else {
             org.jenkinsci.plugins.workflow.actions.WarningAction wa = node.getAction(org.jenkinsci.plugins.workflow.actions.WarningAction.class);
