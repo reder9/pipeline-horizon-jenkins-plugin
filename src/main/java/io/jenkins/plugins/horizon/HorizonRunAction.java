@@ -599,7 +599,7 @@ public class HorizonRunAction implements RunAction2 {
                 result.put("status", "error");
                 result.put("valid", false);
                 result.put("type", "declarative");
-                result.put("message", t.getMessage() != null ? t.getMessage() : t.toString());
+                extractCompilationErrorInfo(t, script, result);
             }
         } else {
             try {
@@ -613,10 +613,94 @@ public class HorizonRunAction implements RunAction2 {
                 result.put("status", "error");
                 result.put("valid", false);
                 result.put("type", "scripted");
-                result.put("message", t.getMessage() != null ? t.getMessage() : t.toString());
+                extractCompilationErrorInfo(t, script, result);
             }
         }
         result.write(rsp.getWriter());
+    }
+
+    private static final java.util.regex.Pattern LINE_COL_PATTERN = java.util.regex.Pattern.compile(
+            "(?:@ line|at line|line:?)\\s*(\\d+)(?:,?\\s*(?:col|column)?:?\\s*(\\d+))?",
+            java.util.regex.Pattern.CASE_INSENSITIVE
+    );
+
+    private static final java.util.regex.Pattern WORKFLOW_SCRIPT_PATTERN = java.util.regex.Pattern.compile(
+            "WorkflowScript:\\s*(\\d+):",
+            java.util.regex.Pattern.CASE_INSENSITIVE
+    );
+
+    static void extractCompilationErrorInfo(Throwable t, String script, JSONObject result) {
+        int line = -1;
+        int col = -1;
+        String cleanMessage = t.getMessage() != null ? t.getMessage() : t.toString();
+
+        Throwable current = t;
+        while (current != null) {
+            if (current instanceof org.codehaus.groovy.control.MultipleCompilationErrorsException) {
+                org.codehaus.groovy.control.MultipleCompilationErrorsException mcee =
+                        (org.codehaus.groovy.control.MultipleCompilationErrorsException) current;
+                org.codehaus.groovy.control.ErrorCollector collector = mcee.getErrorCollector();
+                if (collector != null && collector.getErrorCount() > 0) {
+                    org.codehaus.groovy.syntax.SyntaxException se = collector.getSyntaxError(0);
+                    if (se != null) {
+                        line = se.getLine();
+                        col = se.getStartColumn();
+                        if (se.getOriginalMessage() != null && !se.getOriginalMessage().isEmpty()) {
+                            cleanMessage = se.getOriginalMessage();
+                        }
+                        break;
+                    }
+                }
+            }
+            current = current.getCause();
+        }
+
+        if (line <= 0 && cleanMessage != null) {
+            java.util.regex.Matcher m = LINE_COL_PATTERN.matcher(cleanMessage);
+            if (m.find()) {
+                try {
+                    String lineGroup = m.group(1);
+                    if (lineGroup != null) {
+                        line = Integer.parseInt(lineGroup);
+                    }
+                    String colGroup = m.group(2);
+                    if (colGroup != null) {
+                        col = Integer.parseInt(colGroup);
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            } else {
+                java.util.regex.Matcher m2 = WORKFLOW_SCRIPT_PATTERN.matcher(cleanMessage);
+                if (m2.find()) {
+                    try {
+                        String lineGroup = m2.group(1);
+                        if (lineGroup != null) {
+                            line = Integer.parseInt(lineGroup);
+                        }
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+        }
+
+        if (cleanMessage != null) {
+            cleanMessage = cleanMessage.replaceFirst("(?s)^startup failed:\\s*", "").trim();
+            cleanMessage = cleanMessage.replaceAll("(?m)^\\d+\\s+errors?\\s*$", "").trim();
+        }
+
+        result.put("message", (cleanMessage != null && !cleanMessage.isEmpty()) ? cleanMessage : "Pipeline syntax error.");
+        if (line > 0) {
+            result.put("line", line);
+            if (col > 0) {
+                result.put("column", col);
+            }
+            if (script != null) {
+                String[] scriptLines = script.split("\r?\n", -1);
+                if (line <= scriptLines.length) {
+                    result.put("errorLineText", scriptLines[line - 1]);
+                }
+            }
+        }
     }
 
     /**
