@@ -1,0 +1,1484 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <l:layout title="Pipeline Horizon - ${it.job.fullDisplayName}">
+        <l:header>
+            <script>
+                (function() {
+                    try {
+                        if (typeof Document !== 'undefined' &amp;&amp; Document.prototype.querySelector &amp;&amp; !Document.prototype.querySelector.__horizon_shimmed) {
+                            var origQS = Document.prototype.querySelector;
+                            var origQSA = Document.prototype.querySelectorAll;
+                            var shimmedQS = function(selector) {
+                                try {
+                                    return origQS.apply(this, arguments);
+                                } catch (err) {
+                                    if (typeof selector === 'string' &amp;&amp; selector.indexOf('.dialog-') === 0 &amp;&amp; selector.indexOf('-hash') !== -1) {
+                                        return null;
+                                    }
+                                    throw err;
+                                }
+                            };
+                            shimmedQS.__horizon_shimmed = true;
+                            Document.prototype.querySelector = shimmedQS;
+
+                            var shimmedQSA = function(selector) {
+                                try {
+                                    return origQSA.apply(this, arguments);
+                                } catch (err) {
+                                    if (typeof selector === 'string' &amp;&amp; selector.indexOf('.dialog-') === 0 &amp;&amp; selector.indexOf('-hash') !== -1) {
+                                        return [];
+                                    }
+                                    throw err;
+                                }
+                            };
+                            shimmedQSA.__horizon_shimmed = true;
+                            Document.prototype.querySelectorAll = shimmedQSA;
+                        }
+                    } catch(e) {}
+                })();
+            </script>
+        </l:header>
+        <l:side-panel>
+            <st:include page="sidepanel.jelly" it="${it.job}" />
+        </l:side-panel>
+        <l:main-panel>
+            <j:set var="jobBase" value="${rootURL}/${it.job.url}" />
+            <div id="horizon-job-app"
+                 class="horizon-container"
+                 data-pref-theme="${it.userProperty != null ? it.userProperty.themeChoice : 'auto'}">
+                <script>
+                    (function() {
+                        try {
+                            if (typeof Document !== 'undefined' &amp;&amp; Document.prototype.querySelector &amp;&amp; !Document.prototype.querySelector.__horizon_shimmed) {
+                                var origQS = Document.prototype.querySelector;
+                                var origQSA = Document.prototype.querySelectorAll;
+                                var shimmedQS = function(selector) {
+                                    try {
+                                        return origQS.apply(this, arguments);
+                                    } catch (err) {
+                                        if (typeof selector === 'string' &amp;&amp; selector.indexOf('.dialog-') === 0 &amp;&amp; selector.indexOf('-hash') !== -1) {
+                                            return null;
+                                        }
+                                        throw err;
+                                    }
+                                };
+                                shimmedQS.__horizon_shimmed = true;
+                                Document.prototype.querySelector = shimmedQS;
+
+                                var shimmedQSA = function(selector) {
+                                    try {
+                                        return origQSA.apply(this, arguments);
+                                    } catch (err) {
+                                        if (typeof selector === 'string' &amp;&amp; selector.indexOf('.dialog-') === 0 &amp;&amp; selector.indexOf('-hash') !== -1) {
+                                            return [];
+                                        }
+                                        throw err;
+                                    }
+                                };
+                                shimmedQSA.__horizon_shimmed = true;
+                                Document.prototype.querySelectorAll = shimmedQSA;
+                            }
+                        } catch(e) {}
+                        try {
+                            var app = document.getElementById('horizon-job-app');
+                            var pref = (app ? app.getAttribute('data-pref-theme') : null) || 'auto';
+                            var isDark = false;
+                            if (pref === 'dark') {
+                                isDark = true;
+                            } else if (pref === 'light') {
+                                isDark = false;
+                            } else {
+                                var html = document.documentElement;
+                                var body = document.body;
+                                var th = (html ? html.getAttribute('data-theme') : '') || (body ? body.getAttribute('data-theme') : '') || '';
+                                var tm = document.getElementById('theme-manager-theme');
+                                if (tm &amp;&amp; tm.textContent) {
+                                    try {
+                                        var parsed = JSON.parse(tm.textContent);
+                                        if (parsed.id === 'dark') isDark = true;
+                                        else if (parsed.id === 'light') isDark = false;
+                                    } catch(e) {}
+                                }
+                                if (th.indexOf('dark') !== -1) {
+                                    isDark = true;
+                                } else if (!th &amp;&amp; window.matchMedia &amp;&amp; window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                                    isDark = true;
+                                }
+                            }
+                            if (app) {
+                                if (isDark) {
+                                    app.classList.add('theme-dark');
+                                    app.classList.remove('theme-light');
+                                } else {
+                                    app.classList.add('theme-light');
+                                    app.classList.remove('theme-dark');
+                                }
+                            }
+                        } catch(e) {}
+                    })();
+                </script>
+                <style>
+                    /* Viewport and Page Containment */
+                    #page-body,
+                    .app-page-body {
+                        max-width: 100vw !important;
+                        min-width: 0 !important;
+                        overflow-x: hidden !important;
+                        box-sizing: border-box !important;
+                    }
+                    .app-page-body__contents,
+                    #main-panel,
+                    .app-main-panel {
+                        flex: 1 1 0 !important;
+                        min-width: 0 !important;
+                        max-width: 100% !important;
+                        width: 100% !important;
+                        overflow-x: hidden !important;
+                        box-sizing: border-box !important;
+                    }
+                    .horizon-container {
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                        color: #1e293b;
+                        margin-bottom: 2rem;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        min-width: 0 !important;
+                        overflow-x: hidden !important;
+                        box-sizing: border-box !important;
+                    }
+                    .horizon-hero {
+                        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+                        color: #f8fafc;
+                        border-radius: 12px;
+                        padding: 1.75rem 2rem;
+                        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+                        margin-bottom: 1.5rem;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        gap: 1.5rem;
+                    }
+                    .hero-title-group h1 {
+                        font-size: 1.65rem;
+                        font-weight: 700;
+                        margin: 0 0 0.4rem 0;
+                        letter-spacing: -0.02em;
+                    }
+                    .hero-desc {
+                        color: #94a3b8;
+                        font-size: 0.875rem;
+                        margin: 0;
+                    }
+                    .hero-actions {
+                        display: flex;
+                        gap: 0.75rem;
+                        align-items: center;
+                    }
+                    .btn-primary {
+                        background: #2563eb;
+                        color: #ffffff;
+                        border: none;
+                        padding: 0.6rem 1.25rem;
+                        border-radius: 8px;
+                        font-size: 0.9rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+                        transition: all 0.15s;
+                        text-decoration: none;
+                    }
+                    .btn-primary:hover {
+                        background: #1d4ed8;
+                        transform: translateY(-1px);
+                    }
+                    .btn-secondary {
+                        background: rgba(255, 255, 255, 0.1);
+                        color: #f8fafc;
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        padding: 0.6rem 1.1rem;
+                        border-radius: 8px;
+                        font-size: 0.9rem;
+                        font-weight: 500;
+                        cursor: pointer;
+                        text-decoration: none;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        transition: all 0.15s;
+                    }
+                    .btn-secondary:hover {
+                        background: rgba(255, 255, 255, 0.2);
+                    }
+
+                    /* Filter and Controls Card */
+                    .filter-bar {
+                        background: #ffffff;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 12px;
+                        padding: 1rem 1.5rem;
+                        box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        gap: 1rem;
+                        margin-bottom: 1.5rem;
+                    }
+                    .search-box {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        flex-grow: 1;
+                        max-width: 420px;
+                    }
+                    .search-input {
+                        width: 100%;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 8px;
+                        padding: 0.5rem 0.85rem;
+                        font-size: 0.875rem;
+                        color: #0f172a;
+                        background: #f8fafc;
+                        outline: none;
+                    }
+                    .search-input:focus {
+                        background: #ffffff;
+                        border-color: #2563eb;
+                        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+                    }
+                    /* Accessible Focus Rings */
+                    *:focus-visible {
+                        outline: 2px solid #0284c7;
+                        outline-offset: 2px;
+                    }
+                    .btn-primary:focus-visible, .btn-secondary:focus-visible, .action-link-btn:focus-visible {
+                        outline: 2px solid #0284c7;
+                        outline-offset: 2px;
+                    }
+                    .status-filters {
+                        display: flex;
+                        gap: 0.5rem;
+                        flex-wrap: wrap;
+                    }
+                    .filter-pill {
+                        appearance: none;
+                        -webkit-appearance: none;
+                        font-family: inherit;
+                        padding: 0.35rem 0.75rem;
+                        border-radius: 9999px;
+                        font-size: 0.8rem;
+                        font-weight: 700;
+                        cursor: pointer;
+                        border: 1px solid #cbd5e1;
+                        background: #f8fafc;
+                        color: #334155;
+                        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+                        transition: all 0.15s;
+                    }
+                    .filter-pill:hover {
+                        background: #f1f5f9;
+                        border-color: #94a3b8;
+                        color: #0f172a;
+                    }
+                    .filter-pill:focus-visible {
+                        outline: 2px solid #0284c7;
+                        outline-offset: 2px;
+                    }
+                    .filter-pill.active {
+                        background: #0f172a;
+                        color: #ffffff;
+                        border-color: #0f172a;
+                        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+                    }
+
+                    /* Activity List Table */
+                    .runs-card {
+                        background: #ffffff;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.07), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
+                        overflow: hidden;
+                    }
+                    .runs-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        text-align: left;
+                    }
+                    .runs-table th {
+                        background: #f1f5f9;
+                        color: #334155;
+                        font-size: 0.75rem;
+                        font-weight: 800;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                        padding: 0.85rem 1.25rem;
+                        border-bottom: 1px solid #cbd5e1;
+                    }
+                    .runs-table td {
+                        padding: 1rem 1.25rem;
+                        border-bottom: 1px solid #e2e8f0;
+                        font-size: 0.875rem;
+                        color: #0f172a;
+                        vertical-align: middle;
+                    }
+                    .runs-table tbody tr {
+                        transition: background-color 0.15s ease, box-shadow 0.15s ease;
+                    }
+                    .runs-table tbody tr:hover,
+                    .runs-table tbody tr:hover td {
+                        background: #f8fafc;
+                    }
+                    .runs-table tbody tr:hover td:first-child {
+                        box-shadow: inset 4px 0 0 0 #0284c7;
+                    }
+                    .run-number-link {
+                        font-weight: 800;
+                        color: #1d4ed8;
+                        text-decoration: none;
+                        font-size: 0.95rem;
+                    }
+                    .run-number-link:hover {
+                        text-decoration: underline;
+                    }
+                    .run-status-pill {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.35rem;
+                        padding: 0.25rem 0.65rem;
+                        border-radius: 9999px;
+                        font-size: 0.75rem;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                    }
+                    .pill-success { background: #d1fae5; color: #065f46; font-weight: 700; border: 1px solid #6ee7b7; }
+                    .pill-failed, .pill-failure { background: #fee2e2; color: #991b1b; font-weight: 700; border: 1px solid #fca5a5; }
+                    .pill-unstable { background: #fef3c7; color: #92400e; font-weight: 700; border: 1px solid #fcd34d; }
+                    .pill-in_progress { background: #dbeafe; color: #1e40af; font-weight: 700; border: 1px solid #93c5fd; animation: pulse 2s infinite; }
+                    .pill-paused_input { background: #fef3c7; color: #b45309; font-weight: 700; border: 1px solid #fcd34d; animation: pulse 2s infinite; }
+                    .pill-aborted { background: #f1f5f9; color: #334155; font-weight: 700; border: 1px solid #cbd5e1; }
+
+                    .action-link-btn {
+                        background: #f8fafc;
+                        border: 1px solid #cbd5e1;
+                        color: #1e293b;
+                        padding: 0.35rem 0.75rem;
+                        border-radius: 6px;
+                        text-decoration: none;
+                        font-size: 0.8rem;
+                        font-weight: 700;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.3rem;
+                        cursor: pointer;
+                        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+                        transition: all 0.15s;
+                    }
+                    .action-link-btn:hover {
+                        background: #2563eb;
+                        color: #ffffff;
+                        border-color: #2563eb;
+                    }
+                    .action-stop-btn {
+                        background: #fef2f2;
+                        border: 1px solid #fca5a5;
+                        color: #dc2626;
+                    }
+                    .action-stop-btn:hover {
+                        background: #dc2626 !important;
+                        color: #ffffff !important;
+                        border-color: #dc2626 !important;
+                    }
+
+                    /* Toast Notification */
+                    .horizon-toast-container {
+                        position: fixed;
+                        top: calc(var(--header-height, 3.5rem) + 1rem);
+                        right: 1.5rem;
+                        z-index: 999999;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.5rem;
+                        pointer-events: none;
+                    }
+                    .horizon-toast {
+                        pointer-events: auto;
+                        position: relative;
+                        display: flex !important;
+                        align-items: center !important;
+                        gap: 0.65rem !important;
+                        padding: 0.75rem 1.15rem !important;
+                        border-radius: 10px;
+                        font-size: 0.85rem;
+                        font-weight: 500;
+                        line-height: 1.35;
+                        color: #f8fafc;
+                        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+                        backdrop-filter: blur(8px);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        transform: translateY(-8px);
+                        opacity: 0;
+                        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                    }
+                    .horizon-toast::before,
+                    .horizon-toast::after {
+                        display: none !important;
+                        content: none !important;
+                    }
+                    .horizon-toast svg {
+                        flex-shrink: 0;
+                        display: block;
+                    }
+                    .horizon-toast.show {
+                        transform: translateY(0);
+                        opacity: 1;
+                    }
+                    .horizon-toast.toast-success {
+                        background: linear-gradient(135deg, #064e3b 0%, #0f172a 100%);
+                        border-color: rgba(16, 185, 129, 0.3);
+                        color: #34d399;
+                    }
+                    .horizon-toast.toast-error {
+                        background: linear-gradient(135deg, #7f1d1d 0%, #0f172a 100%);
+                        border-color: rgba(239, 68, 68, 0.3);
+                        color: #f87171;
+                    }
+                    .horizon-toast.toast-info {
+                        background: linear-gradient(135deg, #0c4a6e 0%, #0f172a 100%);
+                        border-color: rgba(14, 165, 233, 0.3);
+                        color: #38bdf8;
+                    }
+
+                    /* Build Parameters Modal */
+                    .horizon-modal-overlay {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: rgba(15, 23, 42, 0.7);
+                        backdrop-filter: blur(4px);
+                        display: none;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 99999;
+                        padding: 1.5rem;
+                        box-sizing: border-box;
+                    }
+                    .horizon-modal-overlay.active {
+                        display: flex;
+                    }
+                    .horizon-modal-dialog {
+                        background: #0f172a;
+                        color: #f8fafc;
+                        border: 1px solid #334155;
+                        border-radius: 14px;
+                        width: 100%;
+                        max-width: 580px;
+                        max-height: 85vh;
+                        display: flex;
+                        flex-direction: column;
+                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                        overflow: hidden;
+                        animation: modal-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                    }
+                    @keyframes modal-enter {
+                        from { transform: scale(0.95); opacity: 0; }
+                        to { transform: scale(1); opacity: 1; }
+                    }
+                    .horizon-modal-header {
+                        padding: 1.25rem 1.5rem;
+                        background: #1e293b;
+                        border-bottom: 1px solid #334155;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+                    .horizon-modal-title {
+                        margin: 0;
+                        font-size: 1.15rem;
+                        font-weight: 700;
+                        color: #f8fafc;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    }
+                    .horizon-modal-close {
+                        background: transparent;
+                        border: none;
+                        color: #94a3b8;
+                        cursor: pointer;
+                        padding: 0.25rem;
+                        border-radius: 6px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: color 0.15s, background 0.15s;
+                    }
+                    .horizon-modal-close:hover {
+                        color: #f8fafc;
+                        background: rgba(255, 255, 255, 0.1);
+                    }
+                    .horizon-modal-body {
+                        padding: 1.5rem;
+                        overflow-y: auto;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 1.15rem;
+                    }
+                    .param-field {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.35rem;
+                    }
+                    .param-label {
+                        font-size: 0.825rem;
+                        font-weight: 600;
+                        color: #e2e8f0;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.4rem;
+                    }
+                    .param-desc {
+                        font-size: 0.75rem;
+                        color: #94a3b8;
+                        margin-top: 0.1rem;
+                    }
+                    .param-input-text, .param-select {
+                        background: #1e293b;
+                        border: 1px solid #334155;
+                        color: #f8fafc;
+                        padding: 0.55rem 0.75rem;
+                        border-radius: 8px;
+                        font-size: 0.875rem;
+                        outline: none;
+                        transition: border-color 0.15s, box-shadow 0.15s;
+                    }
+                    .param-input-text:focus, .param-select:focus {
+                        border-color: #3b82f6;
+                        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+                    }
+                    .param-toggle-row {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        background: #1e293b;
+                        border: 1px solid #334155;
+                        padding: 0.65rem 0.85rem;
+                        border-radius: 8px;
+                    }
+                    .param-toggle-left {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.15rem;
+                    }
+                    .param-toggle-btn {
+                        position: relative;
+                        display: inline-block;
+                        width: 40px;
+                        height: 22px;
+                        flex-shrink: 0;
+                    }
+                    .param-toggle-btn input {
+                        opacity: 0;
+                        width: 0;
+                        height: 0;
+                    }
+                    .param-toggle-slider {
+                        position: absolute;
+                        cursor: pointer;
+                        top: 0; left: 0; right: 0; bottom: 0;
+                        background-color: #475569;
+                        transition: .2s;
+                        border-radius: 9999px;
+                    }
+                    .param-toggle-slider:before {
+                        position: absolute;
+                        content: "";
+                        height: 16px;
+                        width: 16px;
+                        left: 3px;
+                        bottom: 3px;
+                        background-color: white;
+                        transition: .2s;
+                        border-radius: 50%;
+                    }
+                    .param-toggle-btn input:checked + .param-toggle-slider {
+                        background-color: #2563eb;
+                    }
+                    .param-toggle-btn input:checked + .param-toggle-slider:before {
+                        transform: translateX(18px);
+                    }
+                    .horizon-modal-footer {
+                        padding: 1rem 1.5rem;
+                        background: #1e293b;
+                        border-top: 1px solid #334155;
+                        display: flex;
+                        justify-content: flex-end;
+                        gap: 0.75rem;
+                    }
+                    .btn-modal-cancel {
+                        background: transparent;
+                        border: 1px solid #475569;
+                        color: #cbd5e1;
+                        padding: 0.5rem 1rem;
+                        border-radius: 8px;
+                        font-size: 0.85rem;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.15s;
+                    }
+                    .btn-modal-cancel:hover {
+                        background: #334155;
+                        color: #ffffff;
+                    }
+                    .btn-modal-submit {
+                        background: #2563eb;
+                        border: none;
+                        color: #ffffff;
+                        padding: 0.5rem 1.25rem;
+                        border-radius: 8px;
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.4rem;
+                        transition: all 0.15s;
+                        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+                    }
+                    .btn-modal-submit:hover {
+                        background: #1d4ed8;
+                    }
+
+                    /* Light Theme Modal Overrides */
+                    .horizon-container:not(.theme-dark) .horizon-modal-overlay {
+                        background: rgba(15, 23, 42, 0.45);
+                    }
+                    .horizon-container:not(.theme-dark) .horizon-modal-dialog {
+                        background: #ffffff;
+                        color: #0f172a;
+                        border: 1px solid #cbd5e1;
+                        box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22), 0 4px 12px rgba(15, 23, 42, 0.08);
+                    }
+                    .horizon-container:not(.theme-dark) .horizon-modal-header {
+                        background: #f8fafc;
+                        border-bottom: 1px solid #cbd5e1;
+                    }
+                    .horizon-container:not(.theme-dark) .horizon-modal-title {
+                        color: #0f172a;
+                    }
+                    .horizon-container:not(.theme-dark) .horizon-modal-close {
+                        color: #64748b;
+                    }
+                    .horizon-container:not(.theme-dark) .horizon-modal-close:hover {
+                        color: #0f172a;
+                        background: #e2e8f0;
+                    }
+                    .horizon-container:not(.theme-dark) .param-label {
+                        color: #0f172a;
+                        font-weight: 700;
+                    }
+                    .horizon-container:not(.theme-dark) .param-desc {
+                        color: #475569;
+                    }
+                    .horizon-container:not(.theme-dark) .param-input-text,
+                    .horizon-container:not(.theme-dark) .param-select {
+                        background: #ffffff;
+                        border: 1px solid #94a3b8;
+                        color: #0f172a;
+                    }
+                    .horizon-container:not(.theme-dark) .param-toggle-row {
+                        background: #f8fafc;
+                        border: 1px solid #cbd5e1;
+                    }
+                    .horizon-container:not(.theme-dark) .horizon-modal-footer {
+                        background: #f8fafc;
+                        border-top: 1px solid #cbd5e1;
+                    }
+                    .horizon-container:not(.theme-dark) .btn-modal-cancel {
+                        background: #ffffff;
+                        border: 1px solid #cbd5e1;
+                        color: #334155;
+                        font-weight: 600;
+                    }
+                    .horizon-container:not(.theme-dark) .btn-modal-cancel:hover {
+                        background: #f1f5f9;
+                        color: #0f172a;
+                    }
+
+                    /* Dark Theme Base and Contextual Theme Overrides */
+                    .horizon-container.theme-dark,
+                    [data-theme="dark"] .horizon-container:not(.theme-light),
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light),
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) {
+                        color: #f8fafc;
+                    }
+
+                    .horizon-container.theme-dark .horizon-hero,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .horizon-hero,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .horizon-hero,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .horizon-hero {
+                        background: linear-gradient(135deg, #0b1329 0%, #172554 50%, #0f172a 100%);
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+                    }
+
+                    .horizon-container.theme-dark .filter-bar,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .filter-bar,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .filter-bar,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .filter-bar {
+                        background: #0f172a;
+                        border: 1px solid #1e293b;
+                        box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
+                    }
+
+                    .horizon-container.theme-dark .search-input,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .search-input,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .search-input,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .search-input {
+                        background: #1e293b;
+                        border: 1px solid #334155;
+                        color: #f8fafc;
+                    }
+                    .horizon-container.theme-dark .search-input::placeholder,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .search-input::placeholder,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .search-input::placeholder,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .search-input::placeholder {
+                        color: #64748b;
+                    }
+                    .horizon-container.theme-dark .search-input:focus,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .search-input:focus,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .search-input:focus,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .search-input:focus {
+                        border-color: #3b82f6;
+                        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+                    }
+
+                    .horizon-container.theme-dark .filter-pill,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .filter-pill,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .filter-pill,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .filter-pill {
+                        background: #1e293b;
+                        border: 1px solid #334155;
+                        color: #cbd5e1;
+                    }
+                    .horizon-container.theme-dark .filter-pill:hover,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .filter-pill:hover,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .filter-pill:hover,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .filter-pill:hover {
+                        background: #334155;
+                        color: #ffffff;
+                        border-color: #475569;
+                    }
+                    .horizon-container.theme-dark .filter-pill.active,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .filter-pill.active,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .filter-pill.active,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .filter-pill.active {
+                        background: #2563eb;
+                        color: #ffffff;
+                        border-color: #2563eb;
+                        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+                    }
+
+                    .horizon-container.theme-dark .runs-card,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .runs-card,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .runs-card,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .runs-card {
+                        background: #0f172a;
+                        border: 1px solid #1e293b;
+                        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+                    }
+                    .horizon-container.theme-dark .runs-table th,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .runs-table th,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .runs-table th,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .runs-table th {
+                        background: #1e293b;
+                        color: #94a3b8;
+                        border-bottom: 1px solid #334155;
+                    }
+                    .horizon-container.theme-dark .runs-table td,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .runs-table td,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .runs-table td,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .runs-table td {
+                        border-bottom: 1px solid #1e293b;
+                        color: #cbd5e1;
+                    }
+                    .horizon-container.theme-dark .run-number-link,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .run-number-link,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .run-number-link,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .run-number-link {
+                        color: #60a5fa;
+                    }
+                    .horizon-container.theme-dark .run-number-link:hover,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .run-number-link:hover,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .run-number-link:hover,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .run-number-link:hover {
+                        color: #93c5fd;
+                    }
+
+                    .run-subtext {
+                        color: #64748b;
+                    }
+                    .horizon-container.theme-dark .run-subtext,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .run-subtext,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .run-subtext,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .run-subtext {
+                        color: #94a3b8;
+                    }
+                    .horizon-container.theme-dark .run-duration-col,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .run-duration-col,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .run-duration-col,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .run-duration-col {
+                        color: #cbd5e1;
+                    }
+
+                    .horizon-container.theme-dark .action-link-btn,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .action-link-btn,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .action-link-btn,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .action-link-btn {
+                        background: #1e293b;
+                        border: 1px solid #334155;
+                        color: #cbd5e1;
+                    }
+                    .horizon-container.theme-dark .action-link-btn:hover,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .action-link-btn:hover,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .action-link-btn:hover,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .action-link-btn:hover {
+                        background: #2563eb;
+                        color: #ffffff;
+                        border-color: #2563eb;
+                    }
+
+                    /* Dark Theme Row Hover and Highlight */
+                    .horizon-container.theme-dark .runs-table tbody tr:hover,
+                    .horizon-container.theme-dark .runs-table tbody tr:hover td,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .runs-table tbody tr:hover,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .runs-table tbody tr:hover td,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .runs-table tbody tr:hover,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .runs-table tbody tr:hover td,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .runs-table tbody tr:hover,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .runs-table tbody tr:hover td {
+                        background: #1e293b !important;
+                        color: #f8fafc;
+                    }
+                    .horizon-container.theme-dark .runs-table tbody tr:hover td:first-child,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .runs-table tbody tr:hover td:first-child,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .runs-table tbody tr:hover td:first-child,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .runs-table tbody tr:hover td:first-child {
+                        box-shadow: inset 4px 0 0 0 #38bdf8;
+                    }
+                    .horizon-container.theme-dark .runs-table tbody tr:hover .run-subtext,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .runs-table tbody tr:hover .run-subtext,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .runs-table tbody tr:hover .run-subtext,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .runs-table tbody tr:hover .run-subtext {
+                        color: #cbd5e1 !important;
+                    }
+                    .horizon-container.theme-dark .runs-table tbody tr:hover .run-duration-col,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .runs-table tbody tr:hover .run-duration-col,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .runs-table tbody tr:hover .run-duration-col,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .runs-table tbody tr:hover .run-duration-col {
+                        color: #f8fafc !important;
+                    }
+                    .horizon-container.theme-dark .runs-table tbody tr:hover .action-link-btn,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .runs-table tbody tr:hover .action-link-btn,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .runs-table tbody tr:hover .action-link-btn,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .runs-table tbody tr:hover .action-link-btn {
+                        background: #27374f;
+                        border-color: #3b4f6e;
+                        color: #f8fafc;
+                    }
+
+                    /* Dark Theme Status Pills */
+                    .horizon-container.theme-dark .pill-success,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .pill-success,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .pill-success,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .pill-success {
+                        background: rgba(16, 185, 129, 0.2);
+                        color: #34d399;
+                        border: 1px solid rgba(52, 211, 153, 0.4);
+                    }
+                    .horizon-container.theme-dark .pill-failed,
+                    .horizon-container.theme-dark .pill-failure,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .pill-failed,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .pill-failure,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .pill-failed,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .pill-failure,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .pill-failed,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .pill-failure {
+                        background: rgba(239, 68, 68, 0.2);
+                        color: #f87171;
+                        border: 1px solid rgba(248, 113, 113, 0.4);
+                    }
+                    .horizon-container.theme-dark .pill-unstable,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .pill-unstable,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .pill-unstable,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .pill-unstable {
+                        background: rgba(245, 158, 11, 0.2);
+                        color: #fbbf24;
+                        border: 1px solid rgba(251, 191, 36, 0.4);
+                    }
+                    .horizon-container.theme-dark .pill-in_progress,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .pill-in_progress,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .pill-in_progress,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .pill-in_progress {
+                        background: rgba(59, 130, 246, 0.2);
+                        color: #60a5fa;
+                        border: 1px solid rgba(96, 165, 250, 0.4);
+                    }
+                    .horizon-container.theme-dark .pill-paused_input,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .pill-paused_input,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .pill-paused_input,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .pill-paused_input {
+                        background: rgba(245, 158, 11, 0.22);
+                        color: #fbbf24;
+                        border: 1px solid rgba(251, 191, 36, 0.45);
+                    }
+                    .horizon-container.theme-dark .action-stop-btn,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .action-stop-btn,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .action-stop-btn,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .action-stop-btn {
+                        background: rgba(239, 68, 68, 0.16);
+                        border-color: rgba(248, 113, 113, 0.4);
+                        color: #f87171;
+                    }
+                    .horizon-container.theme-dark .pill-aborted,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .pill-aborted,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .pill-aborted,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .pill-aborted {
+                        background: rgba(148, 163, 184, 0.15);
+                        color: #94a3b8;
+                        border: 1px solid rgba(148, 163, 184, 0.3);
+                    }
+                </style>
+
+                <!-- Hero Header -->
+                <header class="horizon-hero" role="banner" aria-label="Pipeline Job Overview">
+                    <div class="hero-title-group">
+                        <h1 id="job-title">${it.job.displayName}</h1>
+                        <p class="hero-desc" id="job-desc">${it.job.description != null ? it.job.description : 'Pipeline Project'}</p>
+                    </div>
+                    <div class="hero-actions">
+                        <button id="btn-run-pipeline" class="btn-primary" onclick="triggerBuild()" aria-label="Run Pipeline">
+                            <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Pipeline
+                        </button>
+                        <a href="${jobBase}configure" class="btn-secondary" aria-label="Configure Jenkins Job">
+                            Configure
+                        </a>
+                        <j:set var="prefTargetUrl" value="${it.userProfileUrl != null ? it.userProfileUrl : (rootURL + '/user/' + (app.me != null ? app.me.id : '') + '/preferences')}" />
+                        <j:if test="${app.me != null || it.userProfileUrl != null}">
+                            <a href="${prefTargetUrl}" class="btn-secondary" target="_blank" aria-label="Pipeline Horizon User Preferences">
+                                Preferences
+                            </a>
+                        </j:if>
+                    </div>
+                </header>
+
+                <!-- Filters and Search Bar -->
+                <nav class="filter-bar" role="search" aria-label="Filter and search pipeline runs">
+                    <div class="search-box">
+                        <input type="text" id="run-search" class="search-input" placeholder="Search by build number, commit or trigger cause..." aria-label="Search by build number, commit or trigger cause" onkeyup="filterRuns()" />
+                    </div>
+                    <div class="status-filters" role="tablist" aria-label="Filter runs by status">
+                        <button type="button" class="filter-pill active" role="tab" aria-selected="true" onclick="setStatusFilter('ALL', this)" onkeydown="handleFilterKeyNav(event, 'ALL', this)">All Runs</button>
+                        <button type="button" class="filter-pill" role="tab" aria-selected="false" onclick="setStatusFilter('SUCCESS', this)" onkeydown="handleFilterKeyNav(event, 'SUCCESS', this)">Success</button>
+                        <button type="button" class="filter-pill" role="tab" aria-selected="false" onclick="setStatusFilter('UNSTABLE', this)" onkeydown="handleFilterKeyNav(event, 'UNSTABLE', this)">Unstable</button>
+                        <button type="button" class="filter-pill" role="tab" aria-selected="false" onclick="setStatusFilter('FAILED', this)" onkeydown="handleFilterKeyNav(event, 'FAILED', this)">Failed</button>
+                        <button type="button" class="filter-pill" role="tab" aria-selected="false" onclick="setStatusFilter('ABORTED', this)" onkeydown="handleFilterKeyNav(event, 'ABORTED', this)">Aborted</button>
+                        <button type="button" class="filter-pill" role="tab" aria-selected="false" onclick="setStatusFilter('IN_PROGRESS', this)" onkeydown="handleFilterKeyNav(event, 'IN_PROGRESS', this)">Running</button>
+                    </div>
+                </nav>
+
+                <!-- Runs Activity Feed -->
+                <section class="runs-card" role="region" aria-label="Pipeline Build History">
+                    <table class="runs-table" aria-label="Pipeline execution runs">
+                        <thead>
+                            <tr>
+                                <th scope="col">Build</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Trigger / Commit</th>
+                                <th scope="col">Duration</th>
+                                <th scope="col">Completed</th>
+                                <th scope="col">Horizon Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="runs-tbody">
+                            <tr>
+                                <td colspan="6" style="text-align:center; padding: 2.5rem; color:#475569;">
+                                    Loading pipeline activity...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+                <!-- Build with Parameters Modal Dialog -->
+                <div id="horizon-build-modal" class="horizon-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-build-title">
+                    <div class="horizon-modal-dialog">
+                        <div class="horizon-modal-header">
+                            <h2 class="horizon-modal-title" id="modal-build-title">
+                                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                Build with Parameters
+                            </h2>
+                            <button class="horizon-modal-close" onclick="closeBuildModal()" aria-label="Close build parameters dialog" title="Close">
+                                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </div>
+                        <div id="modal-params-body" class="horizon-modal-body">
+                            <!-- Dynamically generated parameter fields -->
+                        </div>
+                        <div class="horizon-modal-footer">
+                            <button class="btn-modal-cancel" onclick="closeBuildModal()">Cancel</button>
+                            <button class="btn-modal-submit" id="btn-submit-build" onclick="submitParameterizedBuild()">
+                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                Run Build
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                var jobData = null;
+                var currentFilter = 'ALL';
+                var jobPollTimer = null;
+                var jobBaseUrl = "${jobBase}";
+                if (!jobBaseUrl.endsWith("/")) {
+                    jobBaseUrl += "/";
+                }
+                var horizonBaseUrl = jobBaseUrl + "horizon/";
+
+                function getCrumbHeaders() {
+                    var headers = {};
+                    var headerName = document.head.getAttribute('data-crumb-header');
+                    var headerValue = document.head.getAttribute('data-crumb-value');
+                    if (headerName &amp;&amp; headerValue) {
+                        headers[headerName] = headerValue;
+                    }
+                    return headers;
+                }
+
+                function formatDuration(ms) {
+                    if (!ms || ms &lt;= 0) return "0s";
+                    var sec = Math.floor(ms / 1000);
+                    if (sec &lt; 60) return sec + "s";
+                    var min = Math.floor(sec / 60);
+                    sec = sec % 60;
+                    if (min &lt; 60) return min + "m " + sec + "s";
+                    var hr = Math.floor(min / 60);
+                    min = min % 60;
+                    return hr + "h " + min + "m";
+                }
+
+                function formatTimeAgo(ts) {
+                    if (!ts) return "--";
+                    var diffSec = Math.floor((Date.now() - ts) / 1000);
+                    if (diffSec &lt; 60) return "Just now";
+                    var diffMin = Math.floor(diffSec / 60);
+                    if (diffMin &lt; 60) return diffMin + " min ago";
+                    var diffHr = Math.floor(diffMin / 60);
+                    if (diffHr &lt; 24) return diffHr + " hr ago";
+                    var diffDays = Math.floor(diffHr / 24);
+                    return diffDays + " days ago";
+                }
+
+                function escapeHtml(str) {
+                    if (!str) return "";
+                    var div = document.createElement('div');
+                    div.textContent = str;
+                    return div.innerHTML;
+                }
+
+                function loadJobRuns() {
+                    fetch(horizonBaseUrl + 'apiRuns')
+                        .then(function(res) { return res.json(); })
+                        .then(function(data) {
+                            jobData = data;
+                            var runs = data.runs || [];
+                            renderRunsTable(runs);
+                            var anyBuilding = runs.some(function(r) { return r.building === true; });
+                            if (anyBuilding) {
+                                if (!jobPollTimer) {
+                                    jobPollTimer = setInterval(loadJobRuns, 4000);
+                                }
+                            } else if (jobPollTimer) {
+                                clearInterval(jobPollTimer);
+                                jobPollTimer = null;
+                            }
+                        })
+                        .catch(function(err) {
+                            console.error("Failed to load runs:", err);
+                        });
+                }
+
+                function renderRunsTable(runs) {
+                    var tbody = document.getElementById('runs-tbody');
+                    if (!runs || runs.length === 0) {
+                        tbody.innerHTML = '&lt;tr&gt;&lt;td colspan="6" class="run-empty-msg" style="text-align:center; padding:2rem; color:#94a3b8;"&gt;No builds found.&lt;/td&gt;&lt;/tr&gt;';
+                        return;
+                    }
+
+                    var search = document.getElementById('run-search').value.toLowerCase();
+                    var filtered = runs.filter(function(r) {
+                        var status = r.result || "IN_PROGRESS";
+                        var statusUpper = status.toUpperCase();
+                        if (currentFilter !== 'ALL') {
+                            if (currentFilter === 'FAILED') {
+                                if (statusUpper !== 'FAILED' &amp;&amp; statusUpper !== 'FAILURE') return false;
+                            } else if (statusUpper !== currentFilter) {
+                                return false;
+                            }
+                        }
+                        if (search) {
+                            var text = ("#" + r.number + " " + (r.causes ? r.causes.join(" ") : "") + " " + (r.commitMessage || "") + " " + (r.branch || "")).toLowerCase();
+                            return text.indexOf(search) !== -1;
+                        }
+                        return true;
+                    });
+
+                    if (filtered.length === 0) {
+                        tbody.innerHTML = '&lt;tr&gt;&lt;td colspan="6" class="run-empty-msg" style="text-align:center; padding:2rem; color:#94a3b8;"&gt;No builds matching filters.&lt;/td&gt;&lt;/tr&gt;';
+                        return;
+                    }
+
+                    var html = "";
+                    for (var i = 0; i &lt; filtered.length; i++) {
+                        var r = filtered[i];
+                        var status = r.result || "IN_PROGRESS";
+                        var statusLabel = r.pausedForInput ? "AWAITING INPUT" : status;
+                        var statusLower = r.pausedForInput ? "paused_input" : status.toLowerCase();
+                        var pillClass = "pill-" + (statusLower === 'failure' ? 'failed' : statusLower);
+                        var causeStr = (r.causes &amp;&amp; r.causes.length) ? r.causes[0] : "Direct trigger";
+                        if (r.commitMessage) {
+                            causeStr = '&lt;strong&gt;' + escapeHtml(r.commitMessage) + '&lt;/strong&gt;&lt;br/&gt;&lt;span class="run-subtext" style="font-size:0.75rem;"&gt;' + escapeHtml(causeStr) + '&lt;/span&gt;';
+                        } else {
+                            causeStr = '&lt;span class="run-subtext"&gt;' + escapeHtml(causeStr) + '&lt;/span&gt;';
+                        }
+
+                        html += '&lt;tr&gt;';
+                        html += '&lt;td&gt;&lt;a class="run-number-link" href="' + jobBaseUrl + r.number + '/horizon/" aria-label="Open Horizon graph for build #' + r.number + '"&gt;#' + r.number + '&lt;/a&gt;&lt;/td&gt;';
+                        html += '&lt;td&gt;&lt;span class="run-status-pill ' + pillClass + '" role="status"&gt;' + statusLabel + '&lt;/span&gt;&lt;/td&gt;';
+                        html += '&lt;td&gt;' + causeStr + '&lt;/td&gt;';
+                        html += '&lt;td class="run-duration-col"&gt;' + formatDuration(r.duration) + '&lt;/td&gt;';
+                        html += '&lt;td class="run-subtext"&gt;' + (r.building ? 'In progress' : formatTimeAgo(r.timestamp)) + '&lt;/td&gt;';
+                        html += '&lt;td&gt;';
+                        html += '&lt;a href="' + jobBaseUrl + r.number + '/horizon/" class="action-link-btn" aria-label="Open Horizon graph for build #' + r.number + '"&gt;' + (r.pausedForInput ? 'Review Input &amp;rarr;' : 'Open Graph &amp;rarr;') + '&lt;/a&gt; ';
+                        if (r.building) {
+                            html += '&lt;button class="action-link-btn action-stop-btn" onclick="quickAbortRun(' + r.number + ')" title="Stop running build #' + r.number + '" aria-label="Stop running build #' + r.number + '"&gt;&lt;svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;"&gt;&lt;rect x="5" y="5" width="14" height="14" rx="2"/&gt;&lt;/svg&gt; Stop&lt;/button&gt; ';
+                        } else {
+                            html += '&lt;button class="action-link-btn" onclick="quickRebuildRun(' + r.number + ')" title="Rebuild #' + r.number + ' with same parameters" aria-label="Rebuild run #' + r.number + '"&gt;&lt;svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"&gt;&lt;path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/&gt;&lt;/svg&gt; Rebuild&lt;/button&gt; ';
+                        }
+                        html += '&lt;a href="' + jobBaseUrl + r.number + '/console" class="action-link-btn" target="_blank" aria-label="Open raw console log for build #' + r.number + '"&gt;Console&lt;/a&gt;';
+                        html += '&lt;/td&gt;';
+                        html += '&lt;/tr&gt;';
+                    }
+
+                    tbody.innerHTML = html;
+                }
+
+                function quickAbortRun(runNum) {
+                    showToast("Stopping build #" + runNum + "...", "info");
+                    fetch(horizonBaseUrl + 'apiAbortRun?number=' + encodeURIComponent(runNum), {
+                        method: 'POST',
+                        headers: getCrumbHeaders()
+                    })
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        if (data.status === 'ok') {
+                            showToast(data.message || ("Build #" + runNum + " aborted."), "success");
+                            setTimeout(loadJobRuns, 1200);
+                        } else {
+                            showToast("Stop failed: " + (data.message || "Unknown error"), "error");
+                        }
+                    })
+                    .catch(function(err) {
+                        showToast("Error stopping build: " + err, "error");
+                    });
+                }
+
+                function filterRuns() {
+                    if (jobData) {
+                        renderRunsTable(jobData.runs || []);
+                    }
+                }
+
+                function setStatusFilter(status, elem) {
+                    currentFilter = status;
+                    var pills = document.querySelectorAll('.filter-pill');
+                    pills.forEach(function(p) {
+                        p.classList.remove('active');
+                        p.setAttribute('aria-selected', 'false');
+                    });
+                    elem.classList.add('active');
+                    elem.setAttribute('aria-selected', 'true');
+                    filterRuns();
+                }
+
+                function handleFilterKeyNav(e, status, elem) {
+                    if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        var allPills = Array.from(document.querySelectorAll('.filter-pill'));
+                        var idx = allPills.indexOf(elem);
+                        if (idx !== -1 &amp;&amp; idx &lt; allPills.length - 1) {
+                            allPills[idx + 1].focus();
+                            allPills[idx + 1].click();
+                        }
+                    } else if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        var allPills = Array.from(document.querySelectorAll('.filter-pill'));
+                        var idx = allPills.indexOf(elem);
+                        if (idx &gt; 0) {
+                            allPills[idx - 1].focus();
+                            allPills[idx - 1].click();
+                        }
+                    } else if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setStatusFilter(status, elem);
+                    }
+                }
+
+                function showToast(message, type) {
+                    var container = document.getElementById('horizon-toast-container');
+                    if (!container) {
+                        container = document.createElement('div');
+                        container.id = 'horizon-toast-container';
+                        container.className = 'horizon-toast-container';
+                        container.setAttribute('role', 'status');
+                        container.setAttribute('aria-live', 'polite');
+                        document.body.appendChild(container);
+                    }
+                    var toast = document.createElement('div');
+                    toast.className = 'horizon-toast toast-' + (type || 'info');
+
+                    var iconSvg = (type === 'success') 
+                        ? '<svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
+                        : (type === 'error')
+                        ? '<svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+                        : '<svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+
+                    toast.innerHTML = iconSvg + '<span>' + message + '</span>';
+                    container.appendChild(toast);
+
+                    setTimeout(function() {
+                        toast.classList.add('show');
+                    }, 10);
+
+                    setTimeout(function() {
+                        toast.classList.remove('show');
+                        setTimeout(function() {
+                            if (toast.parentNode) {
+                                toast.parentNode.removeChild(toast);
+                            }
+                        }, 300);
+                    }, 4000);
+                }
+
+                var lastActiveElement = null;
+
+                function openBuildModal() {
+                    if (!jobData || !jobData.parameters || jobData.parameters.length === 0) {
+                        // Unparameterized: directly trigger
+                        executeDirectBuild();
+                        return;
+                    }
+
+                    lastActiveElement = document.activeElement;
+
+                    var body = document.getElementById('modal-params-body');
+                    var html = '';
+                    for (var i = 0; i &lt; jobData.parameters.length; i++) {
+                        var p = jobData.parameters[i];
+                        var name = p.name;
+                        var desc = p.description || '';
+                        var type = p.type || 'StringParameterDefinition';
+                        var defVal = p.defaultValue != null ? p.defaultValue : '';
+                        var descAttr = desc ? ' aria-describedby="param-desc-' + name + '"' : '';
+
+                        if (type === 'BooleanParameterDefinition') {
+                            var checked = (defVal === 'true' || defVal === true) ? 'checked="checked"' : '';
+                            html += '&lt;div class="param-toggle-row"&gt;';
+                            html += '&lt;div class="param-toggle-left"&gt;';
+                            html += '&lt;label class="param-label" for="param-field-' + name + '"&gt;' + name + '&lt;/label&gt;';
+                            if (desc) html += '&lt;span id="param-desc-' + name + '" class="param-desc"&gt;' + desc + '&lt;/span&gt;';
+                            html += '&lt;/div&gt;';
+                            html += '&lt;label class="param-toggle-btn"&gt;';
+                            html += '&lt;input type="checkbox" id="param-field-' + name + '" aria-label="' + name + '" data-param-name="' + name + '" data-param-type="boolean" ' + checked + descAttr + ' /&gt;';
+                            html += '&lt;span class="param-toggle-slider" aria-hidden="true"&gt;&lt;/span&gt;';
+                            html += '&lt;/label&gt;';
+                            html += '&lt;/div&gt;';
+                        } else if (type === 'ChoiceParameterDefinition' &amp;&amp; p.choices &amp;&amp; p.choices.length &gt; 0) {
+                            html += '&lt;div class="param-field"&gt;';
+                            html += '&lt;label class="param-label" for="param-field-' + name + '"&gt;' + name + '&lt;/label&gt;';
+                            html += '&lt;select id="param-field-' + name + '" class="param-select" data-param-name="' + name + '" data-param-type="choice"' + descAttr + '&gt;';
+                            for (var c = 0; c &lt; p.choices.length; c++) {
+                                var ch = p.choices[c];
+                                var sel = (ch === defVal) ? 'selected="selected"' : '';
+                                html += '&lt;option value="' + ch + '" ' + sel + '&gt;' + ch + '&lt;/option&gt;';
+                            }
+                            html += '&lt;/select&gt;';
+                            if (desc) html += '&lt;span id="param-desc-' + name + '" class="param-desc"&gt;' + desc + '&lt;/span&gt;';
+                            html += '&lt;/div&gt;';
+                        } else {
+                            html += '&lt;div class="param-field"&gt;';
+                            html += '&lt;label class="param-label" for="param-field-' + name + '"&gt;' + name + '&lt;/label&gt;';
+                            html += '&lt;input type="text" id="param-field-' + name + '" class="param-input-text" data-param-name="' + name + '" data-param-type="text" value="' + defVal + '"' + descAttr + ' /&gt;';
+                            if (desc) html += '&lt;span id="param-desc-' + name + '" class="param-desc"&gt;' + desc + '&lt;/span&gt;';
+                            html += '&lt;/div&gt;';
+                        }
+                    }
+
+                    body.innerHTML = html;
+                    var modal = document.getElementById('horizon-build-modal');
+                    modal.classList.add('active');
+
+                    // Focus first interactive control in modal
+                    setTimeout(function() {
+                        var firstInput = modal.querySelector('input, select, button');
+                        if (firstInput) firstInput.focus();
+                    }, 50);
+                }
+
+                function closeBuildModal() {
+                    var modal = document.getElementById('horizon-build-modal');
+                    if (modal) modal.classList.remove('active');
+                    if (lastActiveElement) {
+                        lastActiveElement.focus();
+                        lastActiveElement = null;
+                    }
+                }
+
+                function executeDirectBuild() {
+                    fetch(jobBaseUrl + 'build', {
+                        method: 'POST',
+                        headers: getCrumbHeaders()
+                    })
+                    .then(function(res) {
+                        if (res.ok) {
+                            showToast("Build scheduled successfully! Refreshing activity...", "success");
+                            setTimeout(loadJobRuns, 2500);
+                        } else {
+                            showToast("Trigger failed (HTTP " + res.status + ")", "error");
+                        }
+                    })
+                    .catch(function(err) {
+                        showToast("Trigger failed: " + err, "error");
+                    });
+                }
+
+                function quickRebuildRun(runNum) {
+                    showToast("Scheduling rebuild for run #" + runNum + "...", "info");
+                    fetch(jobBaseUrl + runNum + '/horizon/apiRebuild', {
+                        method: 'POST',
+                        headers: getCrumbHeaders()
+                    })
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        if (data.status === 'ok') {
+                            showToast(data.message || ("Build #" + runNum + " rebuild scheduled!"), "success");
+                            setTimeout(loadJobRuns, 2500);
+                        } else {
+                            showToast("Rebuild failed: " + (data.message || "Unknown error"), "error");
+                        }
+                    })
+                    .catch(function(err) {
+                        showToast("Error rebuilding run: " + err, "error");
+                    });
+                }
+
+                function submitParameterizedBuild() {
+                    var submitBtn = document.getElementById('btn-submit-build');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerText = "Scheduling...";
+                    }
+
+                    var formData = new FormData();
+                    var fields = document.querySelectorAll('#modal-params-body [data-param-name]');
+                    fields.forEach(function(el) {
+                        var pName = el.getAttribute('data-param-name');
+                        var pType = el.getAttribute('data-param-type');
+                        var pVal = (pType === 'boolean') ? (el.checked ? 'true' : 'false') : el.value;
+                        formData.append(pName, pVal);
+                    });
+
+                    fetch(jobBaseUrl + 'buildWithParameters', {
+                        method: 'POST',
+                        headers: getCrumbHeaders(),
+                        body: formData
+                    })
+                    .then(function(res) {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Build';
+                        }
+                        if (res.ok) {
+                            closeBuildModal();
+                            showToast("Build scheduled with custom parameters! Refreshing activity...", "success");
+                            setTimeout(loadJobRuns, 2500);
+                        } else {
+                            showToast("Build trigger failed (HTTP " + res.status + ")", "error");
+                        }
+                    })
+                    .catch(function(err) {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Build';
+                        }
+                        showToast("Error triggering build: " + err, "error");
+                    });
+                }
+
+                function triggerBuild() {
+                    if (jobData &amp;&amp; jobData.parameterized &amp;&amp; jobData.parameters &amp;&amp; jobData.parameters.length &gt; 0) {
+                        openBuildModal();
+                    } else if (jobData) {
+                        executeDirectBuild();
+                    } else {
+                        // Fallback: fetch runs first then trigger
+                        fetch(horizonBaseUrl + 'apiRuns')
+                            .then(function(res) { return res.json(); })
+                            .then(function(data) {
+                                jobData = data;
+                                if (data.parameterized &amp;&amp; data.parameters &amp;&amp; data.parameters.length &gt; 0) {
+                                    openBuildModal();
+                                } else {
+                                    executeDirectBuild();
+                                }
+                            })
+                            .catch(function() {
+                                executeDirectBuild();
+                            });
+                    }
+                }
+
+                // Modal focus trapping and Escape handling
+                document.addEventListener('keydown', function(e) {
+                    var modal = document.getElementById('horizon-build-modal');
+                    var isModalOpen = modal &amp;&amp; modal.classList.contains('active');
+                    if (!isModalOpen) return;
+
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        closeBuildModal();
+                    } else if (e.key === 'Tab') {
+                        var focusables = modal.querySelectorAll('input:not([disabled]), select:not([disabled]), button:not([disabled])');
+                        if (focusables.length === 0) return;
+                        var first = focusables[0];
+                        var last = focusables[focusables.length - 1];
+                        if (e.shiftKey &amp;&amp; document.activeElement === first) {
+                            e.preventDefault();
+                            last.focus();
+                        } else if (!e.shiftKey &amp;&amp; document.activeElement === last) {
+                            e.preventDefault();
+                            first.focus();
+                        }
+                    }
+                });
+
+                loadJobRuns();
+            </script>
+        </l:main-panel>
+    </l:layout>
+</j:jelly>

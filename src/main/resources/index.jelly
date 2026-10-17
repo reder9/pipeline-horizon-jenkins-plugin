@@ -1,0 +1,4 @@
+<?jelly escape-by-default='true'?>
+<div>
+    Pipeline Horizon: Modern, stylish pipeline and job visualizer bringing Blue Ocean activity views, enhanced DAG insights, and node awareness to modern Jenkins.
+</div>

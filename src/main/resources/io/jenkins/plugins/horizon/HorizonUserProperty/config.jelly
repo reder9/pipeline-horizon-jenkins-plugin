@@ -1,0 +1,20 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <f:section title="Pipeline Horizon Preferences">
+        <f:entry title="Theme Preference" field="themeChoice" description="Choose Pipeline Horizon appearance. 'Auto' follows your Jenkins theme (dark or light).">
+            <f:select default="auto" />
+        </f:entry>
+        <f:entry title="Default Pipeline Layout" field="defaultLayout" description="Default stage flow layout for DAG visualization.">
+            <f:select default="scroll" />
+        </f:entry>
+        <f:entry title="Default Card Density" field="defaultDensity" description="Density and detail level for stage cards.">
+            <f:select default="comfort" />
+        </f:entry>
+        <f:entry title="Hide Skipped Stages" field="defaultHideSkipped" description="Automatically hide conditionally skipped stages by default.">
+            <f:checkbox />
+        </f:entry>
+        <f:entry title="Auto-Copy Line Links" field="autoCopyLineLink" description="Automatically copy the deep link to your clipboard when clicking log line numbers (when disabled, clicking updates the URL bar only).">
+            <f:checkbox />
+        </f:entry>
+    </f:section>
+</j:jelly>
