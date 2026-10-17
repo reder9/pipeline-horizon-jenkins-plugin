@@ -8745,10 +8745,12 @@
                         }
 
                         var rowClasses = 'agent-stage-row' + (isCurrent ? ' is-current' : '') + (isSkipped ? ' is-skipped' : '');
-                        var branchBadge = st.isParallelBranch ? '&lt;span class="agent-stage-tag tag-parallel"&gt;Parallel&lt;/span&gt;' : '';
+                        var currentBadge = isCurrent ? ' <span class="agent-stage-tag" style="background:rgba(14,165,233,0.15); color:#0284c7; border-color:rgba(14,165,233,0.3);">Current</span>' : '';
+                        var branchBadge = st.isParallelBranch ? ' <span class="agent-stage-tag tag-parallel">Parallel</span>' : '';
                         var allocBadge = (st.agentAllocationMillis &amp;&amp; st.agentAllocationMillis &gt;= 500)
                             ? (' &lt;span class="stage-agent-alloc-chip" style="font-size:0.65rem; padding:0 4px;" title="Agent acquisition delay: ' + (st.formattedAgentAllocation || formatDuration(st.agentAllocationMillis)) + '"&gt;Alloc: ' + (st.formattedAgentAllocation || formatDuration(st.agentAllocationMillis)) + '&lt;/span&gt;')
                             : (st.isWaitingForAgent ? (' &lt;span class="stage-agent-waiting-chip" style="font-size:0.65rem; padding:0 4px;" title="' + (st.agentQueueReason || 'Waiting for executor').replace(/"/g, '&amp;quot;') + '"&gt;Waiting&lt;/span&gt;') : '');
+                        var durText = (st.durationMillis &gt; 0) ? formatDuration(st.durationMillis) : (isSkipped ? '—' : '0s');
 
                         html += '&lt;tr class="' + rowClasses + '" onclick="selectStageFromAgentModal(\'' + st.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();selectStageFromAgentModal(\'' + st.id + '\');}" title="Click to inspect ' + (st.name || '').replace(/"/g, '&amp;quot;') + '" role="button" tabindex="0"&gt;';
                         html += '  &lt;td&gt;&lt;div class="agent-stage-name-cell"&gt;&lt;span class="agent-stage-icon"&gt;' + stIcon + '&lt;/span&gt;&lt;span class="agent-stage-name"&gt;' + st.name + '&lt;/span&gt;' + branchBadge + currentBadge + allocBadge + '&lt;/div&gt;&lt;/td&gt;';
