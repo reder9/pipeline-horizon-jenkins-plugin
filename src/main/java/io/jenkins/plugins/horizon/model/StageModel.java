@@ -28,6 +28,42 @@ public class StageModel {
     private String formattedVariance;
     private boolean isSpike;
     private boolean isFaster;
+    private long agentAllocationMillis;
+    private String formattedAgentAllocation;
+    private boolean isWaitingForAgent;
+    private String agentQueueReason;
+
+    public long getAgentAllocationMillis() {
+        return agentAllocationMillis;
+    }
+
+    public void setAgentAllocationMillis(long agentAllocationMillis) {
+        this.agentAllocationMillis = agentAllocationMillis;
+    }
+
+    public String getFormattedAgentAllocation() {
+        return formattedAgentAllocation;
+    }
+
+    public void setFormattedAgentAllocation(String formattedAgentAllocation) {
+        this.formattedAgentAllocation = formattedAgentAllocation;
+    }
+
+    public boolean isWaitingForAgent() {
+        return isWaitingForAgent;
+    }
+
+    public void setWaitingForAgent(boolean waitingForAgent) {
+        isWaitingForAgent = waitingForAgent;
+    }
+
+    public String getAgentQueueReason() {
+        return agentQueueReason;
+    }
+
+    public void setAgentQueueReason(String agentQueueReason) {
+        this.agentQueueReason = agentQueueReason;
+    }
 
     public Long getAvgDurationMillis() {
         return avgDurationMillis;

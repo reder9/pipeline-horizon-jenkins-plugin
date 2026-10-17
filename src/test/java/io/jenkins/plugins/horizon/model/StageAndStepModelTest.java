@@ -154,4 +154,18 @@ class StageAndStepModelTest {
         assertEquals(1, stage.getArtifacts().size());
         assertEquals("release.zip", stage.getArtifacts().get(0).getName());
     }
+
+    @Test
+    void testStageAgentAllocationMetrics() {
+        StageModel stage = new StageModel();
+        stage.setAgentAllocationMillis(850L);
+        stage.setFormattedAgentAllocation("850ms");
+        stage.setWaitingForAgent(true);
+        stage.setAgentQueueReason("Waiting for next available executor");
+
+        assertEquals(850L, stage.getAgentAllocationMillis());
+        assertEquals("850ms", stage.getFormattedAgentAllocation());
+        assertTrue(stage.isWaitingForAgent());
+        assertEquals("Waiting for next available executor", stage.getAgentQueueReason());
+    }
 }

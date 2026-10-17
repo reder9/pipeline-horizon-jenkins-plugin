@@ -16,6 +16,7 @@ import org.jenkinsci.plugins.workflow.actions.ArgumentsAction;
 import org.jenkinsci.plugins.workflow.actions.ErrorAction;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.actions.LogAction;
+import org.jenkinsci.plugins.workflow.actions.QueueItemAction;
 import org.jenkinsci.plugins.workflow.actions.TagsAction;
 import org.jenkinsci.plugins.workflow.actions.ThreadNameAction;
 import org.jenkinsci.plugins.workflow.actions.TimingAction;
@@ -86,19 +87,12 @@ public class PipelineGraphAnalyzer {
         // Order nodes chronologically
         Collections.reverse(allNodes);
 
-        // Queue Wait Calculation
-        long runStart = run.getStartTimeInMillis();
-        if (!allNodes.isEmpty()) {
-            long firstNodeStart = TimingAction.getStartTime(allNodes.get(0));
-            if (firstNodeStart > runStart) {
-                long queueWait = firstNodeStart - runStart;
-                details.setQueueWaitMillis(queueWait);
-                details.setFormattedQueueWait(formatDuration(queueWait));
-            }
-        }
-        if (details.getFormattedQueueWait() == null) {
-            details.setFormattedQueueWait("0s");
-        }
+        // Controller Queue Wait Calculation (time waiting in Jenkins build queue before execution)
+        long runScheduled = run.getTimeInMillis();
+        long runStarted = run.getStartTimeInMillis();
+        long controllerQueueWait = (runStarted > 0 && runScheduled > 0 && runStarted > runScheduled) ? (runStarted - runScheduled) : 0L;
+        details.setControllerQueueWaitMillis(controllerQueueWait);
+        details.setFormattedControllerQueueWait(formatDuration(controllerQueueWait));
 
         // Map start and end block nodes
         Map<String, FlowNode> nodeMap = new HashMap<>();
@@ -285,6 +279,129 @@ public class PipelineGraphAnalyzer {
             }
         }
 
+        // Agent Allocation & Queue Wait Calculation
+        long totalAgentAllocationMillis = 0L;
+        boolean runWaitingForAgent = false;
+        String runWaitingReason = null;
+
+        for (int i = 0; i < allNodes.size(); i++) {
+            FlowNode n = allNodes.get(i);
+            if (isNodeStepStart(n)) {
+                long reqStart = TimingAction.getStartTime(n);
+                StepStartNode bodyNode = null;
+
+                for (int j = i + 1; j < allNodes.size(); j++) {
+                    FlowNode candidate = allNodes.get(j);
+                    if (candidate instanceof StepStartNode && ((StepStartNode) candidate).isBody()) {
+                        try {
+                            if (candidate.getParents().contains(n)) {
+                                bodyNode = (StepStartNode) candidate;
+                                break;
+                            }
+                            for (BlockStartNode bsn : candidate.iterateEnclosingBlocks()) {
+                                if (bsn.getId().equals(n.getId())) {
+                                    bodyNode = (StepStartNode) candidate;
+                                    break;
+                                }
+                            }
+                            if (bodyNode != null) {
+                                break;
+                            }
+                        } catch (Throwable ignored) {
+                        }
+                    }
+                }
+
+                long allocTime = 0L;
+                boolean isNodeQueued = false;
+                String nodeQueueReason = null;
+
+                try {
+                    QueueItemAction.QueueState qState = QueueItemAction.getNodeState(n);
+                    if (qState == QueueItemAction.QueueState.QUEUED) {
+                        isNodeQueued = true;
+                        hudson.model.Queue.Item qItem = QueueItemAction.getQueueItem(n);
+                        if (qItem != null) {
+                            nodeQueueReason = qItem.getWhy();
+                        }
+                    }
+                } catch (Throwable ignored) {
+                }
+
+                if (bodyNode != null) {
+                    long bodyStart = TimingAction.getStartTime(bodyNode);
+                    if (reqStart > 0 && bodyStart >= reqStart) {
+                        allocTime = bodyStart - reqStart;
+                    }
+                } else if (isNodeQueued) {
+                    if (reqStart > 0) {
+                        allocTime = Math.max(0, System.currentTimeMillis() - reqStart);
+                    }
+                }
+
+                totalAgentAllocationMillis += allocTime;
+                if (isNodeQueued) {
+                    runWaitingForAgent = true;
+                    if (runWaitingReason == null) {
+                        runWaitingReason = nodeQueueReason != null ? nodeQueueReason : "Waiting for available agent executor";
+                    }
+                }
+
+                // Associate with innermost enclosing stage if applicable
+                StageModel enclosingStage = null;
+                try {
+                    List<String> enclosingIds = n.getAllEnclosingIds();
+                    for (String encId : enclosingIds) {
+                        for (StageModel st : rawStages) {
+                            if (st.getId().equals(encId)) {
+                                enclosingStage = st;
+                                break;
+                            }
+                        }
+                        if (enclosingStage != null) {
+                            break;
+                        }
+                    }
+                } catch (Throwable ignored) {
+                }
+
+                if (enclosingStage != null) {
+                    long stageAlloc = enclosingStage.getAgentAllocationMillis() + allocTime;
+                    enclosingStage.setAgentAllocationMillis(stageAlloc);
+                    enclosingStage.setFormattedAgentAllocation(formatDuration(stageAlloc));
+                    if (isNodeQueued) {
+                        enclosingStage.setWaitingForAgent(true);
+                        enclosingStage.setAgentQueueReason(nodeQueueReason != null ? nodeQueueReason : "Waiting for available agent executor");
+                    }
+                }
+            }
+        }
+
+        // Check if any FlowNode in allNodes is currently queued
+        for (FlowNode n : allNodes) {
+            try {
+                if (QueueItemAction.getNodeState(n) == QueueItemAction.QueueState.QUEUED) {
+                    runWaitingForAgent = true;
+                    if (runWaitingReason == null) {
+                        hudson.model.Queue.Item item = QueueItemAction.getQueueItem(n);
+                        if (item != null && item.getWhy() != null) {
+                            runWaitingReason = item.getWhy();
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+
+        details.setAgentAllocationMillis(totalAgentAllocationMillis);
+        details.setFormattedAgentAllocation(formatDuration(totalAgentAllocationMillis));
+        details.setWaitingForAgent(runWaitingForAgent);
+        details.setAgentQueueReason(runWaitingReason);
+
+        long combinedQueueWait = controllerQueueWait + totalAgentAllocationMillis;
+        details.setQueueWaitMillis(combinedQueueWait);
+        details.setFormattedQueueWait(formatDuration(combinedQueueWait));
+
         // Archived Artifacts detection & per-stage mapping
         try {
             List<? extends hudson.model.Run<?, ?>.Artifact> rawArtifacts = run.getArtifacts();
@@ -345,6 +462,24 @@ public class PipelineGraphAnalyzer {
                             allAgentsUsed.add("Built-In Node");
                         }
                     }
+                }
+            }
+            if (s.getChildren() != null && !s.getChildren().isEmpty()) {
+                long maxChildAlloc = s.getAgentAllocationMillis();
+                for (StageModel child : s.getChildren()) {
+                    if (child.isWaitingForAgent()) {
+                        s.setWaitingForAgent(true);
+                        if (s.getAgentQueueReason() == null) {
+                            s.setAgentQueueReason(child.getAgentQueueReason());
+                        }
+                    }
+                    if (child.getAgentAllocationMillis() > maxChildAlloc) {
+                        maxChildAlloc = child.getAgentAllocationMillis();
+                    }
+                }
+                if (maxChildAlloc > s.getAgentAllocationMillis()) {
+                    s.setAgentAllocationMillis(maxChildAlloc);
+                    s.setFormattedAgentAllocation(formatDuration(maxChildAlloc));
                 }
             }
         }
@@ -1254,5 +1389,30 @@ public class PipelineGraphAnalyzer {
             return "Built-In Node";
         }
         return rawNode.trim();
+    }
+
+    private static boolean isNodeStepStart(FlowNode n) {
+        if (n instanceof StepStartNode) {
+            StepStartNode ssn = (StepStartNode) n;
+            if (!ssn.isBody()) {
+                try {
+                    if ("node".equals(ssn.getDisplayFunctionName())) {
+                        return true;
+                    }
+                    org.jenkinsci.plugins.workflow.steps.StepDescriptor desc = ssn.getDescriptor();
+                    if (desc != null && "node".equals(desc.getFunctionName())) {
+                        return true;
+                    }
+                } catch (Throwable ignored) {
+                }
+                try {
+                    if (n.getAction(QueueItemAction.class) != null) {
+                        return true;
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+        return false;
     }
 }

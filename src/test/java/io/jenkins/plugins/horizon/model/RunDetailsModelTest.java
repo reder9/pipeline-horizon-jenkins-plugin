@@ -94,4 +94,26 @@ class RunDetailsModelTest {
         assertEquals(1, model.getStages().size());
         assertEquals("Checkout", model.getStages().get(0).getName());
     }
+
+    @Test
+    void testAgentQueueMetrics() {
+        RunDetailsModel model = new RunDetailsModel();
+        model.setControllerQueueWaitMillis(450L);
+        model.setFormattedControllerQueueWait("450ms");
+        model.setAgentAllocationMillis(1200L);
+        model.setFormattedAgentAllocation("1.2s");
+        model.setQueueWaitMillis(1650L);
+        model.setFormattedQueueWait("1.6s");
+        model.setWaitingForAgent(true);
+        model.setAgentQueueReason("All nodes with label 'linux' are offline");
+
+        assertEquals(450L, model.getControllerQueueWaitMillis());
+        assertEquals("450ms", model.getFormattedControllerQueueWait());
+        assertEquals(1200L, model.getAgentAllocationMillis());
+        assertEquals("1.2s", model.getFormattedAgentAllocation());
+        assertEquals(1650L, model.getQueueWaitMillis());
+        assertEquals("1.6s", model.getFormattedQueueWait());
+        assertTrue(model.isWaitingForAgent());
+        assertEquals("All nodes with label 'linux' are offline", model.getAgentQueueReason());
+    }
 }

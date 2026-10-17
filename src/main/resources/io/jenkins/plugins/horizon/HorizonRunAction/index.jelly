@@ -2990,6 +2990,45 @@
                         color: #0f172a;
                         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
                     }
+                    .stage-agent-alloc-chip {
+                        display: inline-flex;
+                        align-items: center;
+                        background: #f1f5f9;
+                        border: 1px solid #cbd5e1;
+                        color: #475569;
+                        border-radius: 4px;
+                        padding: 0.08rem 0.35rem;
+                        font-family: monospace;
+                        font-size: 0.68rem;
+                        font-weight: 600;
+                        white-space: nowrap;
+                        margin-left: 5px;
+                        user-select: none;
+                    }
+                    .stage-agent-waiting-chip {
+                        display: inline-flex;
+                        align-items: center;
+                        background: #fef3c7;
+                        border: 1px solid #fde68a;
+                        color: #b45309;
+                        border-radius: 4px;
+                        padding: 0.08rem 0.35rem;
+                        font-size: 0.68rem;
+                        font-weight: 700;
+                        white-space: nowrap;
+                        margin-left: 5px;
+                        user-select: none;
+                        animation: agentWaitPulse 1.8s infinite ease-in-out;
+                    }
+                    @keyframes agentWaitPulse {
+                        0%, 100% { opacity: 1; }
+                        50% { opacity: 0.55; }
+                    }
+                    .queue-waiting-text {
+                        color: #d97706;
+                        font-weight: 700;
+                        animation: agentWaitPulse 1.8s infinite ease-in-out;
+                    }
 
                     /* Pipeline Stage Bottleneck and Duration Distribution */
                     .stage-duration-val {
@@ -5157,6 +5196,19 @@
                         color: #f1f5f9;
                         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
                     }
+                    .horizon-container.theme-dark .stage-agent-alloc-chip {
+                        background: rgba(148, 163, 184, 0.12);
+                        border-color: rgba(148, 163, 184, 0.25);
+                        color: #94a3b8;
+                    }
+                    .horizon-container.theme-dark .stage-agent-waiting-chip {
+                        background: rgba(245, 158, 11, 0.16);
+                        border-color: rgba(245, 158, 11, 0.4);
+                        color: #fbbf24;
+                    }
+                    .horizon-container.theme-dark .queue-waiting-text {
+                        color: #fbbf24;
+                    }
                     .horizon-container.theme-dark .stage-pct-label {
                         color: #94a3b8;
                     }
@@ -6610,6 +6662,7 @@
                 var currentTestsFilter = 'ALL';
 
                 var ICON_SERVER = '<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:3px; flex-shrink:0;"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>';
+                var ICON_HOURGLASS = '<svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:3px; flex-shrink:0;"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>';
                 var ICON_BOLT = '<svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px; margin-right:3px; flex-shrink:0;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
                 var ICON_SUCCESS = '<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
                 var ICON_FAILED = '<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
@@ -7440,9 +7493,25 @@
                     var queueItem = document.getElementById('meta-queue-item');
                     var queueEl = document.getElementById('meta-queue-wait');
                     if (queueItem &amp;&amp; queueEl) {
-                        if (data.formattedQueueWait &amp;&amp; data.queueWaitMillis &gt; 0) {
-                            queueEl.innerText = data.formattedQueueWait;
+                        if (data.isWaitingForAgent) {
                             queueItem.style.display = 'flex';
+                            var waitDesc = data.agentQueueReason || "Waiting for available agent executor...";
+                            queueEl.innerHTML = '&lt;span class="queue-waiting-text"&gt;' + (data.formattedQueueWait || 'In Queue') + '&lt;/span&gt;';
+                            queueItem.title = "Awaiting Agent Executor: " + waitDesc + " (Controller: " + (data.formattedControllerQueueWait || '0s') + ", Agent Wait: " + (data.formattedAgentAllocation || '0s') + ")";
+                        } else if (data.queueWaitMillis &amp;&amp; data.queueWaitMillis &gt; 0) {
+                            queueItem.style.display = 'flex';
+                            var breakdown = "Total Scheduling Delay: " + (data.formattedQueueWait || '0s');
+                            if (data.controllerQueueWaitMillis &gt; 0) {
+                                breakdown += " (Controller Queue: " + (data.formattedControllerQueueWait || '0s');
+                                if (data.agentAllocationMillis &gt; 0) {
+                                    breakdown += " \u2022 Agent Provisioning: " + (data.formattedAgentAllocation || '0s');
+                                }
+                                breakdown += ")";
+                            } else if (data.agentAllocationMillis &gt; 0) {
+                                breakdown += " (Agent Provisioning: " + (data.formattedAgentAllocation || '0s') + ")";
+                            }
+                            queueEl.innerText = data.formattedQueueWait;
+                            queueItem.title = breakdown;
                         } else {
                             queueItem.style.display = 'none';
                         }
@@ -8388,11 +8457,12 @@
 
                         var rowClasses = 'agent-stage-row' + (isCurrent ? ' is-current' : '') + (isSkipped ? ' is-skipped' : '');
                         var branchBadge = st.isParallelBranch ? '&lt;span class="agent-stage-tag tag-parallel"&gt;Parallel&lt;/span&gt;' : '';
-                        var currentBadge = isCurrent ? '&lt;span class="agent-stage-tag tag-current"&gt;Selected&lt;/span&gt;' : '';
-                        var durText = (isSkipped &amp;&amp; (!st.durationMillis || st.durationMillis &lt;= 0)) ? '—' : formatDuration(st.durationMillis);
+                        var allocBadge = (st.agentAllocationMillis &amp;&amp; st.agentAllocationMillis &gt;= 500)
+                            ? (' &lt;span class="stage-agent-alloc-chip" style="font-size:0.65rem; padding:0 4px;" title="Agent acquisition delay: ' + (st.formattedAgentAllocation || formatDuration(st.agentAllocationMillis)) + '"&gt;Alloc: ' + (st.formattedAgentAllocation || formatDuration(st.agentAllocationMillis)) + '&lt;/span&gt;')
+                            : (st.isWaitingForAgent ? (' &lt;span class="stage-agent-waiting-chip" style="font-size:0.65rem; padding:0 4px;" title="' + (st.agentQueueReason || 'Waiting for executor').replace(/"/g, '&amp;quot;') + '"&gt;Waiting&lt;/span&gt;') : '');
 
                         html += '&lt;tr class="' + rowClasses + '" onclick="selectStageFromAgentModal(\'' + st.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();selectStageFromAgentModal(\'' + st.id + '\');}" title="Click to inspect ' + (st.name || '').replace(/"/g, '&amp;quot;') + '" role="button" tabindex="0"&gt;';
-                        html += '  &lt;td&gt;&lt;div class="agent-stage-name-cell"&gt;&lt;span class="agent-stage-icon"&gt;' + stIcon + '&lt;/span&gt;&lt;span class="agent-stage-name"&gt;' + st.name + '&lt;/span&gt;' + branchBadge + currentBadge + '&lt;/div&gt;&lt;/td&gt;';
+                        html += '  &lt;td&gt;&lt;div class="agent-stage-name-cell"&gt;&lt;span class="agent-stage-icon"&gt;' + stIcon + '&lt;/span&gt;&lt;span class="agent-stage-name"&gt;' + st.name + '&lt;/span&gt;' + branchBadge + currentBadge + allocBadge + '&lt;/div&gt;&lt;/td&gt;';
                         html += '  &lt;td&gt;&lt;span class="agent-status-pill ' + pillClass + '"&gt;&lt;span class="agent-status-pill-dot"&gt;&lt;/span&gt;' + pillLabel + '&lt;/span&gt;&lt;/td&gt;';
                         html += '  &lt;td class="agent-stage-duration"&gt;' + durText + '&lt;/td&gt;';
                         html += '  &lt;td class="agent-stage-action-cell"&gt;&lt;span class="agent-inspect-btn"&gt;Inspect &lt;svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;polyline points="9 18 15 12 9 6"/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;/td&gt;';
@@ -9395,6 +9465,12 @@
                     card += '&lt;div class="stage-meta-row"&gt;';
                     var escapedAgent = agentStr.replace(/'/g, "\\'");
                     card += '&lt;span&gt;Agent:&lt;/span&gt;&lt;span class="stage-agent-badge" title="Agent: ' + agentStr.replace(/"/g, '&amp;quot;') + ' \u2014 Click for agent details" onclick="event.stopPropagation(); openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\')" role="button" tabindex="0" aria-label="View agent details for ' + agentStr.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_SERVER + agentStr + '&lt;/span&gt;';
+                    if (stage.isWaitingForAgent) {
+                        var waitReason = stage.agentQueueReason || "Waiting for agent executor...";
+                        card += ' &lt;span class="stage-agent-waiting-chip" title="' + waitReason.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_HOURGLASS + 'Waiting for Agent&lt;/span&gt;';
+                    } else if (stage.agentAllocationMillis &amp;&amp; stage.agentAllocationMillis &gt;= 500) {
+                        card += ' &lt;span class="stage-agent-alloc-chip" title="Agent allocation wait: ' + (stage.formattedAgentAllocation || formatDuration(stage.agentAllocationMillis)) + ' (' + stage.agentAllocationMillis + 'ms)"&gt;Alloc: ' + (stage.formattedAgentAllocation || formatDuration(stage.agentAllocationMillis)) + '&lt;/span&gt;';
+                    }
                     card += '&lt;/div&gt;';
 
                     if (stage.skippedStepsCount &amp;&amp; stage.skippedStepsCount &gt; 0) {
@@ -9431,6 +9507,12 @@
                     var displayAgent = stage.agent ? stage.agent : 'Built-in';
                     card += '&lt;div class="stage-compact-agent-row"&gt;';
                     card += '&lt;span class="stage-agent-badge" style="max-width:125px;" title="Agent: ' + agentStr.replace(/"/g, '&amp;quot;') + ' \u2014 Click for agent details" onclick="event.stopPropagation(); openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\')" role="button" tabindex="0" aria-label="View agent details for ' + agentStr.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_SERVER + displayAgent + '&lt;/span&gt;';
+                    if (stage.isWaitingForAgent) {
+                        var waitReasonCompact = stage.agentQueueReason || "Waiting for agent executor...";
+                        card += ' &lt;span class="stage-agent-waiting-chip" style="font-size:0.64rem; padding:0 4px;" title="' + waitReasonCompact.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_HOURGLASS + 'Wait&lt;/span&gt;';
+                    } else if (stage.agentAllocationMillis &amp;&amp; stage.agentAllocationMillis &gt;= 500) {
+                        card += ' &lt;span class="stage-agent-alloc-chip" style="font-size:0.64rem; padding:0 4px;" title="Agent allocation wait: ' + (stage.formattedAgentAllocation || formatDuration(stage.agentAllocationMillis)) + '"&gt;Alloc: ' + (stage.formattedAgentAllocation || formatDuration(stage.agentAllocationMillis)) + '&lt;/span&gt;';
+                    }
                     if (stage.hasArtifacts &amp;&amp; stage.artifactCount &gt; 0) {
                         card += '&lt;span class="stage-artifacts-badge" style="padding:0 4px;" title="' + stage.artifactCount + ' artifacts" onclick="event.stopPropagation(); openArtifactsModal(\'' + stage.id + '\')"&gt;';
                         card += '&lt;svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;"&gt;&lt;path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/&gt;&lt;/svg&gt; ' + stage.artifactCount;
@@ -9621,7 +9703,7 @@
                     if (!lineEl) {
                         var allLines = terminal.querySelectorAll('.log-line');
                         if (allLines.length &gt; 0) {
-                            var clampedIdx = Math.min(Math.max(0, lineNum), allLines.length - 1);
+                            var clampedIdx = Math.min(Math.max(0, lineNum - 1), allLines.length - 1);
                             lineEl = allLines[clampedIdx];
                         }
                     }
@@ -9637,6 +9719,8 @@
                             behavior: 'smooth'
                         });
 
+                        lineEl.classList.remove('pulse-highlight');
+                        void lineEl.offsetWidth;
                         lineEl.classList.add('pulse-highlight');
                         setTimeout(function() {
                             lineEl.classList.remove('pulse-highlight');
@@ -9728,18 +9812,35 @@
                     }
 
                     selectedStepId = stepId;
-                    var autoCopy = isAutoCopyLineLinkEnabled();
 
                     if (event.shiftKey &amp;&amp; selectedLineStart !== null) {
                         var start = Math.min(selectedLineStart, targetLine);
                         var end = Math.max(selectedLineStart, targetLine);
-                        selectStepLineRange(stepId, start, end, true, autoCopy);
+                        selectStepLineRange(stepId, start, end, true, true);
+                        for (var l = start; l &lt;= end; l++) {
+                            var el = document.getElementById('log-line-' + stepId + '-' + l);
+                            if (el) {
+                                el.classList.remove('pulse-highlight');
+                                void el.offsetWidth;
+                                el.classList.add('pulse-highlight');
+                                (function(targetEl) {
+                                    setTimeout(function() { targetEl.classList.remove('pulse-highlight'); }, 2000);
+                                })(el);
+                            }
+                        }
                     } else {
                         if (selectedLineStart === targetLine &amp;&amp; selectedLineEnd === targetLine) {
                             clearLineSelection(true);
                             showToast("Line selection cleared", "info");
                         } else {
-                            selectStepLineRange(stepId, targetLine, targetLine, true, autoCopy);
+                            selectStepLineRange(stepId, targetLine, targetLine, true, true);
+                            var lineEl = document.getElementById('log-line-' + stepId + '-' + targetLine);
+                            if (lineEl) {
+                                lineEl.classList.remove('pulse-highlight');
+                                void lineEl.offsetWidth;
+                                lineEl.classList.add('pulse-highlight');
+                                setTimeout(function() { lineEl.classList.remove('pulse-highlight'); }, 2000);
+                            }
                         }
                     }
                 }
@@ -10400,7 +10501,7 @@
 
                     var html = [];
                     for (var i = 0; i &lt; rawLines.length; i++) {
-                        var lineNum = i;
+                        var lineNum = i + 1;
                         var lineText = rawLines[i];
                         var sevClass = getLogLineSeverityClass(lineText);
                         var formattedText = formatLogLineText(lineText);
@@ -10419,6 +10520,17 @@
                         selectStepLineRange(stepId, initialLineRange.start, initialLineRange.end, false, false);
                         setTimeout(function() {
                             scrollToStepTargetLine(stepId, initialLineRange.start);
+                            for (var l = initialLineRange.start; l &lt;= initialLineRange.end; l++) {
+                                var el = document.getElementById('log-line-' + stepId + '-' + l);
+                                if (el) {
+                                    el.classList.remove('pulse-highlight');
+                                    void el.offsetWidth;
+                                    el.classList.add('pulse-highlight');
+                                    (function(targetEl) {
+                                        setTimeout(function() { targetEl.classList.remove('pulse-highlight'); }, 2800);
+                                    })(el);
+                                }
+                            }
                         }, 90);
                     } else if (pendingLineRange) {
                         var r = pendingLineRange;
@@ -10426,6 +10538,17 @@
                         selectStepLineRange(stepId, r.start, r.end, false, false);
                         setTimeout(function() {
                             scrollToStepTargetLine(stepId, r.start);
+                            for (var l = r.start; l &lt;= r.end; l++) {
+                                var el = document.getElementById('log-line-' + stepId + '-' + l);
+                                if (el) {
+                                    el.classList.remove('pulse-highlight');
+                                    void el.offsetWidth;
+                                    el.classList.add('pulse-highlight');
+                                    (function(targetEl) {
+                                        setTimeout(function() { targetEl.classList.remove('pulse-highlight'); }, 2800);
+                                    })(el);
+                                }
+                            }
                         }, 90);
                     } else {
                         clearLineSelection(false);

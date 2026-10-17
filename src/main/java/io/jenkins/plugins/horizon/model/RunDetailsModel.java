@@ -235,4 +235,41 @@ public class RunDetailsModel extends RunSummaryModel {
     public void setFormattedAgentAllocation(String formattedAgentAllocation) {
         this.formattedAgentAllocation = formattedAgentAllocation;
     }
+
+    private long controllerQueueWaitMillis;
+    private String formattedControllerQueueWait;
+    private boolean isWaitingForAgent;
+    private String agentQueueReason;
+
+    public long getControllerQueueWaitMillis() {
+        return controllerQueueWaitMillis;
+    }
+
+    public void setControllerQueueWaitMillis(long controllerQueueWaitMillis) {
+        this.controllerQueueWaitMillis = controllerQueueWaitMillis;
+    }
+
+    public String getFormattedControllerQueueWait() {
+        return formattedControllerQueueWait;
+    }
+
+    public void setFormattedControllerQueueWait(String formattedControllerQueueWait) {
+        this.formattedControllerQueueWait = formattedControllerQueueWait;
+    }
+
+    public boolean isWaitingForAgent() {
+        return isWaitingForAgent;
+    }
+
+    public void setWaitingForAgent(boolean waitingForAgent) {
+        isWaitingForAgent = waitingForAgent;
+    }
+
+    public String getAgentQueueReason() {
+        return agentQueueReason;
+    }
+
+    public void setAgentQueueReason(String agentQueueReason) {
+        this.agentQueueReason = agentQueueReason;
+    }
 }
