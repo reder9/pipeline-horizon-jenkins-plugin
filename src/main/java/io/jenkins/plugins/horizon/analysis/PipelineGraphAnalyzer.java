@@ -86,6 +86,20 @@ public class PipelineGraphAnalyzer {
         // Order nodes chronologically
         Collections.reverse(allNodes);
 
+        // Queue Wait Calculation
+        long runStart = run.getStartTimeInMillis();
+        if (!allNodes.isEmpty()) {
+            long firstNodeStart = TimingAction.getStartTime(allNodes.get(0));
+            if (firstNodeStart > runStart) {
+                long queueWait = firstNodeStart - runStart;
+                details.setQueueWaitMillis(queueWait);
+                details.setFormattedQueueWait(formatDuration(queueWait));
+            }
+        }
+        if (details.getFormattedQueueWait() == null) {
+            details.setFormattedQueueWait("0s");
+        }
+
         // Map start and end block nodes
         Map<String, FlowNode> nodeMap = new HashMap<>();
         Map<String, BlockEndNode> startToEndMap = new HashMap<>();
@@ -344,6 +358,9 @@ public class PipelineGraphAnalyzer {
         details.setFailedSteps(failedStepsCount);
         details.setAgentsUsed(new ArrayList<>(allAgentsUsed));
 
+        // Compute Historical Stage Variance & Spikes
+        computeStageVariance(run, consolidatedStages);
+
         // Restart Declarative Pipeline detection
         try {
             org.jenkinsci.plugins.pipeline.modeldefinition.actions.RestartDeclarativePipelineAction restartAction =
@@ -382,6 +399,95 @@ public class PipelineGraphAnalyzer {
         details.setRebuildEnabled(run.getParent().isBuildable());
 
         return details;
+    }
+
+    private static void computeStageVariance(WorkflowRun currentRun, List<StageModel> currentStages) {
+        if (currentStages == null || currentStages.isEmpty()) {
+            return;
+        }
+        try {
+            WorkflowJob job = currentRun.getParent();
+            Map<String, List<Long>> historyMap = new HashMap<>();
+            int checked = 0;
+            for (WorkflowRun prev : job.getBuilds()) {
+                if (prev == null || prev.equals(currentRun) || prev.isBuilding()) {
+                    continue;
+                }
+                FlowExecution exec = prev.getExecution();
+                if (exec != null) {
+                    try {
+                        for (FlowNode n : new DepthFirstScanner().allNodes(exec)) {
+                            LabelAction la = n.getAction(LabelAction.class);
+                            if (la != null) {
+                                String disp = la.getDisplayName();
+                                if (disp != null) {
+                                    String name = disp.trim();
+                                    if (name.startsWith("Branch: ")) {
+                                        name = name.substring("Branch: ".length()).trim();
+                                    }
+                                    BlockEndNode end = (n instanceof BlockStartNode) ? ((BlockStartNode) n).getEndNode() : null;
+                                    long start = TimingAction.getStartTime(n);
+                                    long duration = 0L;
+                                    if (end != null) {
+                                        duration = Math.max(0L, TimingAction.getStartTime(end) - start);
+                                    }
+                                    if (duration > 0) {
+                                        historyMap.computeIfAbsent(name, k -> new ArrayList<>()).add(duration);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Throwable ignored) {}
+                }
+                if (++checked >= 10) {
+                    break;
+                }
+            }
+
+            for (StageModel s : currentStages) {
+                applyVariance(s, historyMap);
+                if (s.getChildren() != null) {
+                    for (StageModel child : s.getChildren()) {
+                        applyVariance(child, historyMap);
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    private static void applyVariance(StageModel stage, Map<String, List<Long>> historyMap) {
+        List<Long> past = historyMap.get(stage.getName());
+        if (past != null && !past.isEmpty() && stage.getDurationMillis() > 0) {
+            long sum = 0L;
+            for (Long d : past) {
+                sum += d;
+            }
+            long avg = sum / past.size();
+            stage.setAvgDurationMillis(avg);
+            if (avg > 0) {
+                double diff = (double) (stage.getDurationMillis() - avg);
+                double pct = (diff / (double) avg) * 100.0;
+                stage.setVariancePercent(pct);
+                stage.setFormattedVariance(String.format(java.util.Locale.ROOT, "%+.0f%%", pct));
+                if (pct >= 30.0 && diff >= 3000.0) {
+                    stage.setSpike(true);
+                } else if (pct <= -20.0 && diff <= -3000.0) {
+                    stage.setFaster(true);
+                }
+            }
+        }
+    }
+
+    public static String formatDuration(long millis) {
+        if (millis <= 0) return "0s";
+        long seconds = millis / 1000;
+        if (seconds < 60) return seconds + "s";
+        long minutes = seconds / 60;
+        long remSeconds = seconds % 60;
+        if (minutes < 60) return minutes + "m " + remSeconds + "s";
+        long hours = minutes / 60;
+        long remMinutes = minutes % 60;
+        return hours + "h " + remMinutes + "m";
     }
 
     public static String formatBytes(long bytes) {

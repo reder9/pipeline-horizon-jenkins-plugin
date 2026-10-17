@@ -198,4 +198,41 @@ public class RunDetailsModel extends RunSummaryModel {
     public void setTestCases(List<TestCaseModel> testCases) {
         this.testCases = testCases;
     }
+
+    private long queueWaitMillis;
+    private String formattedQueueWait;
+    private long agentAllocationMillis;
+    private String formattedAgentAllocation;
+
+    public long getQueueWaitMillis() {
+        return queueWaitMillis;
+    }
+
+    public void setQueueWaitMillis(long queueWaitMillis) {
+        this.queueWaitMillis = queueWaitMillis;
+    }
+
+    public String getFormattedQueueWait() {
+        return formattedQueueWait;
+    }
+
+    public void setFormattedQueueWait(String formattedQueueWait) {
+        this.formattedQueueWait = formattedQueueWait;
+    }
+
+    public long getAgentAllocationMillis() {
+        return agentAllocationMillis;
+    }
+
+    public void setAgentAllocationMillis(long agentAllocationMillis) {
+        this.agentAllocationMillis = agentAllocationMillis;
+    }
+
+    public String getFormattedAgentAllocation() {
+        return formattedAgentAllocation;
+    }
+
+    public void setFormattedAgentAllocation(String formattedAgentAllocation) {
+        this.formattedAgentAllocation = formattedAgentAllocation;
+    }
 }

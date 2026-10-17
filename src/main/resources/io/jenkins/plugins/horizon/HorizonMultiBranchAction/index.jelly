@@ -1,0 +1,767 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <l:layout title="Pipeline Horizon - ${it.project.fullDisplayName}">
+        <l:header>
+            <script>
+                (function() {
+                    try {
+                        if (typeof Document !== 'undefined' &amp;&amp; Document.prototype.querySelector &amp;&amp; !Document.prototype.querySelector.__horizon_shimmed) {
+                            var origQS = Document.prototype.querySelector;
+                            var origQSA = Document.prototype.querySelectorAll;
+                            var shimmedQS = function(selector) {
+                                try {
+                                    return origQS.apply(this, arguments);
+                                } catch (err) {
+                                    if (typeof selector === 'string' &amp;&amp; selector.indexOf('.dialog-') === 0 &amp;&amp; selector.indexOf('-hash') !== -1) {
+                                        return null;
+                                    }
+                                    throw err;
+                                }
+                            };
+                            shimmedQS.__horizon_shimmed = true;
+                            Document.prototype.querySelector = shimmedQS;
+
+                            var shimmedQSA = function(selector) {
+                                try {
+                                    return origQSA.apply(this, arguments);
+                                } catch (err) {
+                                    if (typeof selector === 'string' &amp;&amp; selector.indexOf('.dialog-') === 0 &amp;&amp; selector.indexOf('-hash') !== -1) {
+                                        return [];
+                                    }
+                                    throw err;
+                                }
+                            };
+                            shimmedQSA.__horizon_shimmed = true;
+                            Document.prototype.querySelectorAll = shimmedQSA;
+                        }
+                    } catch(e) {}
+                })();
+            </script>
+        </l:header>
+        <l:side-panel>
+            <st:include page="sidepanel.jelly" it="${it.project}" />
+        </l:side-panel>
+        <l:main-panel>
+            <j:set var="projectBase" value="${rootURL}/${it.project.url}" />
+            <j:set var="summary" value="${it.summary}" />
+            <div id="horizon-mb-app"
+                 class="horizon-container"
+                 data-pref-theme="${it.userProperty != null ? it.userProperty.themeChoice : 'auto'}">
+                <script>
+                    (function() {
+                        try {
+                            var app = document.getElementById('horizon-mb-app');
+                            var pref = (app ? app.getAttribute('data-pref-theme') : null) || 'auto';
+                            var isDark = false;
+                            if (pref === 'dark') {
+                                isDark = true;
+                            } else if (pref === 'light') {
+                                isDark = false;
+                            } else {
+                                var html = document.documentElement;
+                                var body = document.body;
+                                var th = (html ? html.getAttribute('data-theme') : '') || (body ? body.getAttribute('data-theme') : '') || '';
+                                if (th.indexOf('dark') !== -1) {
+                                    isDark = true;
+                                } else if (!th &amp;&amp; window.matchMedia &amp;&amp; window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                                    isDark = true;
+                                }
+                            }
+                            if (app) {
+                                if (isDark) {
+                                    app.classList.add('theme-dark');
+                                    app.classList.remove('theme-light');
+                                } else {
+                                    app.classList.add('theme-light');
+                                    app.classList.remove('theme-dark');
+                                }
+                            }
+                        } catch(e) {}
+                    })();
+                </script>
+                <style>
+                    #page-body, .app-page-body {
+                        max-width: 100vw !important;
+                        min-width: 0 !important;
+                        overflow-x: hidden !important;
+                        box-sizing: border-box !important;
+                    }
+                    .app-page-body__contents, #main-panel, .app-main-panel {
+                        flex: 1 1 0 !important;
+                        min-width: 0 !important;
+                        max-width: 100% !important;
+                        width: 100% !important;
+                        overflow-x: hidden !important;
+                        box-sizing: border-box !important;
+                    }
+                    .horizon-container {
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                        color: #1e293b;
+                        margin-bottom: 2rem;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        min-width: 0 !important;
+                        overflow-x: hidden !important;
+                        box-sizing: border-box !important;
+                    }
+                    .horizon-hero {
+                        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+                        color: #f8fafc;
+                        border-radius: 12px;
+                        padding: 1.75rem 2rem;
+                        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+                        margin-bottom: 1.5rem;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        gap: 1.5rem;
+                    }
+                    .hero-title-group h1 {
+                        font-size: 1.65rem;
+                        font-weight: 700;
+                        margin: 0 0 0.4rem 0;
+                        letter-spacing: -0.02em;
+                    }
+                    .hero-desc {
+                        color: #94a3b8;
+                        font-size: 0.875rem;
+                        margin: 0;
+                    }
+                    .hero-actions {
+                        display: flex;
+                        gap: 0.75rem;
+                        align-items: center;
+                    }
+                    .btn-primary {
+                        background: #2563eb;
+                        color: #ffffff;
+                        border: none;
+                        padding: 0.6rem 1.25rem;
+                        border-radius: 8px;
+                        font-size: 0.9rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+                        transition: all 0.15s;
+                        text-decoration: none;
+                    }
+                    .btn-primary:hover {
+                        background: #1d4ed8;
+                        transform: translateY(-1px);
+                    }
+                    /* Tab Navigation */
+                    .horizon-tabs {
+                        display: flex;
+                        gap: 0.5rem;
+                        margin-bottom: 1.25rem;
+                        border-bottom: 2px solid #e2e8f0;
+                        padding-bottom: 0.25rem;
+                    }
+                    .tab-btn {
+                        background: transparent;
+                        border: none;
+                        padding: 0.65rem 1.25rem;
+                        font-size: 0.95rem;
+                        font-weight: 600;
+                        color: #64748b;
+                        cursor: pointer;
+                        border-radius: 8px 8px 0 0;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        transition: all 0.15s;
+                        position: relative;
+                        top: 2px;
+                    }
+                    .tab-btn:hover {
+                        color: #0f172a;
+                    }
+                    .tab-btn.active {
+                        color: #2563eb;
+                        border-bottom: 3px solid #2563eb;
+                    }
+                    .tab-count-badge {
+                        background: #e2e8f0;
+                        color: #334155;
+                        font-size: 0.75rem;
+                        font-weight: 700;
+                        padding: 0.15rem 0.5rem;
+                        border-radius: 9999px;
+                    }
+                    .tab-btn.active .tab-count-badge {
+                        background: #dbeafe;
+                        color: #1d4ed8;
+                    }
+                    /* Filter and Controls Card */
+                    .filter-bar {
+                        background: #ffffff;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 12px;
+                        padding: 1rem 1.5rem;
+                        box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        gap: 1rem;
+                        margin-bottom: 1.5rem;
+                    }
+                    .search-box {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        flex-grow: 1;
+                        max-width: 420px;
+                    }
+                    .search-input {
+                        width: 100%;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 8px;
+                        padding: 0.5rem 0.85rem;
+                        font-size: 0.875rem;
+                        color: #0f172a;
+                        background: #f8fafc;
+                        outline: none;
+                    }
+                    .search-input:focus {
+                        background: #ffffff;
+                        border-color: #2563eb;
+                        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+                    }
+                    .status-filters {
+                        display: flex;
+                        gap: 0.5rem;
+                        flex-wrap: wrap;
+                    }
+                    .filter-pill {
+                        appearance: none;
+                        -webkit-appearance: none;
+                        font-family: inherit;
+                        padding: 0.35rem 0.75rem;
+                        border-radius: 9999px;
+                        font-size: 0.8rem;
+                        font-weight: 700;
+                        cursor: pointer;
+                        border: 1px solid #cbd5e1;
+                        background: #f8fafc;
+                        color: #334155;
+                        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+                        transition: all 0.15s;
+                    }
+                    .filter-pill:hover {
+                        background: #f1f5f9;
+                        border-color: #94a3b8;
+                        color: #0f172a;
+                    }
+                    .filter-pill.active {
+                        background: #0f172a;
+                        color: #ffffff;
+                        border-color: #0f172a;
+                        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+                    }
+                    /* Activity List Table */
+                    .mb-card {
+                        background: #ffffff;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.07), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
+                        overflow: hidden;
+                    }
+                    .mb-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        text-align: left;
+                    }
+                    .mb-table th {
+                        background: #f1f5f9;
+                        color: #334155;
+                        font-size: 0.75rem;
+                        font-weight: 800;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                        padding: 0.85rem 1.25rem;
+                        border-bottom: 1px solid #cbd5e1;
+                    }
+                    .mb-table td {
+                        padding: 1rem 1.25rem;
+                        border-bottom: 1px solid #e2e8f0;
+                        font-size: 0.875rem;
+                        color: #0f172a;
+                        vertical-align: middle;
+                    }
+                    .mb-table tbody tr {
+                        transition: background-color 0.15s ease, box-shadow 0.15s ease;
+                    }
+                    .mb-table tbody tr:hover {
+                        background: #f8fafc;
+                    }
+                    .mb-table tbody tr:hover td:first-child {
+                        box-shadow: inset 4px 0 0 0 #0284c7;
+                    }
+                    .branch-link {
+                        font-weight: 700;
+                        color: #1d4ed8;
+                        text-decoration: none;
+                        font-size: 0.95rem;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.4rem;
+                    }
+                    .branch-link:hover {
+                        text-decoration: underline;
+                    }
+                    .pr-title {
+                        font-size: 0.825rem;
+                        color: #475569;
+                        margin-top: 0.2rem;
+                    }
+                    .pr-target-badge {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.25rem;
+                        background: #f1f5f9;
+                        border: 1px solid #cbd5e1;
+                        padding: 0.15rem 0.45rem;
+                        border-radius: 4px;
+                        font-size: 0.75rem;
+                        font-weight: 600;
+                        color: #475569;
+                    }
+                    .status-pill {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.35rem;
+                        padding: 0.25rem 0.65rem;
+                        border-radius: 9999px;
+                        font-size: 0.75rem;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                    }
+                    .pill-success { background: #d1fae5; color: #065f46; font-weight: 700; border: 1px solid #6ee7b7; }
+                    .pill-failed, .pill-failure { background: #fee2e2; color: #991b1b; font-weight: 700; border: 1px solid #fca5a5; }
+                    .pill-unstable { background: #fef3c7; color: #92400e; font-weight: 700; border: 1px solid #fcd34d; }
+                    .pill-in_progress { background: #dbeafe; color: #1e40af; font-weight: 700; border: 1px solid #93c5fd; animation: pulse 2s infinite; }
+                    .pill-not_built { background: #f1f5f9; color: #64748b; font-weight: 700; border: 1px solid #cbd5e1; }
+                    .pill-aborted { background: #f1f5f9; color: #334155; font-weight: 700; border: 1px solid #cbd5e1; }
+
+                    .action-link-btn {
+                        background: #f8fafc;
+                        border: 1px solid #cbd5e1;
+                        color: #1e293b;
+                        padding: 0.35rem 0.75rem;
+                        border-radius: 6px;
+                        text-decoration: none;
+                        font-size: 0.8rem;
+                        font-weight: 700;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.3rem;
+                        cursor: pointer;
+                        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+                        transition: all 0.15s;
+                    }
+                    .action-link-btn:hover {
+                        background: #2563eb;
+                        color: #ffffff;
+                        border-color: #2563eb;
+                    }
+
+                    /* Dark Theme Overrides */
+                    .horizon-container.theme-dark {
+                        color: #f8fafc;
+                    }
+                    .horizon-container.theme-dark .horizon-hero {
+                        background: linear-gradient(135deg, #0b1329 0%, #172554 50%, #0f172a 100%);
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                    }
+                    .horizon-container.theme-dark .horizon-tabs {
+                        border-bottom-color: #334155;
+                    }
+                    .horizon-container.theme-dark .tab-btn {
+                        color: #94a3b8;
+                    }
+                    .horizon-container.theme-dark .tab-btn:hover {
+                        color: #f8fafc;
+                    }
+                    .horizon-container.theme-dark .tab-btn.active {
+                        color: #38bdf8;
+                        border-bottom-color: #38bdf8;
+                    }
+                    .horizon-container.theme-dark .tab-count-badge {
+                        background: #334155;
+                        color: #cbd5e1;
+                    }
+                    .horizon-container.theme-dark .tab-btn.active .tab-count-badge {
+                        background: rgba(56, 189, 248, 0.2);
+                        color: #38bdf8;
+                    }
+                    .horizon-container.theme-dark .filter-bar {
+                        background: #0f172a;
+                        border-color: #1e293b;
+                    }
+                    .horizon-container.theme-dark .search-input {
+                        background: #1e293b;
+                        border-color: #334155;
+                        color: #f8fafc;
+                    }
+                    .horizon-container.theme-dark .filter-pill {
+                        background: #1e293b;
+                        border-color: #334155;
+                        color: #cbd5e1;
+                    }
+                    .horizon-container.theme-dark .filter-pill.active {
+                        background: #2563eb;
+                        border-color: #2563eb;
+                        color: #ffffff;
+                    }
+                    .horizon-container.theme-dark .mb-card {
+                        background: #0f172a;
+                        border-color: #1e293b;
+                    }
+                    .horizon-container.theme-dark .mb-table th {
+                        background: #1e293b;
+                        color: #94a3b8;
+                        border-bottom-color: #334155;
+                    }
+                    .horizon-container.theme-dark .mb-table td {
+                        border-bottom-color: #1e293b;
+                        color: #cbd5e1;
+                    }
+                    .horizon-container.theme-dark .mb-table tbody tr:hover td {
+                        background: #1e293b !important;
+                    }
+                    .horizon-container.theme-dark .branch-link {
+                        color: #60a5fa;
+                    }
+                    .horizon-container.theme-dark .pr-title {
+                        color: #94a3b8;
+                    }
+                    .horizon-container.theme-dark .pr-target-badge {
+                        background: #1e293b;
+                        border-color: #334155;
+                        color: #94a3b8;
+                    }
+                    .horizon-container.theme-dark .action-link-btn {
+                        background: #1e293b;
+                        border-color: #334155;
+                        color: #cbd5e1;
+                    }
+                    .horizon-container.theme-dark .action-link-btn:hover {
+                        background: #2563eb;
+                        color: #ffffff;
+                    }
+                    .horizon-container.theme-dark .pill-success { background: rgba(16, 185, 129, 0.2); color: #34d399; border-color: rgba(52, 211, 153, 0.4); }
+                    .horizon-container.theme-dark .pill-failed { background: rgba(239, 68, 68, 0.2); color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
+                    .horizon-container.theme-dark .pill-unstable { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); }
+                    .horizon-container.theme-dark .pill-in_progress { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border-color: rgba(96, 165, 250, 0.4); }
+                    .horizon-container.theme-dark .pill-not_built { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border-color: rgba(148, 163, 184, 0.3); }
+
+                    /* Toast Notification */
+                    .horizon-toast-container {
+                        position: fixed;
+                        top: 4.5rem;
+                        right: 1.5rem;
+                        z-index: 999999;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.5rem;
+                        pointer-events: none;
+                    }
+                    .horizon-toast {
+                        pointer-events: auto;
+                        position: relative;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.65rem;
+                        padding: 0.75rem 1.15rem;
+                        border-radius: 10px;
+                        font-size: 0.85rem;
+                        font-weight: 500;
+                        color: #f8fafc;
+                        background: #0f172a;
+                        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        transform: translateY(-8px);
+                        opacity: 0;
+                        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                    }
+                    .horizon-toast.show {
+                        transform: translateY(0);
+                        opacity: 1;
+                    }
+                    .horizon-toast.toast-success {
+                        background: linear-gradient(135deg, #064e3b 0%, #0f172a 100%);
+                        border-color: rgba(16, 185, 129, 0.3);
+                        color: #34d399;
+                    }
+                </style>
+
+                <div class="horizon-toast-container" id="toast-container"></div>
+
+                <!-- Hero Header -->
+                <header class="horizon-hero" role="banner" aria-label="Multibranch Pipeline Overview">
+                    <div class="hero-title-group">
+                        <h1 id="mb-title">${it.project.displayName}</h1>
+                        <p class="hero-desc">Multibranch Pipeline Project &amp;bull; ${summary.totalBranches} Branches &amp;bull; ${summary.totalPullRequests} Pull Requests</p>
+                    </div>
+                    <div class="hero-actions">
+                        <button class="btn-primary" id="btn-scan-repo" onclick="scanRepo()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                            </svg>
+                            <span>Scan Repository</span>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Navigation Tabs -->
+                <div class="horizon-tabs">
+                    <button class="tab-btn active" id="tab-btn-branches" onclick="switchTab('branches')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="6" y1="3" x2="6" y2="15"></line>
+                            <circle cx="18" cy="6" r="3"></circle>
+                            <circle cx="6" cy="18" r="3"></circle>
+                            <path d="M18 9a9 9 0 0 1-9 9"></path>
+                        </svg>
+                        <span>Branches</span>
+                        <span class="tab-count-badge">${summary.totalBranches}</span>
+                    </button>
+                    <button class="tab-btn" id="tab-btn-prs" onclick="switchTab('prs')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="18" cy="18" r="3"></circle>
+                            <circle cx="6" cy="6" r="3"></circle>
+                            <path d="M13 6h3a2 2 0 0 1 2 2v7"></path>
+                            <line x1="6" y1="9" x2="6" y2="21"></line>
+                        </svg>
+                        <span>Pull Requests</span>
+                        <span class="tab-count-badge">${summary.totalPullRequests}</span>
+                    </button>
+                </div>
+
+                <!-- Filter and Search Bar -->
+                <div class="filter-bar">
+                    <div class="search-box">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" class="search-input" id="item-search" placeholder="Filter by branch, PR title, commit, or author..." oninput="filterItems()" />
+                    </div>
+                    <div class="status-filters">
+                        <button class="filter-pill active" data-status="ALL" onclick="filterStatus('ALL')">All</button>
+                        <button class="filter-pill" data-status="SUCCESS" onclick="filterStatus('SUCCESS')">Successful</button>
+                        <button class="filter-pill" data-status="FAILED" onclick="filterStatus('FAILED')">Failed</button>
+                        <button class="filter-pill" data-status="IN_PROGRESS" onclick="filterStatus('IN_PROGRESS')">In Progress</button>
+                    </div>
+                </div>
+
+                <!-- Branches Tab View -->
+                <div id="view-branches" class="tab-view">
+                    <div class="mb-card">
+                        <table class="mb-table" id="branches-table">
+                            <thead>
+                                <tr>
+                                    <th>Branch</th>
+                                    <th>Last Run</th>
+                                    <th>Status</th>
+                                    <th>Commit</th>
+                                    <th>Duration</th>
+                                    <th>Updated</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <j:forEach var="b" items="${summary.branches}">
+                                    <tr class="branch-row" data-name="${b.name}" data-status="${b.lastBuildResult}" data-commit="${b.commitMessage}" data-author="${b.commitAuthor}">
+                                        <td>
+                                            <a class="branch-link" href="${rootURL}/${b.url}horizon/">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <line x1="6" y1="3" x2="6" y2="15"></line>
+                                                    <circle cx="18" cy="6" r="3"></circle>
+                                                    <circle cx="6" cy="18" r="3"></circle>
+                                                    <path d="M18 9a9 9 0 0 1-9 9"></path>
+                                                </svg>
+                                                <span>${b.displayName}</span>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <j:if test="${b.lastBuildNumber != null}">
+                                                <a class="branch-link" href="${rootURL}/${b.url}${b.lastBuildNumber}/horizon/">#${b.lastBuildNumber}</a>
+                                            </j:if>
+                                            <j:if test="${b.lastBuildNumber == null}">—</j:if>
+                                        </td>
+                                        <td>
+                                            <span class="status-pill pill-${b.lastBuildResult.toLowerCase()}">${b.lastBuildResult}</span>
+                                        </td>
+                                        <td>
+                                            <j:if test="${b.commitMessage != null}">
+                                                <div style="font-weight:600; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${b.commitMessage}</div>
+                                                <j:if test="${b.commitAuthor != null}">
+                                                    <div style="font-size:0.75rem; color:#64748b;">${b.commitAuthor}</div>
+                                                </j:if>
+                                            </j:if>
+                                            <j:if test="${b.commitMessage == null}">—</j:if>
+                                        </td>
+                                        <td>${b.formattedDuration}</td>
+                                        <td>${b.timeAgo}</td>
+                                        <td>
+                                            <a class="action-link-btn" href="${rootURL}/${b.url}horizon/">
+                                                <span>Horizon View</span>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </j:forEach>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pull Requests Tab View -->
+                <div id="view-prs" class="tab-view" style="display: none;">
+                    <div class="mb-card">
+                        <table class="mb-table" id="prs-table">
+                            <thead>
+                                <tr>
+                                    <th>Pull Request</th>
+                                    <th>Target</th>
+                                    <th>Last Run</th>
+                                    <th>Status</th>
+                                    <th>Author</th>
+                                    <th>Duration</th>
+                                    <th>Updated</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <j:forEach var="pr" items="${summary.pullRequests}">
+                                    <tr class="pr-row" data-name="${pr.name}" data-title="${pr.pullRequestTitle}" data-status="${pr.lastBuildResult}" data-author="${pr.pullRequestAuthor}">
+                                        <td>
+                                            <a class="branch-link" href="${rootURL}/${pr.url}horizon/">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="18" cy="18" r="3"></circle>
+                                                    <circle cx="6" cy="6" r="3"></circle>
+                                                    <path d="M13 6h3a2 2 0 0 1 2 2v7"></path>
+                                                    <line x1="6" y1="9" x2="6" y2="21"></line>
+                                                </svg>
+                                                <span>${pr.displayName}</span>
+                                            </a>
+                                            <j:if test="${pr.pullRequestTitle != null}">
+                                                <div class="pr-title">${pr.pullRequestTitle}</div>
+                                            </j:if>
+                                        </td>
+                                        <td>
+                                            <j:if test="${pr.pullRequestTarget != null &amp;&amp; !pr.pullRequestTarget.isEmpty()}">
+                                                <span class="pr-target-badge">&#8594; ${pr.pullRequestTarget}</span>
+                                            </j:if>
+                                            <j:if test="${pr.pullRequestTarget == null || pr.pullRequestTarget.isEmpty()}">—</j:if>
+                                        </td>
+                                        <td>
+                                            <j:if test="${pr.lastBuildNumber != null}">
+                                                <a class="branch-link" href="${rootURL}/${pr.url}${pr.lastBuildNumber}/horizon/">#${pr.lastBuildNumber}</a>
+                                            </j:if>
+                                            <j:if test="${pr.lastBuildNumber == null}">—</j:if>
+                                        </td>
+                                        <td>
+                                            <span class="status-pill pill-${pr.lastBuildResult.toLowerCase()}">${pr.lastBuildResult}</span>
+                                        </td>
+                                        <td>${pr.pullRequestAuthor != null ? pr.pullRequestAuthor : '—'}</td>
+                                        <td>${pr.formattedDuration}</td>
+                                        <td>${pr.timeAgo}</td>
+                                        <td>
+                                            <a class="action-link-btn" href="${rootURL}/${pr.url}horizon/">
+                                                <span>Horizon View</span>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </j:forEach>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <script>
+                    var activeTab = 'branches';
+                    var activeStatus = 'ALL';
+
+                    function switchTab(tab) {
+                        activeTab = tab;
+                        document.getElementById('tab-btn-branches').classList.toggle('active', tab === 'branches');
+                        document.getElementById('tab-btn-prs').classList.toggle('active', tab === 'prs');
+                        document.getElementById('view-branches').style.display = tab === 'branches' ? 'block' : 'none';
+                        document.getElementById('view-prs').style.display = tab === 'prs' ? 'block' : 'none';
+                        filterItems();
+                    }
+
+                    function filterStatus(status) {
+                        activeStatus = status;
+                        var pills = document.querySelectorAll('.filter-pill');
+                        pills.forEach(function(p) {
+                            p.classList.toggle('active', p.getAttribute('data-status') === status);
+                        });
+                        filterItems();
+                    }
+
+                    function filterItems() {
+                        var q = (document.getElementById('item-search').value || '').toLowerCase();
+                        var rows = activeTab === 'branches'
+                            ? document.querySelectorAll('#branches-table tbody tr')
+                            : document.querySelectorAll('#prs-table tbody tr');
+
+                        rows.forEach(function(row) {
+                            var status = row.getAttribute('data-status') || '';
+                            var name = (row.getAttribute('data-name') || '').toLowerCase();
+                            var title = (row.getAttribute('data-title') || '').toLowerCase();
+                            var commit = (row.getAttribute('data-commit') || '').toLowerCase();
+                            var author = (row.getAttribute('data-author') || '').toLowerCase();
+
+                            var matchesStatus = (activeStatus === 'ALL') || (status.indexOf(activeStatus) !== -1);
+                            var matchesQuery = !q || (name.indexOf(q) !== -1) || (title.indexOf(q) !== -1) || (commit.indexOf(q) !== -1) || (author.indexOf(q) !== -1);
+
+                            row.style.display = (matchesStatus &amp;&amp; matchesQuery) ? '' : 'none';
+                        });
+                    }
+
+                    function showToast(message, type) {
+                        var container = document.getElementById('toast-container');
+                        if (!container) return;
+                        var toast = document.createElement('div');
+                        toast.className = 'horizon-toast toast-' + (type || 'success');
+                        toast.textContent = message;
+                        container.appendChild(toast);
+                        requestAnimationFrame(function() { toast.classList.add('show'); });
+                        setTimeout(function() {
+                            toast.classList.remove('show');
+                            setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+                        }, 3500);
+                    }
+
+                    function scanRepo() {
+                        var btn = document.getElementById('btn-scan-repo');
+                        if (btn) btn.disabled = true;
+                        fetch('${projectBase}horizon/apiScan', {
+                            method: 'POST',
+                            headers: {
+                                'Jenkins-Crumb': (window.crumb || (document.querySelector('head[data-crumb-value]') ? document.querySelector('head[data-crumb-value]').getAttribute('data-crumb-value') : ''))
+                            }
+                        })
+                        .then(function(res) { return res.json(); })
+                        .then(function(data) {
+                            showToast(data.message || 'Repository scan triggered', 'success');
+                            if (btn) btn.disabled = false;
+                        })
+                        .catch(function(err) {
+                            showToast('Scan initiated', 'success');
+                            if (btn) btn.disabled = false;
+                        });
+                    }
+                </script>
+            </div>
+        </l:main-panel>
+    </l:layout>
+</j:jelly>

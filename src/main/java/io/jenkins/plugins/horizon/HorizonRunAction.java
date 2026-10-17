@@ -546,6 +546,80 @@ public class HorizonRunAction implements RunAction2 {
     }
 
     /**
+     * REST API: Validates Declarative or Scripted pipeline syntax without executing.
+     */
+    @RequirePOST
+    public void doApiValidatePipeline(StaplerRequest2 req, StaplerResponse2 rsp, @QueryParameter(fixEmpty = true) String script) throws IOException {
+        rsp.setContentType("application/json;charset=UTF-8");
+        run.getParent().checkPermission(hudson.model.Item.EXTENDED_READ);
+
+        if (script == null || script.trim().isEmpty()) {
+            if (req.getContentType() != null && req.getContentType().contains("application/json")) {
+                try {
+                    String body = new String(req.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                    if (!body.isEmpty()) {
+                        JSONObject bodyJson = JSONObject.fromObject(body);
+                        if (bodyJson.has("script")) {
+                            script = bodyJson.optString("script", null);
+                        }
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+
+        JSONObject result = new JSONObject();
+        if (script == null || script.trim().isEmpty()) {
+            result.put("status", "error");
+            result.put("valid", false);
+            result.put("message", "Pipeline script cannot be empty.");
+            result.write(rsp.getWriter());
+            return;
+        }
+
+        String trimmed = script.trim();
+        boolean isDeclarative = trimmed.startsWith("pipeline") || trimmed.contains("pipeline {") || trimmed.contains("pipeline{");
+
+        if (isDeclarative) {
+            try {
+                org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTPipelineDef def =
+                        org.jenkinsci.plugins.pipeline.modeldefinition.parser.Converter.scriptToPipelineDef(script);
+                if (def != null) {
+                    result.put("status", "ok");
+                    result.put("valid", true);
+                    result.put("type", "declarative");
+                    result.put("message", "Declarative Pipeline syntax is valid.");
+                } else {
+                    result.put("status", "error");
+                    result.put("valid", false);
+                    result.put("type", "declarative");
+                    result.put("message", "Failed to parse Declarative Pipeline definition.");
+                }
+            } catch (Throwable t) {
+                result.put("status", "error");
+                result.put("valid", false);
+                result.put("type", "declarative");
+                result.put("message", t.getMessage() != null ? t.getMessage() : t.toString());
+            }
+        } else {
+            try {
+                groovy.lang.GroovyShell shell = new groovy.lang.GroovyShell();
+                shell.parse(script);
+                result.put("status", "ok");
+                result.put("valid", true);
+                result.put("type", "scripted");
+                result.put("message", "Scripted Pipeline syntax is valid Groovy.");
+            } catch (Throwable t) {
+                result.put("status", "error");
+                result.put("valid", false);
+                result.put("type", "scripted");
+                result.put("message", t.getMessage() != null ? t.getMessage() : t.toString());
+            }
+        }
+        result.write(rsp.getWriter());
+    }
+
+    /**
      * REST API: Rebuilds this run with the same parameters.
      */
     @RequirePOST

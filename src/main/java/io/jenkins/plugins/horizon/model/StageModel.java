@@ -23,6 +23,51 @@ public class StageModel {
     private List<ArtifactModel> artifacts = new ArrayList<>();
     private List<StepModel> steps = new ArrayList<>();
     private List<StageModel> children = new ArrayList<>();
+    private Long avgDurationMillis;
+    private Double variancePercent;
+    private String formattedVariance;
+    private boolean isSpike;
+    private boolean isFaster;
+
+    public Long getAvgDurationMillis() {
+        return avgDurationMillis;
+    }
+
+    public void setAvgDurationMillis(Long avgDurationMillis) {
+        this.avgDurationMillis = avgDurationMillis;
+    }
+
+    public Double getVariancePercent() {
+        return variancePercent;
+    }
+
+    public void setVariancePercent(Double variancePercent) {
+        this.variancePercent = variancePercent;
+    }
+
+    public String getFormattedVariance() {
+        return formattedVariance;
+    }
+
+    public void setFormattedVariance(String formattedVariance) {
+        this.formattedVariance = formattedVariance;
+    }
+
+    public boolean isSpike() {
+        return isSpike;
+    }
+
+    public void setSpike(boolean spike) {
+        isSpike = spike;
+    }
+
+    public boolean isFaster() {
+        return isFaster;
+    }
+
+    public void setFaster(boolean faster) {
+        isFaster = faster;
+    }
 
     public boolean isPausedForInput() {
         return pausedForInput;

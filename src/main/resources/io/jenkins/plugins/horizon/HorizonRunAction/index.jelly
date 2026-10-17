@@ -3062,6 +3062,69 @@
                         border: 1px solid #f59e0b;
                     }
 
+                    /* Stage Variance Pills and Badges */
+                    .stage-variance-pill {
+                        display: inline-flex;
+                        align-items: center;
+                        font-size: 0.65rem;
+                        font-weight: 700;
+                        padding: 1px 5px;
+                        border-radius: 4px;
+                        margin-left: 6px;
+                        vertical-align: middle;
+                        letter-spacing: 0.02em;
+                        line-height: 1.25;
+                    }
+                    .stage-variance-pill.spike {
+                        background: #fef2f2;
+                        color: #dc2626;
+                        border: 1px solid rgba(220, 38, 38, 0.3);
+                    }
+                    .stage-variance-pill.faster {
+                        background: #f0fdf4;
+                        color: #16a34a;
+                        border: 1px solid rgba(22, 163, 74, 0.3);
+                    }
+                    .stage-variance-pill.neutral {
+                        background: #f8fafc;
+                        color: #64748b;
+                        border: 1px solid #cbd5e1;
+                    }
+                    .stage-badge-variance-spike {
+                        background: #fef2f2;
+                        color: #dc2626;
+                        border: 1px solid rgba(220, 38, 38, 0.35);
+                    }
+                    .stage-badge-variance-faster {
+                        background: #f0fdf4;
+                        color: #16a34a;
+                        border: 1px solid rgba(22, 163, 74, 0.35);
+                    }
+                    .stage-badge-variance-neutral {
+                        background: #f8fafc;
+                        color: #475569;
+                        border: 1px solid #cbd5e1;
+                    }
+                    .replay-validation-banner {
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 0.65rem;
+                        padding: 0.75rem 1rem;
+                        border-radius: 8px;
+                        font-size: 0.8rem;
+                        line-height: 1.45;
+                    }
+                    .replay-validation-banner.valid {
+                        background: rgba(16, 185, 129, 0.12);
+                        color: #059669;
+                        border: 1px solid rgba(16, 185, 129, 0.35);
+                    }
+                    .replay-validation-banner.invalid {
+                        background: rgba(239, 68, 68, 0.12);
+                        color: #dc2626;
+                        border: 1px solid rgba(239, 68, 68, 0.35);
+                    }
+
                     /* Agent Details Modal Styles */
                     .agent-modal-icon-badge {
                         width: 32px;
@@ -5132,6 +5195,46 @@
                         color: #fde68a;
                         border-color: rgba(245, 158, 11, 0.35);
                     }
+                    .horizon-container.theme-dark .stage-variance-pill.spike {
+                        background: rgba(220, 38, 38, 0.2);
+                        color: #f87171;
+                        border-color: rgba(239, 68, 68, 0.35);
+                    }
+                    .horizon-container.theme-dark .stage-variance-pill.faster {
+                        background: rgba(22, 163, 74, 0.2);
+                        color: #4ade80;
+                        border-color: rgba(34, 197, 94, 0.35);
+                    }
+                    .horizon-container.theme-dark .stage-variance-pill.neutral {
+                        background: rgba(255, 255, 255, 0.06);
+                        color: #94a3b8;
+                        border-color: rgba(255, 255, 255, 0.12);
+                    }
+                    .horizon-container.theme-dark .stage-badge-variance-spike {
+                        background: rgba(220, 38, 38, 0.2);
+                        color: #f87171;
+                        border-color: rgba(239, 68, 68, 0.35);
+                    }
+                    .horizon-container.theme-dark .stage-badge-variance-faster {
+                        background: rgba(22, 163, 74, 0.2);
+                        color: #4ade80;
+                        border-color: rgba(34, 197, 94, 0.35);
+                    }
+                    .horizon-container.theme-dark .stage-badge-variance-neutral {
+                        background: rgba(255, 255, 255, 0.08);
+                        color: #cbd5e1;
+                        border-color: rgba(255, 255, 255, 0.15);
+                    }
+                    .horizon-container.theme-dark .replay-validation-banner.valid {
+                        background: rgba(16, 185, 129, 0.15);
+                        color: #34d399;
+                        border-color: rgba(16, 185, 129, 0.4);
+                    }
+                    .horizon-container.theme-dark .replay-validation-banner.invalid {
+                        background: rgba(239, 68, 68, 0.15);
+                        color: #f87171;
+                        border-color: rgba(239, 68, 68, 0.4);
+                    }
                     .horizon-container.theme-dark .flow-path.flow-success {
                         stroke: #10b981;
                         filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.45));
@@ -6002,6 +6105,10 @@
                                 <div class="meta-duration-breakdown" id="meta-duration-breakdown" style="display:none;"></div>
                             </div>
                         </div>
+                        <div class="meta-item" id="meta-queue-item" style="display:none;" title="Time spent waiting in the Jenkins build queue before executor allocation">
+                            <span class="meta-label">Queue Wait</span>
+                            <span class="meta-value" id="meta-queue-wait">--</span>
+                        </div>
                         <div class="meta-item">
                             <span class="meta-label">Triggered By</span>
                             <span class="meta-value" id="meta-cause">--</span>
@@ -6099,6 +6206,7 @@
                             <span id="stage-banner-skipped-badge" class="stage-banner-badge stage-badge-skipped" style="display:none;">SKIPPED</span>
                             <span id="stage-banner-optional-badge" class="stage-banner-badge stage-badge-optional" style="display:none;">OPTIONAL</span>
                             <span id="stage-banner-bottleneck-badge" class="stage-banner-badge stage-badge-bottleneck" style="display:none;" title="Longest running stage in this pipeline"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px; margin-right:3px; flex-shrink:0;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>LONGEST STAGE</span>
+                            <span id="stage-banner-variance-badge" class="stage-banner-badge" style="display:none;"></span>
                         </div>
                         <div class="stage-banner-right">
                             <div id="stage-banner-duration" class="stage-banner-meta-item" title="Stage duration" style="display:none;">
@@ -6429,9 +6537,14 @@
                             <div style="font-size:0.8rem; color:#94a3b8; line-height:1.45;">
                                 Inspect or modify the Jenkinsfile pipeline definition below. Replay triggers an isolated build run with your modified script without committing changes to source control.
                             </div>
-                            <textarea id="replay-script-editor" class="replay-editor" aria-label="Jenkinsfile Script Content" spellcheck="false"></textarea>
+                            <textarea id="replay-script-editor" class="replay-editor" aria-label="Jenkinsfile Script Content" spellcheck="false" oninput="clearReplayValidation()"></textarea>
+                            <div id="replay-validation-banner" class="replay-validation-banner" style="display:none;" role="region" aria-live="polite"></div>
                         </div>
                         <div class="horizon-modal-footer">
+                            <button id="btn-validate-replay" type="button" class="btn-modal-cancel" style="margin-right:auto; display:inline-flex; align-items:center; gap:0.4rem;" onclick="validateReplayScript()">
+                                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                <span>Validate Syntax</span>
+                            </button>
                             <button class="btn-modal-cancel" onclick="closeReplayModal()">Cancel</button>
                             <button id="btn-submit-replay" class="btn-modal-submit" onclick="submitReplayRun()">
                                 <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -6523,6 +6636,10 @@
                 var ICON_ACCORDION_PAUSED_INPUT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke="#7c3aed" fill="rgba(124, 58, 237, 0.22)"/><line x1="10" y1="15" x2="10" y2="9" stroke="#a78bfa"/><line x1="14" y1="15" x2="14" y2="9" stroke="#a78bfa"/></svg>';
                 var ICON_ACCORDION_SKIPPED = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke="#64748b" fill="rgba(100, 116, 139, 0.18)"/><line x1="8" y1="12" x2="16" y2="12" stroke="#94a3b8"/></svg>';
                 var ICON_ACCORDION_ABORTED = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke="#64748b" fill="rgba(100, 116, 139, 0.18)"/><circle cx="12" cy="12" r="3" fill="#94a3b8" stroke="none"/></svg>';
+
+                /* Pipeline Trend Icons */
+                var ICON_TREND_UP = '<svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:2px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>';
+                var ICON_TREND_DOWN = '<svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:2px;"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>';
 
                 /* Step Glyph Icons (Echo, Shell, Tests, Sleep, Artifacts, Git) */
                 var GLYPH_ECHO = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
@@ -7319,6 +7436,18 @@
                             breakdownEl.style.display = 'none';
                         }
                     }
+
+                    var queueItem = document.getElementById('meta-queue-item');
+                    var queueEl = document.getElementById('meta-queue-wait');
+                    if (queueItem &amp;&amp; queueEl) {
+                        if (data.formattedQueueWait &amp;&amp; data.queueWaitMillis &gt; 0) {
+                            queueEl.innerText = data.formattedQueueWait;
+                            queueItem.style.display = 'flex';
+                        } else {
+                            queueItem.style.display = 'none';
+                        }
+                    }
+
                     document.getElementById('meta-cause').innerText = (data.causes &amp;&amp; data.causes.length) ? data.causes[0] : "Direct trigger";
                     
                     var agentsContainer = document.getElementById('meta-agents');
@@ -9247,9 +9376,21 @@
                     }
                     card += '&lt;/div&gt;';
                     card += '&lt;/div&gt;';
+                    var variancePillHtml = "";
+                    if (stage.formattedVariance) {
+                        var vClass = stage.isSpike ? "spike" : (stage.isFaster ? "faster" : "neutral");
+                        var vIcon = stage.isSpike ? ICON_TREND_UP : (stage.isFaster ? ICON_TREND_DOWN : "");
+                        var vTitle = stage.isSpike
+                            ? ("Duration Spike: " + stage.formattedVariance + " vs avg " + formatDuration(stage.avgDurationMillis))
+                            : (stage.isFaster
+                                ? ("Faster: " + stage.formattedVariance.replace('-', '') + " vs avg " + formatDuration(stage.avgDurationMillis))
+                                : ("Historical avg: " + formatDuration(stage.avgDurationMillis)));
+                        variancePillHtml = ' &lt;span class="stage-variance-pill ' + vClass + '" title="' + vTitle.replace(/"/g, '&amp;quot;') + '"&gt;' + vIcon + stage.formattedVariance + '&lt;/span&gt;';
+                    }
+
                     card += '&lt;div class="stage-body"&gt;';
                     card += '&lt;div class="stage-meta-row"&gt;';
-                    card += '&lt;span&gt;Duration:&lt;/span&gt;&lt;strong class="stage-duration-val" title="' + durationTooltip.replace(/"/g, '&amp;quot;') + '"&gt;' + durationLabelHtml + '&lt;/strong&gt;';
+                    card += '&lt;span&gt;Duration:&lt;/span&gt;&lt;strong class="stage-duration-val" title="' + durationTooltip.replace(/"/g, '&amp;quot;') + '"&gt;' + durationLabelHtml + '&lt;/strong&gt;' + variancePillHtml;
                     card += '&lt;/div&gt;';
                     card += '&lt;div class="stage-meta-row"&gt;';
                     var escapedAgent = agentStr.replace(/'/g, "\\'");
@@ -9284,7 +9425,7 @@
                     }
 
                     card += '&lt;div class="stage-compact-metric-row"&gt;';
-                    card += compactDurationHtml;
+                    card += compactDurationHtml + variancePillHtml;
                     card += '&lt;/div&gt;';
 
                     var displayAgent = stage.agent ? stage.agent : 'Built-in';
@@ -9914,6 +10055,25 @@
                     var isBottleneck = (stage.id === longestStageId &amp;&amp; maxStageDuration &gt;= 500);
                     if (bottleneckBadge) {
                         bottleneckBadge.style.display = isBottleneck ? 'inline-flex' : 'none';
+                    }
+
+                    var varBadge = document.getElementById('stage-banner-variance-badge');
+                    if (varBadge) {
+                        if (stage.formattedVariance) {
+                            var isSpike = stage.isSpike;
+                            var isFaster = stage.isFaster;
+                            var avgFmt = formatDuration(stage.avgDurationMillis);
+                            var trendIcon = isSpike ? ICON_TREND_UP : (isFaster ? ICON_TREND_DOWN : '');
+                            var title = isSpike
+                                ? ('Duration Spiked by ' + stage.formattedVariance + ' vs historical average (' + avgFmt + ')')
+                                : (isFaster ? ('Finished ' + stage.formattedVariance.replace('-', '') + ' faster than historical avg (' + avgFmt + ')') : ('Historical avg: ' + avgFmt));
+                            varBadge.className = 'stage-banner-badge ' + (isSpike ? 'stage-badge-variance-spike' : (isFaster ? 'stage-badge-variance-faster' : 'stage-badge-variance-neutral'));
+                            varBadge.innerHTML = trendIcon + (isSpike ? ('SPIKE ' + stage.formattedVariance) : (isFaster ? (stage.formattedVariance + ' FASTER') : ('VARIANCE ' + stage.formattedVariance)));
+                            varBadge.title = title;
+                            varBadge.style.display = 'inline-flex';
+                        } else {
+                            varBadge.style.display = 'none';
+                        }
                     }
 
                     var durEl = document.getElementById('stage-banner-duration');
@@ -10991,7 +11151,17 @@
                     });
                 }
 
+                function clearReplayValidation() {
+                    var banner = document.getElementById('replay-validation-banner');
+                    if (banner) {
+                        banner.style.display = 'none';
+                        banner.className = 'replay-validation-banner';
+                        banner.innerHTML = '';
+                    }
+                }
+
                 function openReplayModal() {
+                    clearReplayValidation();
                     var modal = document.getElementById('replay-modal');
                     var editor = document.getElementById('replay-script-editor');
                     if (graphData &amp;&amp; graphData.originalScript) {
@@ -11004,8 +11174,65 @@
                 }
 
                 function closeReplayModal() {
+                    clearReplayValidation();
                     var modal = document.getElementById('replay-modal');
                     if (modal) modal.classList.remove('active');
+                }
+
+                function validateReplayScript() {
+                    var btn = document.getElementById('btn-validate-replay');
+                    var editor = document.getElementById('replay-script-editor');
+                    var banner = document.getElementById('replay-validation-banner');
+                    if (!editor || !banner) return;
+                    var scriptContent = editor.value;
+
+                    if (!scriptContent || !scriptContent.trim()) {
+                        banner.className = 'replay-validation-banner invalid';
+                        banner.innerHTML = '&lt;svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; margin-top:2px;"&gt;&lt;circle cx="12" cy="12" r="10"/&gt;&lt;line x1="12" y1="8" x2="12" y2="12"/&gt;&lt;line x1="12" y1="16" x2="12.01" y2="16"/&gt;&lt;/svg&gt;&lt;div&gt;&lt;strong&gt;Validation Failed:&lt;/strong&gt; Pipeline script cannot be empty.&lt;/div&gt;';
+                        banner.style.display = 'flex';
+                        return;
+                    }
+
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerHTML = '&lt;svg class="horizon-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;path d="M21 12a9 9 0 1 1-6.219-8.56"/&gt;&lt;/svg&gt;&lt;span&gt;Validating...&lt;/span&gt;';
+                    }
+
+                    var formData = new FormData();
+                    formData.append("script", scriptContent);
+
+                    fetch(horizonBaseUrl + 'apiValidatePipeline', {
+                        method: 'POST',
+                        headers: getCrumbHeaders(),
+                        body: formData
+                    })
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = '&lt;svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/&gt;&lt;polyline points="22 4 12 14.01 9 11.01"/&gt;&lt;/svg&gt;&lt;span&gt;Validate Syntax&lt;/span&gt;';
+                        }
+                        if (data.valid) {
+                            banner.className = 'replay-validation-banner valid';
+                            var pipeType = data.type ? (data.type.charAt(0).toUpperCase() + data.type.slice(1) + ' Pipeline') : 'Pipeline';
+                            banner.innerHTML = '&lt;svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;"&gt;&lt;path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/&gt;&lt;polyline points="22 4 12 14.01 9 11.01"/&gt;&lt;/svg&gt;&lt;div&gt;&lt;strong&gt;Syntax Valid:&lt;/strong&gt; ' + escapeHtml(data.message || (pipeType + ' definition parsed successfully.')) + '&lt;/div&gt;';
+                            banner.style.display = 'flex';
+                        } else {
+                            banner.className = 'replay-validation-banner invalid';
+                            var errDetail = data.message || "Pipeline syntax validation failed.";
+                            banner.innerHTML = '&lt;svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; margin-top:2px;"&gt;&lt;circle cx="12" cy="12" r="10"/&gt;&lt;line x1="12" y1="8" x2="12" y2="12"/&gt;&lt;line x1="12" y1="16" x2="12.01" y2="16"/&gt;&lt;/svg&gt;&lt;div&gt;&lt;strong&gt;Syntax Error:&lt;/strong&gt; ' + escapeHtml(errDetail) + '&lt;/div&gt;';
+                            banner.style.display = 'flex';
+                        }
+                    })
+                    .catch(function(err) {
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = '&lt;svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/&gt;&lt;polyline points="22 4 12 14.01 9 11.01"/&gt;&lt;/svg&gt;&lt;span&gt;Validate Syntax&lt;/span&gt;';
+                        }
+                        banner.className = 'replay-validation-banner invalid';
+                        banner.innerHTML = '&lt;svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; margin-top:2px;"&gt;&lt;circle cx="12" cy="12" r="10"/&gt;&lt;line x1="12" y1="8" x2="12" y2="12"/&gt;&lt;line x1="12" y1="16" x2="12.01" y2="16"/&gt;&lt;/svg&gt;&lt;div&gt;&lt;strong&gt;Validation Request Error:&lt;/strong&gt; ' + escapeHtml(err.toString()) + '&lt;/div&gt;';
+                        banner.style.display = 'flex';
+                    });
                 }
 
                 function submitReplayRun() {
