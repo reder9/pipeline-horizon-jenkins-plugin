@@ -69,8 +69,10 @@ class ScmLinkResolverTest {
         // GitHub standard branch
         assertEquals("https://github.com/owner/repo/tree/main",
                 ScmLinkResolver.buildBranchUrl("https://github.com/owner/repo", "main"));
-        assertEquals("https://github.com/owner/repo/tree/feature%2Flogin-ui",
+        assertEquals("https://github.com/owner/repo/tree/feature/login-ui",
                 ScmLinkResolver.buildBranchUrl("https://github.com/owner/repo", "origin/feature/login-ui"));
+        assertEquals("https://github.com/owner/repo/tree/feature/login-ui",
+                ScmLinkResolver.buildBranchUrl("https://github.com/owner/repo", "feature%2Flogin-ui"));
 
         // GitHub PR
         assertEquals("https://github.com/owner/repo/pull/42",

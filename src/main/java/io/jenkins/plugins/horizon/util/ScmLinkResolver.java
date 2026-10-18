@@ -339,6 +339,14 @@ public final class ScmLinkResolver {
             cleanBranch = cleanBranch.substring("refs/heads/".length());
         }
 
+        // Decode URL-encoded characters from Jenkins branch item names (e.g. %2F -> /)
+        if (cleanBranch.contains("%")) {
+            try {
+                cleanBranch = java.net.URLDecoder.decode(cleanBranch, StandardCharsets.UTF_8.name());
+            } catch (Throwable ignored) {
+            }
+        }
+
         String lowerUrl = repoWebUrl.toLowerCase(Locale.ROOT);
         boolean isPr = cleanBranch.startsWith("PR-") || cleanBranch.startsWith("pr-") || cleanBranch.startsWith("MR-") || cleanBranch.startsWith("mr-");
         String prNum = null;
@@ -353,12 +361,12 @@ public final class ScmLinkResolver {
             if (prNum != null) {
                 return repoWebUrl + "/-/merge_requests/" + prNum;
             }
-            return repoWebUrl + "/-/tree/" + urlEncode(cleanBranch);
+            return repoWebUrl + "/-/tree/" + urlEncodePath(cleanBranch);
         } else if (lowerUrl.contains("bitbucket.org")) {
             if (prNum != null) {
                 return repoWebUrl + "/pull-requests/" + prNum;
             }
-            return repoWebUrl + "/branch/" + urlEncode(cleanBranch);
+            return repoWebUrl + "/branch/" + urlEncodePath(cleanBranch);
         } else if (lowerUrl.contains("/projects/") && lowerUrl.contains("/repos/")) {
             // Bitbucket Server / Data Center
             if (prNum != null) {
@@ -374,13 +382,13 @@ public final class ScmLinkResolver {
             if (prNum != null) {
                 return repoWebUrl + "/pulls/" + prNum;
             }
-            return repoWebUrl + "/src/branch/" + urlEncode(cleanBranch);
+            return repoWebUrl + "/src/branch/" + urlEncodePath(cleanBranch);
         } else {
             // GitHub default
             if (prNum != null) {
                 return repoWebUrl + "/pull/" + prNum;
             }
-            return repoWebUrl + "/tree/" + urlEncode(cleanBranch);
+            return repoWebUrl + "/tree/" + urlEncodePath(cleanBranch);
         }
     }
 
@@ -445,6 +453,21 @@ public final class ScmLinkResolver {
             return commitUrl.substring(0, mrIdx);
         }
         return null;
+    }
+
+    private static String urlEncodePath(String value) {
+        if (value == null) {
+            return "";
+        }
+        String[] parts = value.split("/");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            if (i > 0) {
+                sb.append("/");
+            }
+            sb.append(urlEncode(parts[i]));
+        }
+        return sb.toString();
     }
 
     private static String urlEncode(String value) {
