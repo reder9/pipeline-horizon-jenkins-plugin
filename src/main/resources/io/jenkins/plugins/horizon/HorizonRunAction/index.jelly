@@ -11590,7 +11590,7 @@
 
                 function getLogLineSeverityClass(lineText) {
                     if (!lineText) return '';
-                    if (/(ERROR\b|FATAL\b|FAILED\b|FAILURE\b|Exception:|\bError:|\bErr:\b|SyntaxError|NullPointerException|returned exit code [1-9]|BUILD FAILURE)/i.test(lineText)) {
+                    if (/(ERROR\b|FATAL\b|FAILED\b|FAILURE\b|Exception:|\bError:|\bErr:\b|SyntaxError|NullPointerException|\bexit [1-9]|\bexit code [1-9]|returned exit code [1-9]|BUILD FAILURE)/i.test(lineText)) {
                         return ' log-line-error';
                     }
                     if (/(WARN\b|WARNING\b|DEPRECATED\b|\bNotice:\b)/i.test(lineText)) {
