@@ -52,8 +52,11 @@ public class PipelineGraphAnalyzer {
      * Builds full details and graph representation for a specific build run.
      */
     public static RunDetailsModel buildRunDetails(WorkflowRun run) {
+        if (run == null) {
+            return new RunDetailsModel();
+        }
         if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.log(Level.FINE, "Analyzing pipeline graph for build {0}", run != null ? run.getFullDisplayName() : "null");
+            LOGGER.log(Level.FINE, "Analyzing pipeline graph for build {0}", run.getFullDisplayName());
         }
         RunDetailsModel details = new RunDetailsModel();
         populateSummaryMetadata(run, details);

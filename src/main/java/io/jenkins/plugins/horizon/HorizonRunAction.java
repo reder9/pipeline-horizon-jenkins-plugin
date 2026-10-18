@@ -116,10 +116,10 @@ public class HorizonRunAction implements RunAction2 {
         }
         if (!wfRun.isBuilding()) {
             String cacheKey = wfRun.getExternalizableId();
-            RunDetailsModel details = (cacheKey != null) ? COMPLETED_RUN_DETAILS_CACHE.get(cacheKey) : null;
+            RunDetailsModel details = COMPLETED_RUN_DETAILS_CACHE.get(cacheKey);
             if (details == null) {
                 details = PipelineGraphAnalyzer.buildRunDetails(wfRun);
-                if (cacheKey != null && !wfRun.isBuilding()) {
+                if (!wfRun.isBuilding()) {
                     COMPLETED_RUN_DETAILS_CACHE.put(cacheKey, details);
                 }
             }
