@@ -2136,9 +2136,15 @@
                         margin-top: auto;
                         margin-bottom: auto;
                         transform-origin: 0 50%;
-                        transition: transform 0.12s ease-out;
                         padding: 1rem 0.5rem;
                         box-sizing: border-box;
+                    }
+
+                    .terminal-end-group {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 3.5rem;
+                        flex-shrink: 0;
                     }
 
                     /* Sleek custom scrollbar */
@@ -6425,7 +6431,7 @@
                             <span class="meta-label">Triggered By</span>
                             <span class="meta-value" id="meta-cause">--</span>
                         </div>
-                        <div class="meta-item" id="meta-agents-item" role="button" tabindex="0" aria-label="View all agents used in this build" onclick="openAgentModal(null, 'ALL')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAgentModal(null, 'ALL');}" title="Click to view all agents used in this build">
+                        <div class="meta-item" id="meta-agents-item" style="cursor:pointer;" role="button" tabindex="0" aria-label="View all agents used in this build" onclick="openAgentModal(null, 'ALL')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAgentModal(null, 'ALL');}" title="Click to view all agents used in this build">
                             <span class="meta-label">Agents Used</span>
                             <span class="meta-value" id="meta-agents">--</span>
                         </div>
@@ -6483,18 +6489,18 @@
                         </div>
                         <!-- Floating Canvas Toolbar in Bottom Right (matches Image 2) -->
                         <div class="flow-canvas-toolbar" role="toolbar" aria-label="Pipeline canvas controls">
-                            <button class="canvas-tool-btn" onclick="zoomIn()" title="Zoom In (+)" aria-label="Zoom in">
+                            <button id="canvas-tool-zoomin-btn" class="canvas-tool-btn" onclick="zoomIn()" title="Zoom In (+)" aria-label="Zoom in">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             </button>
                             <span id="canvas-zoom-display" class="canvas-zoom-display" onclick="resetZoom()" title="Current zoom level — Click to reset to 100%, scroll wheel over here to zoom">100%</span>
-                            <button class="canvas-tool-btn" onclick="zoomOut()" title="Zoom Out (-)" aria-label="Zoom out">
+                            <button id="canvas-tool-zoomout-btn" class="canvas-tool-btn" onclick="zoomOut()" title="Zoom Out (-)" aria-label="Zoom out">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             </button>
                             <span class="canvas-tool-divider" aria-hidden="true"></span>
-                            <button class="canvas-tool-btn" onclick="fitFlowToScreen()" title="Fit entire pipeline to screen" aria-label="Fit pipeline to screen">
+                            <button id="canvas-tool-fit-btn" class="canvas-tool-btn" onclick="fitFlowToScreen()" title="Fit entire pipeline to screen" aria-label="Fit pipeline to screen">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
                             </button>
-                            <button class="canvas-tool-btn" onclick="resetZoom()" title="Reset zoom to 100%" aria-label="Reset zoom">
+                            <button id="canvas-tool-reset-btn" class="canvas-tool-btn" onclick="resetZoom()" title="Reset zoom to 100%" aria-label="Reset zoom">
                                 <span style="font-size:0.7rem; font-weight:700;">1:1</span>
                             </button>
                             <span class="canvas-tool-divider" aria-hidden="true"></span>
@@ -7406,10 +7412,21 @@
                     var naturalH = canvas.scrollHeight;
                     var availableW = flow.clientWidth;
 
+                    var startNode = document.getElementById('terminal-node-start');
+                    var endNode = document.getElementById('terminal-node-end');
+                    if (startNode &amp;&amp; endNode &amp;&amp; currentLayoutMode === 'scroll') {
+                        var startR = startNode.getBoundingClientRect();
+                        var endR = endNode.getBoundingClientRect();
+                        var span = (endR.right - startR.left) + 40;
+                        if (span &gt; 50) {
+                            naturalW = span;
+                        }
+                    }
+
                     if (currentLayoutMode === 'wrap') {
                         canvas.style.transformOrigin = 'left top';
                         canvas.style.transform = (currentZoom === 1.0) ? 'none' : 'scale(' + currentZoom + ')';
-                        if (currentZoom &gt; 1.0 &amp;&amp; naturalW &gt; 0) {
+                        if (currentZoom !== 1.0 &amp;&amp; naturalW &gt; 0) {
                             canvas.style.marginRight = Math.round(naturalW * (currentZoom - 1)) + 'px';
                             canvas.style.marginBottom = Math.round(naturalH * (currentZoom - 1)) + 'px';
                         }
@@ -7417,28 +7434,17 @@
                         canvas.style.transformOrigin = 'left center';
                         canvas.style.transform = (currentZoom === 1.0) ? 'none' : 'scale(' + currentZoom + ')';
 
-                        // Check if content is narrower than flow container to center it
-                        var startNode = document.getElementById('terminal-node-start');
-                        var endNode = document.getElementById('terminal-node-end');
-                        var actualSpanW = naturalW;
-                        if (startNode &amp;&amp; endNode) {
-                            var startR = startNode.getBoundingClientRect();
-                            var endR = endNode.getBoundingClientRect();
-                            var span = (endR.right - startR.left) + 32;
-                            if (span &gt; 50) actualSpanW = span;
-                        }
-
-                        var scaledSpanW = actualSpanW * currentZoom;
-                        if (scaledSpanW &lt; availableW - 48) {
-                            var offset = Math.max(0, Math.floor((availableW - scaledSpanW) / 2) - 16);
+                        // Content visual width after zoom
+                        var visualW = naturalW * currentZoom;
+                        if (visualW &lt; availableW - 48) {
+                            var offset = Math.max(0, Math.floor((availableW - visualW) / 2));
                             canvas.style.marginLeft = offset + 'px';
                         } else {
                             canvas.style.marginLeft = '0px';
                         }
 
-                        if (currentZoom &gt; 1.0 &amp;&amp; naturalW &gt; 0) {
+                        if (currentZoom !== 1.0 &amp;&amp; naturalW &gt; 0) {
                             canvas.style.marginRight = Math.round(naturalW * (currentZoom - 1)) + 'px';
-                            canvas.style.marginBottom = Math.round(naturalH * (currentZoom - 1)) + 'px';
                         }
                     }
 
@@ -7447,7 +7453,7 @@
                 }
 
                 function setZoom(scale, isUserManual) {
-                    currentZoom = Math.max(0.35, Math.min(1.8, Math.round(scale * 100) / 100));
+                    currentZoom = Math.max(0.20, Math.min(1.8, Math.round(scale * 100) / 100));
                     if (isUserManual) {
                         userManualZoomApplied = true;
                         localStorage.setItem('horizon_canvas_zoom', currentZoom.toString());
@@ -7488,49 +7494,77 @@
                     var columns = canvas.querySelectorAll('.stage-column');
                     var colCount = columns.length;
 
-                    var naturalW = canvas.scrollWidth;
-                    var naturalH = canvas.scrollHeight;
+                    var fitScale = 1.0;
 
-                    if (startNode &amp;&amp; endNode &amp;&amp; currentLayoutMode === 'scroll') {
-                        var startR = startNode.getBoundingClientRect();
-                        var endR = endNode.getBoundingClientRect();
-                        var spanW = (endR.right - startR.left) + 40;
-                        if (spanW &gt; 60) {
-                            naturalW = spanW;
-                        }
-                    }
-
-                    var scaleW = (naturalW &gt; 0 &amp;&amp; availableW &gt; 0) ? (availableW / naturalW) : 1.0;
-                    var scaleH = (naturalH &gt; 0 &amp;&amp; availableH &gt; 0) ? (availableH / naturalH) : 1.0;
-                    var fitScale = Math.min(scaleW, scaleH);
-
-                    if (colCount &lt;= 1) {
-                        // Single stage: zoom in prominent up to 1.35x if space permits
-                        fitScale = Math.min(1.35, scaleW);
-                        if (scaleW &gt;= 1.25) {
-                            fitScale = 1.35;
-                        }
-                    } else if (colCount === 2) {
-                        fitScale = Math.min(1.20, fitScale);
-                        if (scaleW &gt;= 1.15) {
+                    if (currentLayoutMode === 'wrap') {
+                        // In Wrap view: stages wrap into multiple visual rows across the full width.
+                        // It is natural and intended for multi-row pipelines to scroll vertically.
+                        // Never crush multi-stage pipelines vertically in wrap mode!
+                        if (colCount &lt;= 1) {
+                            fitScale = 1.30;
+                        } else if (colCount === 2) {
                             fitScale = 1.15;
+                        } else if (colCount === 3) {
+                            fitScale = 1.05;
+                        } else {
+                            fitScale = 1.0;
                         }
-                    } else if (colCount === 3) {
-                        fitScale = Math.min(1.10, fitScale);
+
+                        // On very narrow viewports where a single card or stage column exceeds available width,
+                        // scale down gracefully so it doesn't clip
+                        var maxColW = 0;
+                        for (var i = 0; i &lt; columns.length; i++) {
+                            var cw = columns[i].offsetWidth;
+                            if (cw &gt; maxColW) maxColW = cw;
+                        }
+                        if (maxColW &gt; 0 &amp;&amp; availableW &lt; maxColW + 64) {
+                            var minWrapScale = (availableW / (maxColW + 64));
+                            fitScale = Math.min(fitScale, Math.max(0.6, minWrapScale));
+                        }
                     } else {
-                        // Multi-stage pipeline: scale so the entire pipeline fits comfortably
-                        fitScale = Math.min(1.0, fitScale);
+                        // In Canvas Flow (horizontal scroll) view:
+                        // Scale so the entire pipeline fits comfortably from Start to End
+                        var naturalW = canvas.scrollWidth;
+                        var naturalH = canvas.scrollHeight;
+
+                        if (startNode &amp;&amp; endNode) {
+                            var startR = startNode.getBoundingClientRect();
+                            var endR = endNode.getBoundingClientRect();
+                            var spanW = (endR.right - startR.left) + 40;
+                            if (spanW &gt; 60) {
+                                naturalW = spanW;
+                            }
+                        }
+
+                        var scaleW = (naturalW &gt; 0 &amp;&amp; availableW &gt; 0) ? (availableW / naturalW) : 1.0;
+                        var scaleH = (naturalH &gt; 0 &amp;&amp; availableH &gt; 0) ? (availableH / naturalH) : 1.0;
+                        fitScale = Math.min(scaleW, scaleH);
+
+                        if (colCount &lt;= 1) {
+                            fitScale = Math.min(1.35, Math.max(1.15, scaleW));
+                        } else if (colCount === 2) {
+                            fitScale = Math.min(1.20, Math.max(1.05, fitScale));
+                        } else if (colCount === 3) {
+                            fitScale = Math.min(1.10, Math.max(0.95, fitScale));
+                        } else {
+                            // Multi-stage pipeline: scale down to fit Start-to-End comfortably on screen
+                            fitScale = Math.min(1.0, fitScale);
+                        }
                     }
 
-                    fitScale = Math.max(0.35, Math.min(1.50, Math.round(fitScale * 100) / 100));
+                    fitScale = Math.max(0.20, Math.min(1.80, Math.round(fitScale * 100) / 100));
 
-                    setZoom(fitScale, false);
-                    flow.scrollLeft = 0;
-                    flow.scrollTop = 0;
+                    setZoom(fitScale, force);
+                    requestAnimationFrame(function() {
+                        if (flow) {
+                            flow.scrollLeft = 0;
+                            flow.scrollTop = 0;
+                        }
+                    });
                 }
 
                 function fitFlowToScreen() {
-                    userManualZoomApplied = false;
+                    userManualZoomApplied = true;
                     autoFitPipelineGraph(true);
                 }
 
@@ -7956,10 +7990,11 @@
                         if (data.agentsUsed &amp;&amp; data.agentsUsed.length) {
                             agentsContainer.innerHTML = data.agentsUsed.map(function(ag) {
                                 var esc = ag.replace(/'/g, "\\'");
-                                return '&lt;span class="agent-chip" title="Agent: ' + ag + ' — Click for agent details" onclick="event.stopPropagation(); openAgentModal(null, \'' + esc + '\')" role="button" tabindex="0"&gt;' + ICON_SERVER + ag + '&lt;/span&gt;';
+                                var displayAg = escapeHtml(ag);
+                                return '&lt;span class="agent-chip" title="Agent: ' + displayAg + ' — Click for agent details" onclick="event.stopPropagation(); openAgentModal(null, \'' + esc + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(null, \'' + esc + '\');}" role="button" tabindex="0"&gt;' + ICON_SERVER + displayAg + '&lt;/span&gt;';
                             }).join(' ');
                         } else {
-                            agentsContainer.innerHTML = '&lt;span class="agent-chip" title="Agent: Built-In Node — Click for agent details" onclick="event.stopPropagation(); openAgentModal(null, \'Built-In Node\')" role="button" tabindex="0"&gt;' + ICON_SERVER + 'Built-In Node&lt;/span&gt;';
+                            agentsContainer.innerHTML = '&lt;span class="agent-chip" title="Agent: Built-In Node — Click for agent details" onclick="event.stopPropagation(); openAgentModal(null, \'Built-In Node\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(null, \'Built-In Node\');}" role="button" tabindex="0"&gt;' + ICON_SERVER + 'Built-In Node&lt;/span&gt;';
                         }
                     }
 
@@ -9369,6 +9404,11 @@
 
                     for (var i = 0; i &lt; visibleColumns.length; i++) {
                         var col = visibleColumns[i];
+                        var isLastCol = (i === visibleColumns.length - 1);
+
+                        if (isLastCol) {
+                            html += '&lt;div class="terminal-end-group"&gt;';
+                        }
 
                         if (col.isParallel) {
                             var maxChildDur = 0;
@@ -9415,23 +9455,42 @@
                             html += renderStageCard(col.stage, null, 0);
                             html += '&lt;/div&gt;';
                         }
+
+                        if (isLastCol) {
+                            var runStatus = data.status || 'SUCCESS';
+                            var endStatusCls = 'status-' + runStatus;
+                            var endIcon = ICON_SUCCESS;
+                            if (runStatus === 'FAILED' || runStatus === 'FAILURE') endIcon = ICON_FAILED;
+                            else if (runStatus === 'UNSTABLE') endIcon = ICON_UNSTABLE;
+                            else if (runStatus === 'IN_PROGRESS') endIcon = ICON_IN_PROGRESS;
+                            else if (runStatus === 'ABORTED') endIcon = ICON_ABORTED;
+
+                            html += '&lt;div class="terminal-node terminal-end ' + endStatusCls + '" id="terminal-node-end" data-status="' + runStatus + '" title="Pipeline execution completed (' + runStatus + ')"&gt;';
+                            html += '  &lt;span class="terminal-label"&gt;End&lt;/span&gt;';
+                            html += '  &lt;div class="terminal-circle terminal-end-circle ' + endStatusCls + '" aria-hidden="true"&gt;';
+                            html += '    ' + endIcon;
+                            html += '  &lt;/div&gt;';
+                            html += '&lt;/div&gt;';
+                            html += '&lt;/div&gt;'; // close .terminal-end-group
+                        }
                     }
 
-                    // End Terminal Milestone Node (Image 2 style)
-                    var runStatus = data.status || 'SUCCESS';
-                    var endStatusCls = 'status-' + runStatus;
-                    var endIcon = ICON_SUCCESS;
-                    if (runStatus === 'FAILED' || runStatus === 'FAILURE') endIcon = ICON_FAILED;
-                    else if (runStatus === 'UNSTABLE') endIcon = ICON_UNSTABLE;
-                    else if (runStatus === 'IN_PROGRESS') endIcon = ICON_IN_PROGRESS;
-                    else if (runStatus === 'ABORTED') endIcon = ICON_ABORTED;
+                    if (visibleColumns.length === 0) {
+                        var runStatus = data.status || 'SUCCESS';
+                        var endStatusCls = 'status-' + runStatus;
+                        var endIcon = ICON_SUCCESS;
+                        if (runStatus === 'FAILED' || runStatus === 'FAILURE') endIcon = ICON_FAILED;
+                        else if (runStatus === 'UNSTABLE') endIcon = ICON_UNSTABLE;
+                        else if (runStatus === 'IN_PROGRESS') endIcon = ICON_IN_PROGRESS;
+                        else if (runStatus === 'ABORTED') endIcon = ICON_ABORTED;
 
-                    html += '&lt;div class="terminal-node terminal-end ' + endStatusCls + '" id="terminal-node-end" data-status="' + runStatus + '" title="Pipeline execution completed (' + runStatus + ')"&gt;';
-                    html += '  &lt;span class="terminal-label"&gt;End&lt;/span&gt;';
-                    html += '  &lt;div class="terminal-circle terminal-end-circle ' + endStatusCls + '" aria-hidden="true"&gt;';
-                    html += '    ' + endIcon;
-                    html += '  &lt;/div&gt;';
-                    html += '&lt;/div&gt;';
+                        html += '&lt;div class="terminal-node terminal-end ' + endStatusCls + '" id="terminal-node-end" data-status="' + runStatus + '" title="Pipeline execution completed (' + runStatus + ')"&gt;';
+                        html += '  &lt;span class="terminal-label"&gt;End&lt;/span&gt;';
+                        html += '  &lt;div class="terminal-circle terminal-end-circle ' + endStatusCls + '" aria-hidden="true"&gt;';
+                        html += '    ' + endIcon;
+                        html += '  &lt;/div&gt;';
+                        html += '&lt;/div&gt;';
+                    }
 
                     html += '&lt;/div&gt;'; // close #pipeline-flow-canvas
 
@@ -9695,24 +9754,104 @@
                             svg.appendChild(createFlowPathElement(src.x, src.y, tgt.x, tgt.y, src.status, tgt.status, src.bottomY, wrapFloor));
                         } else if (currCards.length === 1 &amp;&amp; nextCards.length &gt; 1) {
                             var src = getNodeAnchor(currCards[0], "right");
-                            svg.appendChild(createJunctionDotElement(src.x, src.y, src.status));
-                            for (var k = 0; k &lt; nextCards.length; k++) {
-                                var tgt = getNodeAnchor(nextCards[k], "left");
-                                svg.appendChild(createFlowPathElement(src.x, src.y, tgt.x, tgt.y, src.status, tgt.status, src.bottomY, wrapFloor));
+                            var nextAnchors = nextCards.map(function(c) { return getNodeAnchor(c, "left"); });
+                            var isRowBreak = false;
+                            for (var k = 0; k &lt; nextAnchors.length; k++) {
+                                if (nextAnchors[k].x &lt; src.x) { isRowBreak = true; break; }
+                            }
+                            if (isRowBreak) {
+                                var minTgtX = Infinity;
+                                var sumTgtY = 0;
+                                for (var k = 0; k &lt; nextAnchors.length; k++) {
+                                    if (nextAnchors[k].x &lt; minTgtX) minTgtX = nextAnchors[k].x;
+                                    sumTgtY += nextAnchors[k].y;
+                                }
+                                var divX = Math.max(12, minTgtX - 22);
+                                var divY = sumTgtY / nextAnchors.length;
+                                svg.appendChild(createJunctionDotElement(src.x, src.y, src.status));
+                                svg.appendChild(createFlowPathElement(src.x, src.y, divX, divY, src.status, "SUCCESS", src.bottomY, wrapFloor));
+                                svg.appendChild(createJunctionDotElement(divX, divY, src.status));
+                                for (var k = 0; k &lt; nextAnchors.length; k++) {
+                                    svg.appendChild(createFlowPathElement(divX, divY, nextAnchors[k].x, nextAnchors[k].y, src.status, nextAnchors[k].status));
+                                }
+                            } else {
+                                svg.appendChild(createJunctionDotElement(src.x, src.y, src.status));
+                                for (var k = 0; k &lt; nextCards.length; k++) {
+                                    var tgt = nextAnchors[k];
+                                    svg.appendChild(createFlowPathElement(src.x, src.y, tgt.x, tgt.y, src.status, tgt.status, src.bottomY, wrapFloor));
+                                }
                             }
                         } else if (currCards.length &gt; 1 &amp;&amp; nextCards.length === 1) {
                             var tgt = getNodeAnchor(nextCards[0], "left");
-                            for (var k = 0; k &lt; currCards.length; k++) {
-                                var src = getNodeAnchor(currCards[k], "right");
-                                svg.appendChild(createFlowPathElement(src.x, src.y, tgt.x, tgt.y, src.status, tgt.status, src.bottomY, wrapFloor));
+                            var srcAnchors = currCards.map(function(c) { return getNodeAnchor(c, "right"); });
+                            var maxSrcX = 0;
+                            var sumSrcY = 0;
+                            for (var k = 0; k &lt; srcAnchors.length; k++) {
+                                if (srcAnchors[k].x &gt; maxSrcX) maxSrcX = srcAnchors[k].x;
+                                sumSrcY += srcAnchors[k].y;
                             }
-                            svg.appendChild(createJunctionDotElement(tgt.x, tgt.y, tgt.status));
-                        } else {
-                            for (var k = 0; k &lt; currCards.length; k++) {
-                                var src = getNodeAnchor(currCards[k], "right");
-                                for (var m = 0; m &lt; nextCards.length; m++) {
-                                    var tgt = getNodeAnchor(nextCards[m], "left");
+                            var avgSrcY = sumSrcY / srcAnchors.length;
+
+                            if (tgt.x &lt; maxSrcX) {
+                                // Row break between parallel stack and next stage:
+                                // Fan-in all parallel branches to a single convergence junction dot on the source row,
+                                // then route ONE clean serpentine connector down to the target card
+                                var convX = maxSrcX + 20;
+                                var convY = avgSrcY;
+                                for (var k = 0; k &lt; srcAnchors.length; k++) {
+                                    var src = srcAnchors[k];
+                                    svg.appendChild(createFlowPathElement(src.x, src.y, convX, convY, src.status, "SUCCESS"));
+                                }
+                                svg.appendChild(createJunctionDotElement(convX, convY, tgt.status));
+                                svg.appendChild(createFlowPathElement(convX, convY, tgt.x, tgt.y, tgt.status, tgt.status, undefined, wrapFloor));
+                                svg.appendChild(createJunctionDotElement(tgt.x, tgt.y, tgt.status));
+                            } else {
+                                // Normal horizontal flow on the same row:
+                                for (var k = 0; k &lt; srcAnchors.length; k++) {
+                                    var src = srcAnchors[k];
                                     svg.appendChild(createFlowPathElement(src.x, src.y, tgt.x, tgt.y, src.status, tgt.status, src.bottomY, wrapFloor));
+                                }
+                                svg.appendChild(createJunctionDotElement(tgt.x, tgt.y, tgt.status));
+                            }
+                        } else {
+                            var srcAnchors = currCards.map(function(c) { return getNodeAnchor(c, "right"); });
+                            var nextAnchors = nextCards.map(function(c) { return getNodeAnchor(c, "left"); });
+                            var maxSrcX = 0;
+                            var sumSrcY = 0;
+                            for (var k = 0; k &lt; srcAnchors.length; k++) {
+                                if (srcAnchors[k].x &gt; maxSrcX) maxSrcX = srcAnchors[k].x;
+                                sumSrcY += srcAnchors[k].y;
+                            }
+                            var minTgtX = Infinity;
+                            var sumTgtY = 0;
+                            for (var m = 0; m &lt; nextAnchors.length; m++) {
+                                if (nextAnchors[m].x &lt; minTgtX) minTgtX = nextAnchors[m].x;
+                                sumTgtY += nextAnchors[m].y;
+                            }
+
+                            if (minTgtX &lt; maxSrcX) {
+                                // Row break between two parallel stacks:
+                                var convX = maxSrcX + 20;
+                                var convY = sumSrcY / srcAnchors.length;
+                                var divX = Math.max(12, minTgtX - 22);
+                                var divY = sumTgtY / nextAnchors.length;
+
+                                for (var k = 0; k &lt; srcAnchors.length; k++) {
+                                    svg.appendChild(createFlowPathElement(srcAnchors[k].x, srcAnchors[k].y, convX, convY, srcAnchors[k].status, "SUCCESS"));
+                                }
+                                svg.appendChild(createJunctionDotElement(convX, convY, "SUCCESS"));
+                                svg.appendChild(createFlowPathElement(convX, convY, divX, divY, "SUCCESS", "SUCCESS", undefined, wrapFloor));
+                                svg.appendChild(createJunctionDotElement(divX, divY, "SUCCESS"));
+                                for (var m = 0; m &lt; nextAnchors.length; m++) {
+                                    svg.appendChild(createFlowPathElement(divX, divY, nextAnchors[m].x, nextAnchors[m].y, "SUCCESS", nextAnchors[m].status));
+                                }
+                            } else {
+                                for (var k = 0; k &lt; srcAnchors.length; k++) {
+                                    var src = srcAnchors[k];
+                                    for (var m = 0; m &lt; nextCards.length; m++) {
+                                        var tgt = nextAnchors[m];
+                                        svg.appendChild(createFlowPathElement(src.x, src.y, tgt.x, tgt.y, src.status, tgt.status, src.bottomY, wrapFloor));
+                                    }
                                 }
                             }
                         }
@@ -9899,7 +10038,7 @@
                     card += '&lt;/div&gt;';
                     card += '&lt;div class="stage-meta-row"&gt;';
                     var escapedAgent = agentStr.replace(/'/g, "\\'");
-                    card += '&lt;span&gt;Agent:&lt;/span&gt;&lt;span class="stage-agent-badge" title="Agent: ' + agentStr.replace(/"/g, '&amp;quot;') + ' \u2014 Click for agent details" onclick="event.stopPropagation(); openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\')" role="button" tabindex="0" aria-label="View agent details for ' + agentStr.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_SERVER + agentStr + '&lt;/span&gt;';
+                    card += '&lt;span&gt;Agent:&lt;/span&gt;&lt;span class="stage-agent-badge" title="Agent: ' + agentStr.replace(/"/g, '&amp;quot;') + ' \u2014 Click for agent details" onclick="event.stopPropagation(); openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\');}" role="button" tabindex="0" aria-label="View agent details for ' + agentStr.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_SERVER + agentStr + '&lt;/span&gt;';
                     if (stage.isWaitingForAgent) {
                         var waitReason = stage.agentQueueReason || "Waiting for agent executor...";
                         card += ' &lt;span class="stage-agent-waiting-chip" title="' + waitReason.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_HOURGLASS + 'Waiting for Agent&lt;/span&gt;';
@@ -9941,7 +10080,7 @@
 
                     var displayAgent = stage.agent ? stage.agent : 'Built-in';
                     card += '&lt;div class="stage-compact-agent-row"&gt;';
-                    card += '&lt;span class="stage-agent-badge" style="max-width:125px;" title="Agent: ' + agentStr.replace(/"/g, '&amp;quot;') + ' \u2014 Click for agent details" onclick="event.stopPropagation(); openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\')" role="button" tabindex="0" aria-label="View agent details for ' + agentStr.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_SERVER + displayAgent + '&lt;/span&gt;';
+                    card += '&lt;span class="stage-agent-badge" style="max-width:125px;" title="Agent: ' + agentStr.replace(/"/g, '&amp;quot;') + ' \u2014 Click for agent details" onclick="event.stopPropagation(); openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\');}" role="button" tabindex="0" aria-label="View agent details for ' + agentStr.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_SERVER + displayAgent + '&lt;/span&gt;';
                     if (stage.isWaitingForAgent) {
                         var waitReasonCompact = stage.agentQueueReason || "Waiting for agent executor...";
                         card += ' &lt;span class="stage-agent-waiting-chip" style="font-size:0.64rem; padding:0 4px;" title="' + waitReasonCompact.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_HOURGLASS + 'Wait&lt;/span&gt;';
