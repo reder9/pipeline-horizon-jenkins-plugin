@@ -32,6 +32,8 @@ import org.jenkinsci.plugins.workflow.graph.StepNode;
 import org.jenkinsci.plugins.workflow.graphanalysis.DepthFirstScanner;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
+
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1048,68 +1050,195 @@ public class PipelineGraphAnalyzer {
         return step;
     }
 
+    static boolean isParallelChildOf(FlowNode childNode, FlowNode parentNode) {
+        if (childNode == null || parentNode == null) {
+            return false;
+        }
+        if (childNode.getAction(ThreadNameAction.class) != null) {
+            return true;
+        }
+        try {
+            for (BlockStartNode bsn : childNode.iterateEnclosingBlocks()) {
+                if (bsn.getId().equals(parentNode.getId())) {
+                    break;
+                }
+                if (bsn.getAction(ThreadNameAction.class) != null) {
+                    return true;
+                }
+                if (bsn instanceof StepStartNode) {
+                    StepDescriptor desc = ((StepStartNode) bsn).getDescriptor();
+                    if (desc != null && "parallel".equals(desc.getFunctionName())) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
+    }
+
     static List<StageModel> consolidateStages(List<StageModel> stages, Map<String, FlowNode> nodeMap, Map<String, BlockEndNode> startToEndMap) {
-        List<StageModel> result = new ArrayList<>();
+        if (stages == null || stages.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         Map<String, StageModel> stageById = new HashMap<>();
         for (StageModel s : stages) {
             stageById.put(s.getId(), s);
         }
 
+        Map<String, List<StageModel>> parallelChildrenMap = new LinkedHashMap<>();
+        Map<String, List<StageModel>> sequentialChildrenMap = new LinkedHashMap<>();
+        Set<String> absorbedStages = new HashSet<>();
+
         for (StageModel s : stages) {
             FlowNode sNode = nodeMap != null ? nodeMap.get(s.getId()) : null;
             StageModel parentStage = null;
+            boolean isParallelChild = false;
 
-            // 1. Primary resolution: Use FlowNode enclosing blocks hierarchy (works for both completed AND in-flight runs)
+            // 1. Primary resolution: Use FlowNode enclosing blocks hierarchy
             if (sNode != null) {
                 try {
                     for (BlockStartNode bsn : sNode.iterateEnclosingBlocks()) {
                         StageModel candidate = stageById.get(bsn.getId());
                         if (candidate != null && candidate != s) {
                             parentStage = candidate;
+                            FlowNode parentNode = nodeMap.get(candidate.getId());
+                            isParallelChild = isParallelChildOf(sNode, parentNode);
                             break;
                         }
                     }
                 } catch (Throwable ignored) {
                 }
-            }
+            } else {
+                // Secondary fallback ONLY for synthetic graphs or unit-test mocks where nodeMap is absent:
+                if (s.isParallelBranch() && startToEndMap != null) {
+                    long sId = 0L;
+                    try {
+                        sId = Long.parseLong(s.getId());
+                    } catch (NumberFormatException ignored) {}
 
-            // 2. Secondary fallback (e.g. for synthetic graphs or mocks): BlockEndNode span check
-            if (parentStage == null && startToEndMap != null) {
-                long sId = 0L;
-                try {
-                    sId = Long.parseLong(s.getId());
-                } catch (NumberFormatException ignored) {}
-
-                if (sId > 0) {
-                    for (StageModel candidateParent : result) {
-                        BlockEndNode parentEnd = startToEndMap.get(candidateParent.getId());
-                        if (parentEnd != null) {
-                            try {
-                                long parentStartId = Long.parseLong(candidateParent.getId());
-                                long parentEndId = Long.parseLong(parentEnd.getId());
-                                if (sId > parentStartId && sId < parentEndId) {
-                                    parentStage = candidateParent;
-                                    break;
-                                }
-                            } catch (NumberFormatException ignored) {}
+                    if (sId > 0) {
+                        for (StageModel candidateParent : stages) {
+                            if (candidateParent == s) continue;
+                            BlockEndNode parentEnd = startToEndMap.get(candidateParent.getId());
+                            if (parentEnd != null) {
+                                try {
+                                    long parentStartId = Long.parseLong(candidateParent.getId());
+                                    long parentEndId = Long.parseLong(parentEnd.getId());
+                                    if (sId > parentStartId && sId < parentEndId) {
+                                        parentStage = candidateParent;
+                                        isParallelChild = true;
+                                        break;
+                                    }
+                                } catch (NumberFormatException ignored) {}
+                            }
                         }
                     }
                 }
             }
 
             if (parentStage != null) {
-                parentStage.addChild(s);
-                s.setParallelBranch(true);
-                if (s.isHasArtifacts()) {
-                    parentStage.setHasArtifacts(true);
-                    parentStage.setArtifactCount(parentStage.getArtifactCount() + s.getArtifactCount());
-                    if (parentStage.getArtifacts() == null) {
-                        parentStage.setArtifacts(new ArrayList<>());
-                    }
-                    for (ArtifactModel art : s.getArtifacts()) {
-                        if (!parentStage.getArtifacts().contains(art)) {
-                            parentStage.addArtifact(art);
+                if (isParallelChild) {
+                    s.setParallelBranch(true);
+                    parallelChildrenMap.computeIfAbsent(parentStage.getId(), k -> new ArrayList<>()).add(s);
+                    absorbedStages.add(s.getId());
+                    if (s.isHasArtifacts()) {
+                        parentStage.setHasArtifacts(true);
+                        parentStage.setArtifactCount(parentStage.getArtifactCount() + s.getArtifactCount());
+                        if (parentStage.getArtifacts() == null) {
+                            parentStage.setArtifacts(new ArrayList<>());
                         }
+                        for (ArtifactModel art : s.getArtifacts()) {
+                            if (!parentStage.getArtifacts().contains(art)) {
+                                parentStage.addArtifact(art);
+                            }
+                        }
+                    }
+                } else {
+                    s.setParallelBranch(false);
+                    sequentialChildrenMap.computeIfAbsent(parentStage.getId(), k -> new ArrayList<>()).add(s);
+                }
+            }
+        }
+
+        List<StageModel> result = new ArrayList<>();
+        for (StageModel s : stages) {
+            if (absorbedStages.contains(s.getId())) {
+                continue;
+            }
+
+            List<StageModel> parChildren = parallelChildrenMap.get(s.getId());
+            List<StageModel> seqChildren = sequentialChildrenMap.get(s.getId());
+
+            if (parChildren != null && !parChildren.isEmpty()) {
+                // Stage has true parallel branches
+                s.setChildren(parChildren);
+                result.add(s);
+            } else if (seqChildren != null && !seqChildren.isEmpty()) {
+                if (seqChildren.size() == 1) {
+                    // Single sequential sub-stage (e.g. stage('Add Git Tag') { stages { stage('Test42 Common Git Tagging') } })
+                    StageModel child = seqChildren.get(0);
+                    absorbedStages.add(child.getId());
+                    if (child.getName() != null && !child.getName().trim().isEmpty()
+                            && !child.getName().trim().equalsIgnoreCase(s.getName().trim())) {
+                        s.setBranchName(child.getName().trim());
+                    }
+                    if (s.getSteps().isEmpty() && !child.getSteps().isEmpty()) {
+                        s.setSteps(new ArrayList<>(child.getSteps()));
+                    } else if (!child.getSteps().isEmpty()) {
+                        for (StepModel cStep : child.getSteps()) {
+                            boolean exists = false;
+                            for (StepModel exStep : s.getSteps()) {
+                                if (exStep.getId().equals(cStep.getId())) {
+                                    exists = true;
+                                    break;
+                                }
+                            }
+                            if (!exists) {
+                                s.addStep(cStep);
+                            }
+                        }
+                    }
+                    if (s.getDurationMillis() <= 0 && child.getDurationMillis() > 0) {
+                        s.setDurationMillis(child.getDurationMillis());
+                    }
+                    if ((s.getAgent() == null || s.getAgent().isEmpty()) && child.getAgent() != null) {
+                        s.setAgent(child.getAgent());
+                    }
+                    if (child.getStatus() != null && !"SUCCESS".equalsIgnoreCase(child.getStatus())) {
+                        s.setStatus(child.getStatus());
+                    }
+                    if (child.getError() != null && s.getError() == null) {
+                        s.setError(child.getError());
+                    }
+                    if (child.isHasArtifacts()) {
+                        s.setHasArtifacts(true);
+                        s.setArtifactCount(s.getArtifactCount() + child.getArtifactCount());
+                        if (s.getArtifacts() == null) {
+                            s.setArtifacts(new ArrayList<>());
+                        }
+                        for (ArtifactModel art : child.getArtifacts()) {
+                            if (!s.getArtifacts().contains(art)) {
+                                s.addArtifact(art);
+                            }
+                        }
+                    }
+                    List<StageModel> childPar = parallelChildrenMap.get(child.getId());
+                    if (childPar != null && !childPar.isEmpty()) {
+                        s.setChildren(childPar);
+                    }
+                    result.add(s);
+                } else {
+                    // Multiple sequential sub-stages (or outer pipeline wrapper)
+                    // Flatten sequential children into the result flow
+                    for (StageModel child : seqChildren) {
+                        List<StageModel> childPar = parallelChildrenMap.get(child.getId());
+                        if (childPar != null && !childPar.isEmpty()) {
+                            child.setChildren(childPar);
+                        }
+                        result.add(child);
+                        absorbedStages.add(child.getId());
                     }
                 }
             } else {
@@ -1117,7 +1246,7 @@ public class PipelineGraphAnalyzer {
             }
         }
 
-        // Synchronize parent stage status and duration with children
+        // Synchronize parent stage status and duration with children for parallel stages
         for (StageModel s : result) {
             if (s.getChildren() != null && !s.getChildren().isEmpty()) {
                 boolean hasFailure = false;
@@ -1169,6 +1298,7 @@ public class PipelineGraphAnalyzer {
 
         return result;
     }
+
 
     private static void populatePendingInputs(
             WorkflowRun run,

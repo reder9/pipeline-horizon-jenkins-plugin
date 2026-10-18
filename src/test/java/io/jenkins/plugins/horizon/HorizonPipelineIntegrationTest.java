@@ -234,4 +234,40 @@ class HorizonPipelineIntegrationTest {
         assertNotNull(stageRes.getResponseHeaderValue("X-Text-Size"));
         assertTrue(stageContent.contains("Line 1: Building project Alpha") || stageContent.contains("Line 2: Compiling sources"));
     }
+
+    @Test
+    void testSequentialNestedStagesAndOuterWrapperNotParallel(JenkinsRule jenkins) throws Exception {
+        WorkflowJob job = jenkins.createProject(WorkflowJob.class, "sequential-nested-test-job");
+        job.setDefinition(new CpsFlowDefinition(
+                "stage('Pipeline Wrapper') {\n" +
+                "    node {\n" +
+                "        stage('Checkout') {\n" +
+                "            echo 'Checking out code'\n" +
+                "        }\n" +
+                "        stage('Add Git Tag') {\n" +
+                "            stage('Git Tagging Substage') {\n" +
+                "                echo 'Tagging git release'\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "}", true));
+
+        WorkflowRun build = jenkins.buildAndAssertStatus(Result.SUCCESS, job);
+        assertNotNull(build);
+
+        RunDetailsModel details = PipelineGraphAnalyzer.buildRunDetails(build);
+        assertNotNull(details);
+        List<StageModel> stages = details.getStages();
+        assertNotNull(stages);
+
+        // Verify sequential stages are not parallel
+        for (StageModel s : stages) {
+            assertFalse(s.isParallelBranch(), "Stage " + s.getName() + " should not be a parallel branch");
+            assertTrue(s.getChildren() == null || s.getChildren().isEmpty(),
+                    "Stage " + s.getName() + " should not have parallel children");
+        }
+
+        assertTrue(stages.stream().anyMatch(s -> s.getName().contains("Checkout")));
+        assertTrue(stages.stream().anyMatch(s -> s.getName().contains("Add Git Tag")));
+    }
 }

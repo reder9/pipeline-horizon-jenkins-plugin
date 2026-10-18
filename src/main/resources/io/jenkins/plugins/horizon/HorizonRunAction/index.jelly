@@ -2835,6 +2835,22 @@
                         text-transform: uppercase;
                         line-height: 1.2;
                     }
+                    .stage-badge-substage {
+                        display: inline-flex;
+                        align-items: center;
+                        font-size: 0.62rem;
+                        font-weight: 600;
+                        color: #0369a1;
+                        background: #f0f9ff;
+                        border: 1px solid #bae6fd;
+                        padding: 0.5px 5px;
+                        border-radius: 3px;
+                        line-height: 1.2;
+                        max-width: 100%;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
                     .stage-node.is-optional {
                         border-left: 3.5px solid #8b5cf6;
                     }
@@ -5586,6 +5602,11 @@
                         color: #c084fc;
                         background: rgba(168, 85, 247, 0.18);
                         border: 1px solid rgba(168, 85, 247, 0.4);
+                    }
+                    .horizon-container.theme-dark .stage-badge-substage {
+                        color: #38bdf8;
+                        background: rgba(56, 189, 248, 0.15);
+                        border: 1px solid rgba(56, 189, 248, 0.35);
                     }
                     .horizon-container.theme-dark .stage-node.is-optional {
                         border-left: 3.5px solid #a855f7;
@@ -10649,13 +10670,16 @@
                     var bottleneckBadge = isBottleneck
                         ? '&lt;span class="stage-bottleneck-badge" title="Bottleneck stage: Took ' + formatDuration(stage.durationMillis) + ' (' + pctOfTotal + '% of total run)"&gt;' + ICON_BOLT + 'Longest&lt;/span&gt;'
                         : '';
+                    var subStageBadge = (!isParallelChild &amp;&amp; stage.branchName &amp;&amp; stage.branchName !== stage.name)
+                        ? '&lt;span class="stage-badge-substage" title="Sub-stage: ' + escapeHtml(stage.branchName) + '"&gt;' + escapeHtml(stage.branchName) + '&lt;/span&gt;'
+                        : '';
                     var currentAttr = isSelected ? ' aria-current="step"' : '';
                     var card = '&lt;div id="stage-card-' + stage.id + '" data-status="' + status + '" class="stage-node status-' + status + optionalClass + selectedClass + '" role="button" tabindex="0" aria-pressed="' + (isSelected ? 'true' : 'false') + '"' + currentAttr + ' aria-label="' + a11yLabel.replace(/"/g, '&amp;quot;') + '" onclick="selectStage(\'' + stage.id + '\')" onkeydown="handleStageKeyNav(event, \'' + stage.id + '\')"&gt;';
                     card += '&lt;div class="stage-selected-pill" aria-hidden="true"&gt;&lt;span class="stage-selected-pill-dot"&gt;&lt;/span&gt;Viewing&lt;/div&gt;';
                     card += '&lt;div class="stage-active-strip" aria-hidden="true"&gt;&lt;/div&gt;';
                     card += '&lt;div class="stage-drawer-pointer" aria-hidden="true"&gt;&lt;/div&gt;';
                     card += '&lt;div class="stage-header"&gt;';
-                    card += '&lt;div class="stage-title-wrap"&gt;&lt;div class="stage-name" title="' + stage.name.replace(/"/g, '&amp;quot;') + '"&gt;' + stage.name + '&lt;/div&gt;' + optionalBadge + bottleneckBadge + '&lt;/div&gt;';
+                    card += '&lt;div class="stage-title-wrap"&gt;&lt;div class="stage-name" title="' + stage.name.replace(/"/g, '&amp;quot;') + '"&gt;' + stage.name + '&lt;/div&gt;' + optionalBadge + bottleneckBadge + subStageBadge + '&lt;/div&gt;';
                     card += '&lt;div class="stage-card-actions"&gt;';
                     card += '&lt;span class="stage-status-icon" title="Stage status: ' + status + '"&gt;' + icon + '&lt;/span&gt;';
                     var escapedStageName = stage.name.replace(/'/g, "\\'");
