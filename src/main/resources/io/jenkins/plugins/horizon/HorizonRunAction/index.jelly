@@ -10937,7 +10937,17 @@
                         html += '&lt;/div&gt;';
                         html += '&lt;div class="inline-log-actions"&gt;';
                         html += '&lt;span class="inline-log-line-count" id="log-count-' + step.id + '"&gt;0 lines&lt;/span&gt;';
-                        html += '&lt;button class="inline-log-btn live-tail-btn live-tail-active" id="btn-tail-step-' + step.id + '" onclick="toggleStepLiveTail(\'' + step.id + '\')" title="Toggle auto-following live log stream"&gt;&lt;span class="live-tail-dot"&gt;&lt;/span&gt;&lt;span id="label-tail-step-' + step.id + '"&gt;Live Tail&lt;/span&gt;&lt;/button&gt;';
+
+                        var isRunActive = !!(graphData &amp;&amp; (graphData.building || graphData.result === 'IN_PROGRESS'));
+                        var isStepActive = (st === 'IN_PROGRESS');
+                        var isStageActive = (stage &amp;&amp; stage.status === 'IN_PROGRESS');
+                        var isFinishedStatus = (st === 'SUCCESS' || st === 'FAILED' || st === 'FAILURE' || st === 'ABORTED' || st === 'UNSTABLE' || st.indexOf('SKIPPED') !== -1 || st === 'NOT_EXECUTED');
+                        var showLiveTail = isRunActive &amp;&amp; (isStepActive || (isStageActive &amp;&amp; !isFinishedStatus));
+
+                        if (showLiveTail) {
+                            html += '&lt;button class="inline-log-btn live-tail-btn live-tail-active" id="btn-tail-step-' + step.id + '" onclick="toggleStepLiveTail(\'' + step.id + '\')" title="Toggle auto-following live log stream"&gt;&lt;span class="live-tail-dot"&gt;&lt;/span&gt;&lt;span id="label-tail-step-' + step.id + '"&gt;Live Tail&lt;/span&gt;&lt;/button&gt;';
+                        }
+
                         html += '&lt;button class="inline-log-btn" id="btn-share-step-' + step.id + '" onclick="copyCurrentDeepLink(\'step\', \'' + step.id + '\')" title="Copy direct link to this step / line"&gt;';
                         html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/&gt;&lt;path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/&gt;&lt;/svg&gt;';
                         html += '&lt;span id="btn-share-label-' + step.id + '"&gt;Share Step&lt;/span&gt;';
@@ -11344,16 +11354,22 @@
                         }, 90);
                     } else {
                         clearLineSelection(false);
-                        var shouldTail = (activeLiveTailSteps[stepId] !== false);
+                        var tailBtn = document.getElementById('btn-tail-step-' + stepId);
+                        var shouldTail = tailBtn &amp;&amp; (activeLiveTailSteps[stepId] !== false);
                         if (shouldTail) {
                             terminal.scrollTop = terminal.scrollHeight;
+                        } else {
+                            terminal.scrollTop = 0;
                         }
                     }
 
                     if (!terminal._scrollHandlerAttached) {
                         terminal.addEventListener('scroll', function() {
-                            var atBottom = (terminal.scrollHeight - terminal.scrollTop - terminal.clientHeight &lt;= 30);
-                            setStepLiveTailState(stepId, atBottom);
+                            var tailBtn = document.getElementById('btn-tail-step-' + stepId);
+                            if (tailBtn) {
+                                var atBottom = (terminal.scrollHeight - terminal.scrollTop - terminal.clientHeight &lt;= 30);
+                                setStepLiveTailState(stepId, atBottom);
+                            }
                         });
                         terminal._scrollHandlerAttached = true;
                     }
