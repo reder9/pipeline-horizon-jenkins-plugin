@@ -4662,6 +4662,235 @@
                         border-color: #334155;
                         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
                     }
+
+                    /* Phase 3: Stage Picker Navigator Dropdown */
+                    .stage-picker-dropdown-wrap {
+                        position: relative;
+                        display: inline-flex;
+                    }
+                    .stage-picker-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.4rem;
+                        background: #f1f5f9;
+                        border: 1px solid #cbd5e1;
+                        color: #334155;
+                        padding: 0.25rem 0.65rem;
+                        border-radius: 6px;
+                        font-size: 0.76rem;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.15s ease;
+                        max-width: 220px;
+                    }
+                    .stage-picker-btn:hover {
+                        background: #e2e8f0;
+                        color: #0f172a;
+                        border-color: #94a3b8;
+                    }
+                    .stage-picker-btn #stage-picker-btn-text {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    .horizon-container.theme-dark .stage-picker-btn {
+                        background: #1e293b;
+                        border-color: #334155;
+                        color: #cbd5e1;
+                    }
+                    .horizon-container.theme-dark .stage-picker-btn:hover {
+                        background: #334155;
+                        color: #f8fafc;
+                        border-color: #475569;
+                    }
+                    .stage-picker-menu {
+                        position: absolute;
+                        top: calc(100% + 5px);
+                        right: 0;
+                        width: 280px;
+                        max-height: 380px;
+                        background: #ffffff;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 8px;
+                        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+                        z-index: 1000;
+                        display: flex;
+                        flex-direction: column;
+                        overflow: hidden;
+                    }
+                    .horizon-container.theme-dark .stage-picker-menu {
+                        background: #0f172a;
+                        border-color: #334155;
+                        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.35);
+                    }
+                    .stage-picker-search-wrap {
+                        padding: 0.5rem;
+                        border-bottom: 1px solid #e2e8f0;
+                        background: rgba(248, 250, 252, 0.8);
+                    }
+                    .horizon-container.theme-dark .stage-picker-search-wrap {
+                        border-bottom-color: #1e293b;
+                        background: rgba(15, 23, 42, 0.9);
+                    }
+                    .stage-picker-search {
+                        width: 100%;
+                        background: #ffffff;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 5px;
+                        color: #0f172a;
+                        padding: 0.3rem 0.55rem;
+                        font-size: 0.75rem;
+                        outline: none;
+                        box-sizing: border-box;
+                    }
+                    .stage-picker-search:focus {
+                        border-color: #38bdf8;
+                        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+                    }
+                    .horizon-container.theme-dark .stage-picker-search {
+                        background: #1e293b;
+                        border-color: #334155;
+                        color: #f1f5f9;
+                    }
+                    .stage-picker-items-list {
+                        overflow-y: auto;
+                        max-height: 290px;
+                        padding: 0.25rem 0;
+                    }
+                    .stage-picker-item {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 0.38rem 0.65rem;
+                        cursor: pointer;
+                        transition: background 0.12s ease;
+                        font-size: 0.76rem;
+                        color: #334155;
+                        text-decoration: none;
+                    }
+                    .horizon-container.theme-dark .stage-picker-item {
+                        color: #cbd5e1;
+                    }
+                    .stage-picker-item:hover,
+                    .stage-picker-item:focus {
+                        background: #f1f5f9;
+                        color: #0284c7;
+                        outline: none;
+                    }
+                    .horizon-container.theme-dark .stage-picker-item:hover,
+                    .horizon-container.theme-dark .stage-picker-item:focus {
+                        background: #1e293b;
+                        color: #38bdf8;
+                    }
+                    .stage-picker-item.active {
+                        background: rgba(14, 165, 233, 0.12);
+                        font-weight: 600;
+                        color: #0284c7;
+                    }
+                    .horizon-container.theme-dark .stage-picker-item.active {
+                        background: rgba(56, 189, 248, 0.15);
+                        color: #38bdf8;
+                    }
+                    .stage-picker-item-left {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.45rem;
+                        min-width: 0;
+                        flex: 1;
+                    }
+                    .stage-picker-dot {
+                        width: 7px;
+                        height: 7px;
+                        border-radius: 50%;
+                        flex-shrink: 0;
+                    }
+                    .stage-picker-dot.dot-success { background: #22c55e; }
+                    .stage-picker-dot.dot-failed { background: #ef4444; }
+                    .stage-picker-dot.dot-unstable { background: #f59e0b; }
+                    .stage-picker-dot.dot-in-progress { background: #0ea5e9; }
+                    .stage-picker-dot.dot-paused-input { background: #a855f7; }
+                    .stage-picker-dot.dot-skipped { background: #94a3b8; }
+                    .stage-picker-name {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    .stage-picker-dur {
+                        font-size: 0.7rem;
+                        color: #64748b;
+                        margin-left: 0.4rem;
+                        flex-shrink: 0;
+                        font-variant-numeric: tabular-nums;
+                    }
+                    .horizon-container.theme-dark .stage-picker-dur {
+                        color: #94a3b8;
+                    }
+
+                    /* Phase 3: Auto-Jump Notice and Failure Pulse */
+                    .stage-badge-autojump {
+                        background: rgba(239, 68, 68, 0.15) !important;
+                        color: #ef4444 !important;
+                        border: 1px solid rgba(239, 68, 68, 0.35) !important;
+                        font-weight: 700;
+                        letter-spacing: 0.04em;
+                    }
+                    .autojump-notice-bar {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 0.45rem 0.85rem;
+                        background: rgba(239, 68, 68, 0.08);
+                        border: 1px solid rgba(239, 68, 68, 0.25);
+                        border-radius: 6px;
+                        margin-bottom: 0.65rem;
+                        font-size: 0.78rem;
+                        color: #ef4444;
+                        animation: fadeInNotice 0.25s ease;
+                    }
+                    .autojump-notice-content {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.45rem;
+                    }
+                    .autojump-btn-reset {
+                        background: #ef4444;
+                        color: #ffffff;
+                        border: none;
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        font-size: 0.72rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: opacity 0.15s;
+                    }
+                    .autojump-btn-reset:hover {
+                        opacity: 0.88;
+                    }
+                    .autojump-btn-dismiss {
+                        background: transparent;
+                        border: none;
+                        color: #ef4444;
+                        font-size: 0.85rem;
+                        cursor: pointer;
+                        padding: 0 4px;
+                        line-height: 1;
+                        opacity: 0.7;
+                    }
+                    .autojump-btn-dismiss:hover {
+                        opacity: 1;
+                    }
+                    @keyframes fadeInNotice {
+                        from { opacity: 0; transform: translateY(-4px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                    @keyframes errorLinePulse {
+                        0% { background: rgba(239, 68, 68, 0.45); }
+                        50% { background: rgba(239, 68, 68, 0.28); }
+                        100% { background: rgba(239, 68, 68, 0.14); }
+                    }
+                    .error-pulse-highlight {
+                        animation: errorLinePulse 2.8s ease-out;
+                    }
                     .inline-log-actions {
                         display: flex;
                         align-items: center;
@@ -6626,6 +6855,21 @@
                                 <span class="ctrl-toggle-track" aria-hidden="true"></span>
                                 <span class="ctrl-toggle-label">Hide Skipped</span>
                             </label>
+                            <div class="stage-picker-dropdown-wrap" id="stage-picker-wrap">
+                                <button type="button" class="ctrl-btn stage-picker-btn" id="btn-stage-picker" onclick="toggleStagePicker(event)" aria-haspopup="true" aria-expanded="false" title="Jump directly to any pipeline stage (Hotkey: s)">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; flex-shrink:0;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <span id="stage-picker-btn-text">Jump to Stage...</span>
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div id="stage-picker-menu" class="stage-picker-menu" style="display:none;" role="menu">
+                                    <div class="stage-picker-search-wrap">
+                                        <input type="text" id="stage-picker-search-input" class="stage-picker-search" placeholder="Filter stages..." oninput="filterStagePickerItems(this.value)" onclick="event.stopPropagation()" onkeydown="handleStagePickerKey(event)" />
+                                    </div>
+                                    <div id="stage-picker-items" class="stage-picker-items-list" role="listbox">
+                                        <!-- Dynamically rendered -->
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="graph-canvas-container" style="position:relative;">
@@ -6677,6 +6921,10 @@
                             <span id="stage-banner-optional-badge" class="stage-banner-badge stage-badge-optional" style="display:none;">OPTIONAL</span>
                             <span id="stage-banner-bottleneck-badge" class="stage-banner-badge stage-badge-bottleneck" style="display:none;" title="Longest running stage in this pipeline"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px; margin-right:3px; flex-shrink:0;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>LONGEST STAGE</span>
                             <span id="stage-banner-variance-badge" class="stage-banner-badge" style="display:none;"></span>
+                            <span id="stage-banner-autojump-badge" class="stage-banner-badge stage-badge-autojump" style="display:none;" title="Auto-jumped to failed step on initial load">
+                                <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px; margin-right:3px; flex-shrink:0;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                                <span id="stage-banner-autojump-text">AUTO-JUMP</span>
+                            </span>
                         </div>
                         <div class="stage-banner-right">
                             <div id="stage-banner-duration" class="stage-banner-meta-item" title="Stage duration" style="display:none;">
@@ -6722,6 +6970,18 @@
                                     </a>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Auto-Jump Notice Bar -->
+                    <div id="autojump-notice-bar" class="autojump-notice-bar" style="display:none;" role="status">
+                        <div class="autojump-notice-content">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#ef4444; flex-shrink:0;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                            <span id="autojump-notice-text">Auto-jumped directly to failure log.</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <button type="button" class="autojump-btn-reset" onclick="resetPipelineViewToStart()">Reset to Start</button>
+                            <button type="button" class="autojump-btn-dismiss" onclick="dismissAutoJumpNotice()" title="Dismiss notice">&#x2715;</button>
                         </div>
                     </div>
 
@@ -7002,6 +7262,7 @@
                                     <div class="shortcut-row"><span class="shortcut-desc">Wrap Rows layout</span><div class="shortcut-keys"><kbd class="hkbd">2</kbd></div></div>
                                     <div class="shortcut-row"><span class="shortcut-desc">Fit pipeline to screen</span><div class="shortcut-keys"><kbd class="hkbd">f</kbd></div></div>
                                     <div class="shortcut-row"><span class="shortcut-desc">Select previous / next stage</span><div class="shortcut-keys"><kbd class="hkbd">&#8592;</kbd><kbd class="hkbd">&#8594;</kbd></div></div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Open stage jump picker</span><div class="shortcut-keys"><kbd class="hkbd">s</kbd></div></div>
                                 </div>
                                 <div class="shortcuts-section">
                                     <div class="shortcuts-section-title">Stage Steps &amp; Logs</div>
@@ -9742,18 +10003,38 @@
                     }
                     setTimeout(drawFlowConnectors, 25);
 
-                    // Re-select stage from URL hash if present, otherwise active or first stage
+                    // Re-select stage from URL hash if present, otherwise auto-jump to failure / active, or first stage
                     var hashApplied = applyHashSelection(true);
                     if (!hashApplied) {
-                        var isCurrentlyVisible = selectedStageId &amp;&amp; document.getElementById('stage-card-' + selectedStageId);
-                        if (isCurrentlyVisible) {
-                            selectStage(selectedStageId, true);
-                        } else if (visibleColumns.length &gt; 0) {
-                            var firstCol = visibleColumns[0];
-                            var firstStage = firstCol.isParallel ? firstCol.children[0] : firstCol.stage;
-                            selectStage(firstStage.id, true);
+                        if (!window._horizonInitialAutoJumpDone) {
+                            window._horizonInitialAutoJumpDone = true;
+                            var autoTarget = findAutoJumpTarget(graphData);
+                            if (autoTarget &amp;&amp; autoTarget.stage) {
+                                autoTarget.stage._isAutoJump = true;
+                                selectStage(autoTarget.stage.id, true, autoTarget.step ? autoTarget.step.id : null);
+                                setTimeout(function() {
+                                    scrollStageIntoPipelineView(autoTarget.stage.id, true);
+                                }, 120);
+                                if (autoTarget.type === 'failure' || autoTarget.type === 'unstable') {
+                                    showAutoJumpNotice(autoTarget);
+                                }
+                            } else if (visibleColumns.length &gt; 0) {
+                                var firstCol = visibleColumns[0];
+                                var firstStage = firstCol.isParallel ? firstCol.children[0] : firstCol.stage;
+                                selectStage(firstStage.id, true);
+                            }
+                        } else {
+                            var isCurrentlyVisible = selectedStageId &amp;&amp; document.getElementById('stage-card-' + selectedStageId);
+                            if (isCurrentlyVisible) {
+                                selectStage(selectedStageId, true);
+                            } else if (visibleColumns.length &gt; 0) {
+                                var firstCol = visibleColumns[0];
+                                var firstStage = firstCol.isParallel ? firstCol.children[0] : firstCol.stage;
+                                selectStage(firstStage.id, true);
+                            }
                         }
                     }
+                    renderStagePickerList();
                 }
 
                 function getFlowStatusClass(srcStatus, tgtStatus) {
@@ -10907,6 +11188,12 @@
                     renderStageHeaderBanner(stage);
                     renderStepAccordionList(stage, targetStepId, targetLineRange);
                     renderPipelineActionsRestartList();
+
+                    var pickerLabel = document.getElementById('stage-picker-btn-text');
+                    if (pickerLabel &amp;&amp; stage) {
+                        pickerLabel.innerText = stage.name;
+                        pickerLabel.title = "Current Stage: " + stage.name + " (Click or press 's' to switch)";
+                    }
                 }
 
                 function renderStageHeaderBanner(stage) {
@@ -10940,6 +11227,11 @@
                     }
 
                     banner.className = 'stage-header-banner ' + bannerStatusClass;
+
+                    var ajBadge = document.getElementById('stage-banner-autojump-badge');
+                    if (ajBadge &amp;&amp; !stage._isAutoJump) {
+                        ajBadge.style.display = 'none';
+                    }
 
                     var iconEl = document.getElementById('stage-banner-status-icon');
                     if (iconEl) iconEl.innerHTML = iconSvg;
@@ -11630,7 +11922,16 @@
                         clearLineSelection(false);
                         var tailBtn = document.getElementById('btn-tail-step-' + stepId);
                         var shouldTail = tailBtn &amp;&amp; (activeLiveTailSteps[stepId] !== false);
-                        if (shouldTail) {
+                        var firstErrEl = terminal.querySelector('.log-line.log-line-error');
+                        if (firstErrEl) {
+                            setTimeout(function() {
+                                firstErrEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                                firstErrEl.classList.remove('error-pulse-highlight');
+                                void firstErrEl.offsetWidth;
+                                firstErrEl.classList.add('error-pulse-highlight');
+                                setTimeout(function() { firstErrEl.classList.remove('error-pulse-highlight'); }, 2800);
+                            }, 70);
+                        } else if (shouldTail) {
                             terminal.scrollTop = terminal.scrollHeight;
                         } else {
                             terminal.scrollTop = 0;
@@ -11795,6 +12096,253 @@
                     }
                 }
 
+                function toggleStagePicker(event) {
+                    if (event) event.stopPropagation();
+                    var menu = document.getElementById('stage-picker-menu');
+                    if (!menu) return;
+                    var isOpen = menu.style.display !== 'none';
+                    if (isOpen) {
+                        closeStagePicker();
+                    } else {
+                        openStagePicker();
+                    }
+                }
+
+                function openStagePicker() {
+                    var menu = document.getElementById('stage-picker-menu');
+                    var btn = document.getElementById('btn-stage-picker');
+                    if (!menu) return;
+                    renderStagePickerList();
+                    menu.style.display = 'flex';
+                    if (btn) btn.setAttribute('aria-expanded', 'true');
+                    var searchInput = document.getElementById('stage-picker-search-input');
+                    if (searchInput) {
+                        searchInput.value = '';
+                        setTimeout(function() { searchInput.focus(); }, 40);
+                    }
+                }
+
+                function closeStagePicker() {
+                    var menu = document.getElementById('stage-picker-menu');
+                    var btn = document.getElementById('btn-stage-picker');
+                    if (menu) menu.style.display = 'none';
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                }
+
+                function renderStagePickerList(filterQuery) {
+                    var listContainer = document.getElementById('stage-picker-items');
+                    if (!listContainer || !graphData || !graphData.stages) return;
+
+                    var allStages = getAllStagesFlat(graphData.stages);
+                    var q = (filterQuery || '').trim().toLowerCase();
+                    var html = '';
+
+                    for (var i = 0; i &lt; allStages.length; i++) {
+                        var st = allStages[i];
+                        if (st.name === 'Declarative: Post Actions') continue;
+                        if (q &amp;&amp; st.name.toLowerCase().indexOf(q) === -1) continue;
+
+                        var stat = (st.status || 'SUCCESS').toUpperCase();
+                        var dotCls = 'dot-success';
+                        if (stat === 'FAILED' || stat === 'FAILURE') dotCls = 'dot-failed';
+                        else if (stat === 'UNSTABLE') dotCls = 'dot-unstable';
+                        else if (stat === 'IN_PROGRESS') dotCls = 'dot-in-progress';
+                        else if (stat === 'PAUSED_INPUT') dotCls = 'dot-paused-input';
+                        else if (stat.indexOf('SKIPPED') !== -1 || stat === 'NOT_EXECUTED') dotCls = 'dot-skipped';
+
+                        var isAct = (st.id === selectedStageId);
+                        var durStr = st.durationMillis ? formatStepDuration(st.durationMillis) : '';
+
+                        html += '&lt;div class="stage-picker-item' + (isAct ? ' active' : '') + '" role="option" aria-selected="' + (isAct ? 'true' : 'false') + '" tabindex="0" onclick="selectStageFromPicker(\'' + st.id + '\')" onkeydown="handleStagePickerItemKey(event, \'' + st.id + '\')"&gt;';
+                        html += '&lt;div class="stage-picker-item-left"&gt;';
+                        html += '&lt;span class="stage-picker-dot ' + dotCls + '" aria-hidden="true"&gt;&lt;/span&gt;';
+                        html += '&lt;span class="stage-picker-name" title="' + escapeHtml(st.name) + '"&gt;' + escapeHtml(st.name) + '&lt;/span&gt;';
+                        html += '&lt;/div&gt;';
+                        if (durStr) {
+                            html += '&lt;span class="stage-picker-dur"&gt;' + durStr + '&lt;/span&gt;';
+                        }
+                        html += '&lt;/div&gt;';
+                    }
+
+                    if (!html) {
+                        html = '&lt;div style="padding:0.75rem; text-align:center; color:#94a3b8; font-size:0.75rem;"&gt;No stages match filter&lt;/div&gt;';
+                    }
+                    listContainer.innerHTML = html;
+                }
+
+                function filterStagePickerItems(query) {
+                    renderStagePickerList(query);
+                }
+
+                function selectStageFromPicker(stageId) {
+                    closeStagePicker();
+                    selectStage(stageId, false);
+                    setTimeout(function() {
+                        scrollStageIntoPipelineView(stageId, true);
+                    }, 50);
+                }
+
+                function handleStagePickerKey(event) {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        closeStagePicker();
+                        var btn = document.getElementById('btn-stage-picker');
+                        if (btn) btn.focus();
+                    } else if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        var firstItem = document.querySelector('.stage-picker-item');
+                        if (firstItem) firstItem.focus();
+                    }
+                }
+
+                function handleStagePickerItemKey(event, stageId) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        selectStageFromPicker(stageId);
+                    } else if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        var next = event.target.nextElementSibling;
+                        if (next &amp;&amp; next.classList.contains('stage-picker-item')) next.focus();
+                    } else if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        var prev = event.target.previousElementSibling;
+                        if (prev &amp;&amp; prev.classList.contains('stage-picker-item')) {
+                            prev.focus();
+                        } else {
+                            var search = document.getElementById('stage-picker-search-input');
+                            if (search) search.focus();
+                        }
+                    } else if (event.key === 'Escape') {
+                        event.preventDefault();
+                        closeStagePicker();
+                        var btn = document.getElementById('btn-stage-picker');
+                        if (btn) btn.focus();
+                    }
+                }
+
+                function findAutoJumpTarget(data) {
+                    if (!data || !data.stages || data.stages.length === 0) return null;
+                    var allStages = getAllStagesFlat(data.stages);
+
+                    // 1. First look for FAILED or FAILURE
+                    for (var i = 0; i &lt; allStages.length; i++) {
+                        var st = allStages[i];
+                        var status = (st.status || '').toUpperCase();
+                        if (status === 'FAILED' || status === 'FAILURE') {
+                            var failStep = null;
+                            if (st.steps &amp;&amp; st.steps.length &gt; 0) {
+                                for (var s = 0; s &lt; st.steps.length; s++) {
+                                    var stepStat = (st.steps[s].status || '').toUpperCase();
+                                    if (stepStat === 'FAILED' || stepStat === 'FAILURE') {
+                                        failStep = st.steps[s];
+                                        break;
+                                    }
+                                }
+                                if (!failStep) failStep = st.steps[st.steps.length - 1];
+                            }
+                            return { stage: st, step: failStep, type: 'failure' };
+                        }
+                    }
+
+                    // 2. Next look for UNSTABLE
+                    for (var i = 0; i &lt; allStages.length; i++) {
+                        var st = allStages[i];
+                        var status = (st.status || '').toUpperCase();
+                        if (status === 'UNSTABLE') {
+                            var unstStep = null;
+                            if (st.steps &amp;&amp; st.steps.length &gt; 0) {
+                                for (var s = 0; s &lt; st.steps.length; s++) {
+                                    if ((st.steps[s].status || '').toUpperCase() === 'UNSTABLE') {
+                                        unstStep = st.steps[s];
+                                        break;
+                                    }
+                                }
+                            }
+                            return { stage: st, step: unstStep, type: 'unstable' };
+                        }
+                    }
+
+                    // 3. Next look for PAUSED_INPUT
+                    for (var i = 0; i &lt; allStages.length; i++) {
+                        var st = allStages[i];
+                        if ((st.status || '').toUpperCase() === 'PAUSED_INPUT') {
+                            var pausedStep = null;
+                            if (st.steps &amp;&amp; st.steps.length &gt; 0) {
+                                for (var s = 0; s &lt; st.steps.length; s++) {
+                                    if ((st.steps[s].status || '').toUpperCase() === 'PAUSED_INPUT') {
+                                        pausedStep = st.steps[s];
+                                        break;
+                                    }
+                                }
+                            }
+                            return { stage: st, step: pausedStep, type: 'paused_input' };
+                        }
+                    }
+
+                    // 4. If build is active, look for IN_PROGRESS
+                    if (data.building || data.result === 'IN_PROGRESS') {
+                        for (var i = 0; i &lt; allStages.length; i++) {
+                            var st = allStages[i];
+                            if ((st.status || '').toUpperCase() === 'IN_PROGRESS') {
+                                var progStep = null;
+                                if (st.steps &amp;&amp; st.steps.length &gt; 0) {
+                                    for (var s = 0; s &lt; st.steps.length; s++) {
+                                        if ((st.steps[s].status || '').toUpperCase() === 'IN_PROGRESS') {
+                                            progStep = st.steps[s];
+                                            break;
+                                        }
+                                    }
+                                }
+                                return { stage: st, step: progStep, type: 'in_progress' };
+                            }
+                        }
+                    }
+
+                    return null;
+                }
+
+                function showAutoJumpNotice(autoTarget) {
+                    var noticeBar = document.getElementById('autojump-notice-bar');
+                    var noticeText = document.getElementById('autojump-notice-text');
+                    var badge = document.getElementById('stage-banner-autojump-badge');
+                    var badgeText = document.getElementById('stage-banner-autojump-text');
+                    if (!noticeBar || !noticeText) return;
+
+                    var stName = autoTarget.stage ? autoTarget.stage.name : '';
+                    var spName = autoTarget.step ? (autoTarget.step.displayName || autoTarget.step.name) : '';
+                    var targetDesc = spName ? ('step "' + spName + '" in stage "' + stName + '"') : ('stage "' + stName + '"');
+
+                    noticeText.innerHTML = '&lt;strong&gt;Failure Auto-Jump:&lt;/strong&gt; Landed directly on failed ' + escapeHtml(targetDesc);
+                    noticeBar.style.display = 'flex';
+
+                    if (badge) {
+                        badge.style.display = 'inline-flex';
+                        if (badgeText) badgeText.innerText = 'AUTO-JUMP';
+                    }
+                }
+
+                function dismissAutoJumpNotice() {
+                    var noticeBar = document.getElementById('autojump-notice-bar');
+                    if (noticeBar) noticeBar.style.display = 'none';
+                    var badge = document.getElementById('stage-banner-autojump-badge');
+                    if (badge) badge.style.display = 'none';
+                }
+
+                function resetPipelineViewToStart() {
+                    dismissAutoJumpNotice();
+                    if (!graphData || !graphData.stages || graphData.stages.length === 0) return;
+                    var firstStage = graphData.stages[0];
+                    if (firstStage.children &amp;&amp; firstStage.children.length &gt; 0) {
+                        firstStage = firstStage.children[0];
+                    }
+                    selectStage(firstStage.id, false);
+                    var flow = document.getElementById('pipeline-flow');
+                    if (flow) {
+                        flow.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+                    }
+                    showToast("Reset view to first stage: " + firstStage.name, "info");
+                }
+
                 function copyStepConsoleLog(stepId) {
                     var text = stepLogsCache[stepId] || "";
                     if (selectedStepId === stepId &amp;&amp; selectedLineStart !== null) {
@@ -11834,6 +12382,10 @@
                     if (stageMenu &amp;&amp; stageMenu.classList.contains('show') &amp;&amp; (!stageBtn || !stageBtn.contains(e.target)) &amp;&amp; !stageMenu.contains(e.target)) {
                         stageMenu.classList.remove('show');
                         if (stageBtn) stageBtn.setAttribute('aria-expanded', 'false');
+                    }
+                    var pickerWrap = document.getElementById('stage-picker-wrap');
+                    if (pickerWrap &amp;&amp; !pickerWrap.contains(e.target)) {
+                        closeStagePicker();
                     }
                 });
 
@@ -12872,6 +13424,16 @@
                             return;
                         }
                     }
+                    var stagePicker = document.getElementById('stage-picker-menu');
+                    if (stagePicker &amp;&amp; stagePicker.style.display !== 'none') {
+                        if (e.key === 'Escape') {
+                            e.preventDefault();
+                            closeStagePicker();
+                            var btn = document.getElementById('btn-stage-picker');
+                            if (btn) btn.focus();
+                            return;
+                        }
+                    }
                     var shortcutsModal = document.getElementById('shortcuts-modal');
                     if (shortcutsModal &amp;&amp; shortcutsModal.classList.contains('active')) {
                         if (e.key === 'Escape') {
@@ -13021,6 +13583,12 @@
                     if (e.key === 'ArrowRight') {
                         e.preventDefault();
                         navigateStageByArrow(1);
+                        return;
+                    }
+
+                    if (e.key === 's' || e.key === 'S') {
+                        e.preventDefault();
+                        toggleStagePicker();
                         return;
                     }
                 });
