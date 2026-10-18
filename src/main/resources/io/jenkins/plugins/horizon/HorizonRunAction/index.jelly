@@ -12311,13 +12311,22 @@
                     if (btn) btn.setAttribute('aria-expanded', 'false');
                 }
 
+                function formatExportStatusLabel(status) {
+                    var s = (status || '').toUpperCase();
+                    if (s.indexOf('SKIPPED') !== -1 || s === 'NOT_EXECUTED') return 'SKIPPED';
+                    if (s === 'IN_PROGRESS' || s === 'RUNNING') return 'RUNNING';
+                    if (s === 'PAUSED_INPUT' || s === 'PAUSED') return 'PAUSED';
+                    if (s === 'FAILURE') return 'FAILED';
+                    return s || 'UNKNOWN';
+                }
+
                 function getStageExportColors(status, isDark) {
                     var st = (status || 'SUCCESS').toUpperCase();
                     if (st === 'SUCCESS') {
                         return {
                             pillBg: isDark ? '#064e3b' : '#d1fae5',
                             pillText: isDark ? '#34d399' : '#065f46',
-                            border: isDark ? '#065f46' : '#a7f3d0',
+                            border: isDark ? '#059669' : '#10b981',
                             path: '#10b981'
                         };
                     }
@@ -12325,7 +12334,7 @@
                         return {
                             pillBg: isDark ? '#450a0a' : '#fee2e2',
                             pillText: isDark ? '#f87171' : '#991b1b',
-                            border: isDark ? '#991b1b' : '#fca5a5',
+                            border: isDark ? '#ef4444' : '#ef4444',
                             path: '#ef4444'
                         };
                     }
@@ -12333,30 +12342,46 @@
                         return {
                             pillBg: isDark ? '#451a03' : '#fef3c7',
                             pillText: isDark ? '#fbbf24' : '#92400e',
-                            border: isDark ? '#92400e' : '#fcd34d',
+                            border: isDark ? '#f59e0b' : '#f59e0b',
                             path: '#f59e0b'
                         };
                     }
-                    if (st === 'IN_PROGRESS') {
+                    if (st === 'IN_PROGRESS' || st === 'RUNNING') {
                         return {
                             pillBg: isDark ? '#172554' : '#dbeafe',
                             pillText: isDark ? '#60a5fa' : '#1e40af',
-                            border: isDark ? '#1e40af' : '#93c5fd',
+                            border: isDark ? '#3b82f6' : '#3b82f6',
                             path: '#3b82f6'
                         };
                     }
-                    if (st === 'PAUSED_INPUT') {
+                    if (st === 'PAUSED_INPUT' || st === 'PAUSED') {
                         return {
                             pillBg: isDark ? '#2e1065' : '#ede9fe',
                             pillText: isDark ? '#a78bfa' : '#5b21b6',
-                            border: isDark ? '#5b21b6' : '#c4b5fd',
+                            border: isDark ? '#8b5cf6' : '#8b5cf6',
                             path: '#8b5cf6'
+                        };
+                    }
+                    if (st === 'ABORTED') {
+                        return {
+                            pillBg: isDark ? '#334155' : '#f1f5f9',
+                            pillText: isDark ? '#94a3b8' : '#475569',
+                            border: isDark ? '#64748b' : '#94a3b8',
+                            path: '#64748b'
+                        };
+                    }
+                    if (st.indexOf('SKIPPED') !== -1 || st === 'NOT_EXECUTED') {
+                        return {
+                            pillBg: isDark ? '#1e293b' : '#f1f5f9',
+                            pillText: isDark ? '#64748b' : '#94a3b8',
+                            border: isDark ? '#334155' : '#cbd5e1',
+                            path: '#475569'
                         };
                     }
                     return {
                         pillBg: isDark ? '#1e293b' : '#f1f5f9',
                         pillText: isDark ? '#94a3b8' : '#64748b',
-                        border: isDark ? '#334155' : '#cbd5e1',
+                        border: isDark ? '#475569' : '#cbd5e1',
                         path: '#64748b'
                     };
                 }
@@ -12380,34 +12405,96 @@
                         return;
                     }
 
+                    function escapeXml(str) {
+                        if (!str) return "";
+                        return String(str)
+                            .replace(/&amp;/g, '&amp;amp;')
+                            .replace(/&lt;/g, '&amp;lt;')
+                            .replace(/&gt;/g, '&amp;gt;')
+                            .replace(/"/g, '&amp;quot;')
+                            .replace(/'/g, '&amp;apos;');
+                    }
+
                     try {
                         var svgEl = document.getElementById('pipeline-flow-svg');
                         var zoom = currentZoom || 1.0;
                         var canvasRect = canvas.getBoundingClientRect();
-                        var baseW = Math.ceil(canvas.scrollWidth);
-                        var baseH = Math.ceil(canvas.scrollHeight);
-                        if (svgEl) {
-                            var svgW = parseInt(svgEl.getAttribute('width') || 0, 10);
-                            var svgH = parseInt(svgEl.getAttribute('height') || 0, 10);
-                            if (svgW &gt; baseW) baseW = svgW;
-                            if (svgH &gt; baseH) baseH = svgH;
+
+                        var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                        function updateBounds(x, y, w, h) {
+                            if (isNaN(x) || isNaN(y) || isNaN(w) || isNaN(h)) return;
+                            if (x &lt; minX) minX = x;
+                            if (y &lt; minY) minY = y;
+                            if (x + w &gt; maxX) maxX = x + w;
+                            if (y + h &gt; maxY) maxY = y + h;
                         }
 
-                        var pad = 40;
+                        var startNode = document.getElementById('terminal-node-start');
+                        if (startNode) {
+                            var sr = startNode.getBoundingClientRect();
+                            var sx = (sr.left - canvasRect.left) / zoom;
+                            var sy = (sr.top - canvasRect.top) / zoom;
+                            var sw = sr.width / zoom;
+                            var sh = sr.height / zoom;
+                            updateBounds(sx - 10, sy - 24, sw + 20, sh + 28);
+                        }
+
+                        var endNode = document.getElementById('terminal-node-end');
+                        if (endNode) {
+                            var er = endNode.getBoundingClientRect();
+                            var ex = (er.left - canvasRect.left) / zoom;
+                            var ey = (er.top - canvasRect.top) / zoom;
+                            var ew = er.width / zoom;
+                            var eh = er.height / zoom;
+                            updateBounds(ex - 10, ey - 24, ew + 20, eh + 28);
+                        }
+
+                        var pLabels = canvas.querySelectorAll('.parallel-label');
+                        for (var pl = 0; pl &lt; pLabels.length; pl++) {
+                            var plr = pLabels[pl].getBoundingClientRect();
+                            updateBounds((plr.left - canvasRect.left) / zoom, (plr.top - canvasRect.top) / zoom, plr.width / zoom, plr.height / zoom);
+                        }
+
+                        var cards = canvas.querySelectorAll('.stage-node');
+                        for (var c = 0; c &lt; cards.length; c++) {
+                            var cr = cards[c].getBoundingClientRect();
+                            updateBounds((cr.left - canvasRect.left) / zoom, (cr.top - canvasRect.top) / zoom, cr.width / zoom, cr.height / zoom);
+                        }
+
+                        if (minX === Infinity || maxX &lt;= minX) {
+                            minX = 0;
+                            minY = 0;
+                            maxX = Math.max(800, canvas.scrollWidth || 800);
+                            maxY = Math.max(400, canvas.scrollHeight || 400);
+                        }
+
+                        var pad = 36;
                         var headerH = 48;
-                        var totalW = baseW + (pad * 2);
-                        var totalH = baseH + headerH + (pad * 2);
+                        var contentW = Math.ceil(maxX - minX);
+                        var contentH = Math.ceil(maxY - minY);
+                        var totalW = Math.max(contentW + (pad * 2), 620);
+                        var totalH = contentH + headerH + (pad * 2);
+                        var offsetX = minX;
+                        var offsetY = minY;
 
                         var isDark = document.querySelector('.horizon-container.theme-dark') !== null;
                         var bgColor = isDark ? '#0b1120' : '#f8fafc';
                         var textPrimary = isDark ? '#f8fafc' : '#0f172a';
                         var textSecondary = isDark ? '#94a3b8' : '#64748b';
                         var buildNum = graphData.number || 'run';
+                        var rawRunStatus = (graphData.status || 'SUCCESS').toUpperCase();
+                        var runStatus = formatExportStatusLabel(rawRunStatus);
+                        var statusCol = getStageExportColors(rawRunStatus, isDark);
+                        var titleStr = (graphData.fullName || graphData.name || 'Pipeline') + ' #' + buildNum;
+                        var durationStr = graphData.durationFormatted || formatDuration(graphData.duration || 0);
 
                         // -------------------------------------------------------------
                         // EXPORT FORMAT: SVG (Pure Native Vector SVG)
                         // -------------------------------------------------------------
                         if (format === 'svg') {
+                            var headerPillW = Math.max(56, runStatus.length * 7 + 16);
+                            var approxTitleW = titleStr.length * 9;
+
                             var svg = '&lt;svg xmlns="http://www.w3.org/2000/svg" width="' + totalW + '" height="' + totalH + '" viewBox="0 0 ' + totalW + ' ' + totalH + '"&gt;\n';
                             svg += '  &lt;defs&gt;\n';
                             svg += '    &lt;style type="text/css"&gt;\n';
@@ -12417,19 +12504,14 @@
                             svg += '  &lt;rect width="100%" height="100%" fill="' + bgColor + '"/&gt;\n';
 
                             // Title &amp; Telemetry Header
-                            var titleStr = escapeHtml((graphData.fullName || graphData.name || 'Pipeline') + ' #' + buildNum);
-                            var runStatus = (graphData.status || 'SUCCESS').toUpperCase();
-                            var statusCol = getStageExportColors(runStatus, isDark);
-                            var durationStr = escapeHtml(graphData.durationFormatted || formatDuration(graphData.duration || 0));
-
                             svg += '  &lt;g transform="translate(' + pad + ',' + (pad - 8) + ')"&gt;\n';
-                            svg += '    &lt;text x="0" y="16" fill="' + textPrimary + '" font-size="16" font-weight="700"&gt;' + titleStr + '&lt;/text&gt;\n';
-                            svg += '    &lt;rect x="' + (titleStr.length * 9 + 12) + '" y="2" width="68" height="18" rx="9" fill="' + statusCol.pillBg + '"/&gt;\n';
-                            svg += '    &lt;text x="' + (titleStr.length * 9 + 46) + '" y="15" fill="' + statusCol.pillText + '" font-size="10" font-weight="bold" text-anchor="middle"&gt;' + runStatus + '&lt;/text&gt;\n';
-                            svg += '    &lt;text x="' + (titleStr.length * 9 + 90) + '" y="15" fill="' + textSecondary + '" font-size="12"&gt;Duration: ' + durationStr + '&lt;/text&gt;\n';
+                            svg += '    &lt;text x="0" y="24" fill="' + textPrimary + '" font-size="16" font-weight="700"&gt;' + escapeXml(titleStr) + '&lt;/text&gt;\n';
+                            svg += '    &lt;rect x="' + (approxTitleW + 12) + '" y="10" width="' + headerPillW + '" height="18" rx="9" fill="' + statusCol.pillBg + '"/&gt;\n';
+                            svg += '    &lt;text x="' + (approxTitleW + 12 + headerPillW / 2) + '" y="23" fill="' + statusCol.pillText + '" font-size="10" font-weight="bold" text-anchor="middle"&gt;' + runStatus + '&lt;/text&gt;\n';
+                            svg += '    &lt;text x="' + (approxTitleW + headerPillW + 26) + '" y="23" fill="' + textSecondary + '" font-size="12"&gt;Duration: ' + escapeXml(durationStr) + '&lt;/text&gt;\n';
                             svg += '  &lt;/g&gt;\n';
 
-                            svg += '  &lt;g transform="translate(' + pad + ',' + (pad + headerH) + ')"&gt;\n';
+                            svg += '  &lt;g transform="translate(' + (pad - offsetX) + ',' + (pad + headerH - offsetY) + ')"&gt;\n';
 
                             // Connecting lines
                             if (svgEl) {
@@ -12437,45 +12519,55 @@
                                 for (var p = 0; p &lt; paths.length; p++) {
                                     var path = paths[p];
                                     var d = path.getAttribute('d');
+                                    if (!d) continue;
                                     var cls = path.getAttribute('class') || '';
                                     var col = getConnectorPathColor(cls);
-                                    svg += '    &lt;path d="' + d + '" stroke="' + col + '" stroke-width="2.5" fill="none" stroke-linecap="round"/&gt;\n';
+                                    svg += '    &lt;path d="' + d + '" stroke="' + col + '" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/&gt;\n';
                                 }
                                 var circles = svgEl.querySelectorAll('circle');
                                 for (var ci = 0; ci &lt; circles.length; ci++) {
                                     var dot = circles[ci];
                                     var dotCls = dot.getAttribute('class') || '';
                                     var dotCol = getConnectorPathColor(dotCls);
-                                    svg += '    &lt;circle cx="' + dot.getAttribute('cx') + '" cy="' + dot.getAttribute('cy') + '" r="' + (dot.getAttribute('r') || '3.5') + '" fill="' + dotCol + '"/&gt;\n';
+                                    var dcx = parseFloat(dot.getAttribute('cx') || 0);
+                                    var dcy = parseFloat(dot.getAttribute('cy') || 0);
+                                    var dr = parseFloat(dot.getAttribute('r') || 3.5);
+                                    svg += '    &lt;circle cx="' + dcx + '" cy="' + dcy + '" r="' + dr + '" fill="' + dotCol + '"/&gt;\n';
                                 }
                             }
 
                             // Start Terminal Node
-                            var startNode = document.getElementById('terminal-node-start');
                             if (startNode) {
-                                var sr = startNode.getBoundingClientRect();
                                 var scx = (sr.left - canvasRect.left) / zoom + sr.width / (zoom * 2);
                                 var scy = (sr.top - canvasRect.top) / zoom + sr.height / (zoom * 2);
-                                svg += '    &lt;circle cx="' + scx + '" cy="' + scy + '" r="9" fill="#10b981"/&gt;\n';
-                                svg += '    &lt;text x="' + scx + '" y="' + (scy - 14) + '" fill="' + textSecondary + '" font-size="11" font-weight="bold" text-anchor="middle"&gt;Start&lt;/text&gt;\n';
+                                svg += '    &lt;circle cx="' + scx + '" cy="' + scy + '" r="11" fill="rgba(16, 185, 129, 0.2)"/&gt;\n';
+                                svg += '    &lt;circle cx="' + scx + '" cy="' + scy + '" r="7" fill="#10b981"/&gt;\n';
+                                svg += '    &lt;text x="' + scx + '" y="' + (scy - 14) + '" fill="' + textSecondary + '" font-size="11" font-weight="bold" text-anchor="middle"&gt;Start&lt;/text&gt;
+';
                             }
 
-                            // Parallel Stacks
-                            var pLabels = canvas.querySelectorAll('.parallel-label');
+                            // Parallel Headers
                             for (var pl = 0; pl &lt; pLabels.length; pl++) {
                                 var plEl = pLabels[pl];
                                 var plr = plEl.getBoundingClientRect();
                                 var plx = (plr.left - canvasRect.left) / zoom;
                                 var ply = (plr.top - canvasRect.top) / zoom;
-                                var plNameEl = plEl.querySelector('.parallel-label-name');
-                                var plName = plNameEl ? escapeHtml(plNameEl.textContent.trim()) : 'Parallel';
+                                var plw = plr.width / zoom;
+                                var plh = plr.height / zoom;
+                                var plNameEl = plEl.querySelector('.parallel-label-name') || plEl;
+                                var rawPlName = plNameEl ? plNameEl.textContent.trim() : 'Parallel';
+                                var xmlPlName = escapeXml(rawPlName);
+                                var plBg = isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(2, 132, 199, 0.08)';
+                                var plBorder = isDark ? 'rgba(56, 189, 248, 0.35)' : 'rgba(2, 132, 199, 0.25)';
+                                var plTextCol = isDark ? '#38bdf8' : '#0284c7';
+
                                 svg += '    &lt;g transform="translate(' + plx + ',' + ply + ')"&gt;\n';
-                                svg += '      &lt;text x="4" y="14" fill="' + textSecondary + '" font-size="11" font-weight="600"&gt;' + plName + '&lt;/text&gt;\n';
+                                svg += '      &lt;rect width="' + plw + '" height="' + plh + '" rx="6" fill="' + plBg + '" stroke="' + plBorder + '" stroke-width="1"/&gt;\n';
+                                svg += '      &lt;text x="8" y="16" fill="' + plTextCol + '" font-size="11" font-weight="600"&gt;' + xmlPlName + '&lt;/text&gt;\n';
                                 svg += '    &lt;/g&gt;\n';
                             }
 
-                            // Stage Node Cards
-                            var cards = canvas.querySelectorAll('.stage-node-card');
+                            // Stage Cards (.stage-node)
                             for (var c = 0; c &lt; cards.length; c++) {
                                 var card = cards[c];
                                 var cr = card.getBoundingClientRect();
@@ -12483,42 +12575,63 @@
                                 var cy = (cr.top - canvasRect.top) / zoom;
                                 var cw = cr.width / zoom;
                                 var ch = cr.height / zoom;
-                                var cSt = (card.getAttribute('data-status') || 'SUCCESS').toUpperCase();
-                                var cCol = getStageExportColors(cSt, isDark);
-                                var titleEl = card.querySelector('.stage-card-title');
-                                var titleText = titleEl ? escapeHtml(titleEl.textContent.trim()) : '';
-                                var timingEl = card.querySelector('.stage-card-timing');
-                                var timingText = timingEl ? escapeHtml(timingEl.textContent.trim()) : '';
-                                var agentEl = card.querySelector('.stage-agent-pill') || card.querySelector('.agent-badge');
-                                var agentText = agentEl ? escapeHtml(agentEl.textContent.trim()) : '';
-                                var pillW = Math.max(54, Math.min(cw - 24, cSt.length * 7 + 16));
+                                var rawSt = (card.getAttribute('data-status') || 'SUCCESS').toUpperCase();
+                                var cSt = formatExportStatusLabel(rawSt);
+                                var cCol = getStageExportColors(rawSt, isDark);
+
+                                var nameEl = card.querySelector('.stage-name');
+                                var rawTitle = nameEl ? nameEl.textContent.trim() : 'Stage';
+                                var durEl = card.querySelector('.stage-duration-val');
+                                var rawDuration = durEl ? durEl.textContent.trim() : '';
+                                var agentEl = card.querySelector('.stage-agent-badge');
+                                var rawAgent = agentEl ? agentEl.textContent.trim() : '';
+
+                                var pillW = Math.max(50, Math.min(68, cSt.length * 6.5 + 14));
+                                var cardBg = isDark ? '#1e293b' : '#ffffff';
+                                var dividerCol = isDark ? '#334155' : '#e2e8f0';
+                                var agentCol = isDark ? '#38bdf8' : '#0284c7';
+
+                                var displayTitle = rawTitle;
+                                var maxTitleChars = Math.max(8, Math.floor((cw - pillW - 30) / 7.5));
+                                if (displayTitle.length &gt; maxTitleChars) {
+                                    displayTitle = displayTitle.slice(0, maxTitleChars) + '...';
+                                }
 
                                 svg += '    &lt;g transform="translate(' + cx + ',' + cy + ')"&gt;\n';
-                                svg += '      &lt;rect width="' + cw + '" height="' + ch + '" rx="10" fill="' + (isDark ? '#1e293b' : '#ffffff') + '" stroke="' + cCol.border + '" stroke-width="1.5"/&gt;\n';
-                                svg += '      &lt;rect x="12" y="10" width="' + pillW + '" height="18" rx="9" fill="' + cCol.pillBg + '"/&gt;\n';
-                                svg += '      &lt;text x="' + (12 + pillW / 2) + '" y="23" fill="' + cCol.pillText + '" font-size="10" font-weight="bold" text-anchor="middle"&gt;' + cSt + '&lt;/text&gt;\n';
-                                svg += '      &lt;text x="12" y="47" fill="' + textPrimary + '" font-size="12" font-weight="600"&gt;' + titleText + '&lt;/text&gt;\n';
-                                svg += '      &lt;text x="12" y="65" fill="' + textSecondary + '" font-size="11"&gt;' + timingText + '&lt;/text&gt;\n';
-                                if (agentText) {
-                                    svg += '      &lt;text x="' + (cw - 12) + '" y="65" fill="' + textSecondary + '" font-size="10" text-anchor="end"&gt;' + agentText + '&lt;/text&gt;\n';
+                                svg += '      &lt;rect width="' + cw + '" height="' + ch + '" rx="10" fill="' + cardBg + '" stroke="' + cCol.border + '" stroke-width="1.5"/&gt;\n';
+                                svg += '      &lt;rect x="2" y="2" width="4" height="' + (ch - 4) + '" rx="2" fill="' + cCol.path + '"/&gt;\n';
+                                svg += '      &lt;text x="14" y="22" fill="' + textPrimary + '" font-size="12" font-weight="600"&gt;' + escapeXml(displayTitle) + '&lt;/text&gt;\n';
+                                svg += '      &lt;rect x="' + (cw - pillW - 10) + '" y="10" width="' + pillW + '" height="16" rx="8" fill="' + cCol.pillBg + '"/&gt;\n';
+                                svg += '      &lt;text x="' + (cw - 10 - pillW / 2) + '" y="22" fill="' + cCol.pillText + '" font-size="9" font-weight="bold" text-anchor="middle"&gt;' + cSt + '&lt;/text&gt;\n';
+                                svg += '      &lt;line x1="10" y1="34" x2="' + (cw - 10) + '" y2="34" stroke="' + dividerCol + '" stroke-width="1"/&gt;\n';
+                                svg += '      &lt;text x="14" y="50" fill="' + textSecondary + '" font-size="11"&gt;Duration:&lt;/text&gt;\n';
+                                svg += '      &lt;text x="68" y="50" fill="' + textPrimary + '" font-size="11" font-weight="600"&gt;' + escapeXml(rawDuration) + '&lt;/text&gt;\n';
+                                if (rawAgent) {
+                                    var displayAgent = rawAgent;
+                                    var maxAgentChars = Math.max(8, Math.floor((cw - 70) / 7));
+                                    if (displayAgent.length &gt; maxAgentChars) {
+                                        displayAgent = displayAgent.slice(0, maxAgentChars) + '...';
+                                    }
+                                    svg += '      &lt;text x="14" y="66" fill="' + textSecondary + '" font-size="11"&gt;Agent:&lt;/text&gt;\n';
+                                    svg += '      &lt;text x="56" y="66" fill="' + agentCol + '" font-size="10" font-weight="500"&gt;' + escapeXml(displayAgent) + '&lt;/text&gt;\n';
                                 }
                                 svg += '    &lt;/g&gt;\n';
                             }
 
                             // End Terminal Node
-                            var endNode = document.getElementById('terminal-node-end');
                             if (endNode) {
-                                var er = endNode.getBoundingClientRect();
                                 var ecx = (er.left - canvasRect.left) / zoom + er.width / (zoom * 2);
                                 var ecy = (er.top - canvasRect.top) / zoom + er.height / (zoom * 2);
-                                var endStatus = (endNode.getAttribute('data-status') || runStatus).toUpperCase();
+                                var endStatus = (endNode.getAttribute('data-status') || rawRunStatus).toUpperCase();
                                 var endCol = getStageExportColors(endStatus, isDark);
-                                svg += '    &lt;circle cx="' + ecx + '" cy="' + ecy + '" r="11" fill="' + endCol.path + '"/&gt;\n';
-                                svg += '    &lt;circle cx="' + ecx + '" cy="' + ecy + '" r="4" fill="#ffffff"/&gt;\n';
+                                svg += '    &lt;circle cx="' + ecx + '" cy="' + ecy + '" r="13" fill="' + endCol.pillBg + '"/&gt;\n';
+                                svg += '    &lt;circle cx="' + ecx + '" cy="' + ecy + '" r="9" fill="' + endCol.path + '"/&gt;\n';
+                                svg += '    &lt;circle cx="' + ecx + '" cy="' + ecy + '" r="3.5" fill="#ffffff"/&gt;\n';
                                 svg += '    &lt;text x="' + ecx + '" y="' + (ecy - 16) + '" fill="' + textSecondary + '" font-size="11" font-weight="bold" text-anchor="middle"&gt;End&lt;/text&gt;\n';
                             }
 
-                            svg += '  &lt;/g&gt;\n&lt;/svg&gt;';
+                            svg += '  &lt;/g&gt;
+&lt;/svg&gt;';
 
                             var svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
                             var svgUrl = URL.createObjectURL(svgBlob);
@@ -12550,50 +12663,48 @@
                         ctx.fillRect(0, 0, totalW, totalH);
 
                         // Title &amp; Telemetry Header
-                        var runStatus = (graphData.status || 'SUCCESS').toUpperCase();
-                        var statusCol = getStageExportColors(runStatus, isDark);
-                        var titleStr = (graphData.fullName || graphData.name || 'Pipeline') + ' #' + buildNum;
-                        var durationStr = graphData.durationFormatted || formatDuration(graphData.duration || 0);
-
                         ctx.fillStyle = textPrimary;
                         ctx.font = '700 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
                         ctx.textAlign = 'left';
                         ctx.fillText(titleStr, pad, pad + 16);
 
                         var titleMetrics = ctx.measureText(titleStr);
-                        var pillX = pad + titleMetrics.width + 12;
-                        var pillW = Math.max(56, runStatus.length * 7 + 16);
+                        var headerPillX = pad + titleMetrics.width + 12;
+                        var headerPillW = Math.max(56, runStatus.length * 7 + 16);
 
                         ctx.beginPath();
-                        if (ctx.roundRect) ctx.roundRect(pillX, pad + 2, pillW, 18, 9);
-                        else ctx.rect(pillX, pad + 2, pillW, 18);
+                        if (ctx.roundRect) ctx.roundRect(headerPillX, pad + 2, headerPillW, 18, 9);
+                        else ctx.rect(headerPillX, pad + 2, headerPillW, 18);
                         ctx.fillStyle = statusCol.pillBg;
                         ctx.fill();
 
                         ctx.fillStyle = statusCol.pillText;
                         ctx.font = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
                         ctx.textAlign = 'center';
-                        ctx.fillText(runStatus, pillX + pillW / 2, pad + 15);
+                        ctx.fillText(runStatus, headerPillX + headerPillW / 2, pad + 15);
 
                         ctx.textAlign = 'left';
                         ctx.fillStyle = textSecondary;
                         ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                        ctx.fillText('Duration: ' + durationStr, pillX + pillW + 12, pad + 15);
+                        ctx.fillText('Duration: ' + durationStr, headerPillX + headerPillW + 14, pad + 15);
 
-                        // Connecting paths
+                        // Connecting paths and cards translated into cropped view
                         ctx.save();
-                        ctx.translate(pad, pad + headerH);
+                        ctx.translate(pad - offsetX, pad + headerH - offsetY);
+
                         if (svgEl) {
                             var paths = svgEl.querySelectorAll('path');
                             for (var p = 0; p &lt; paths.length; p++) {
                                 var path = paths[p];
                                 var d = path.getAttribute('d');
+                                if (!d) continue;
                                 var cls = path.getAttribute('class') || '';
                                 var col = getConnectorPathColor(cls);
                                 ctx.beginPath();
                                 ctx.strokeStyle = col;
                                 ctx.lineWidth = 2.5;
                                 ctx.lineCap = 'round';
+                                ctx.lineJoin = 'round';
                                 ctx.stroke(new Path2D(d));
                             }
                             var circles = svgEl.querySelectorAll('circle');
@@ -12612,13 +12723,16 @@
                         }
 
                         // Start Node
-                        var startNode = document.getElementById('terminal-node-start');
                         if (startNode) {
-                            var sr = startNode.getBoundingClientRect();
                             var scx = (sr.left - canvasRect.left) / zoom + sr.width / (zoom * 2);
                             var scy = (sr.top - canvasRect.top) / zoom + sr.height / (zoom * 2);
                             ctx.beginPath();
-                            ctx.arc(scx, scy, 9, 0, Math.PI * 2);
+                            ctx.arc(scx, scy, 11, 0, Math.PI * 2);
+                            ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+                            ctx.fill();
+
+                            ctx.beginPath();
+                            ctx.arc(scx, scy, 7, 0, Math.PI * 2);
                             ctx.fillStyle = '#10b981';
                             ctx.fill();
 
@@ -12629,22 +12743,32 @@
                         }
 
                         // Parallel labels
-                        var pLabels = canvas.querySelectorAll('.parallel-label');
                         for (var pl = 0; pl &lt; pLabels.length; pl++) {
                             var plEl = pLabels[pl];
                             var plr = plEl.getBoundingClientRect();
                             var plx = (plr.left - canvasRect.left) / zoom;
                             var ply = (plr.top - canvasRect.top) / zoom;
-                            var plNameEl = plEl.querySelector('.parallel-label-name');
-                            var plName = plNameEl ? plNameEl.textContent.trim() : 'Parallel';
-                            ctx.fillStyle = textSecondary;
+                            var plw = plr.width / zoom;
+                            var plh = plr.height / zoom;
+                            var plNameEl = plEl.querySelector('.parallel-label-name') || plEl;
+                            var rawPlName = plNameEl ? plNameEl.textContent.trim() : 'Parallel';
+
+                            ctx.beginPath();
+                            if (ctx.roundRect) ctx.roundRect(plx, ply, plw, plh, 6);
+                            else ctx.rect(plx, ply, plw, plh);
+                            ctx.fillStyle = isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(2, 132, 199, 0.08)';
+                            ctx.fill();
+                            ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.35)' : 'rgba(2, 132, 199, 0.25)';
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+
+                            ctx.fillStyle = isDark ? '#38bdf8' : '#0284c7';
                             ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
                             ctx.textAlign = 'left';
-                            ctx.fillText(plName, plx + 4, ply + 14);
+                            ctx.fillText(rawPlName, plx + 8, ply + 16);
                         }
 
-                        // Stage Cards
-                        var cards = canvas.querySelectorAll('.stage-node-card');
+                        // Stage Cards (.stage-node)
                         for (var c = 0; c &lt; cards.length; c++) {
                             var card = cards[c];
                             var cr = card.getBoundingClientRect();
@@ -12652,15 +12776,20 @@
                             var cy = (cr.top - canvasRect.top) / zoom;
                             var cw = cr.width / zoom;
                             var ch = cr.height / zoom;
-                            var cSt = (card.getAttribute('data-status') || 'SUCCESS').toUpperCase();
-                            var cCol = getStageExportColors(cSt, isDark);
-                            var titleEl = card.querySelector('.stage-card-title');
-                            var titleText = titleEl ? titleEl.textContent.trim() : '';
-                            var timingEl = card.querySelector('.stage-card-timing');
-                            var timingText = timingEl ? timingEl.textContent.trim() : '';
-                            var agentEl = card.querySelector('.stage-agent-pill') || card.querySelector('.agent-badge');
-                            var agentText = agentEl ? agentEl.textContent.trim() : '';
-                            var pillW = Math.max(54, Math.min(cw - 24, cSt.length * 7 + 16));
+                            var rawSt = (card.getAttribute('data-status') || 'SUCCESS').toUpperCase();
+                            var cSt = formatExportStatusLabel(rawSt);
+                            var cCol = getStageExportColors(rawSt, isDark);
+
+                            var nameEl = card.querySelector('.stage-name');
+                            var rawTitle = nameEl ? nameEl.textContent.trim() : 'Stage';
+                            var durEl = card.querySelector('.stage-duration-val');
+                            var rawDuration = durEl ? durEl.textContent.trim() : '';
+                            var agentEl = card.querySelector('.stage-agent-badge');
+                            var rawAgent = agentEl ? agentEl.textContent.trim() : '';
+
+                            var pillW = Math.max(50, Math.min(68, cSt.length * 6.5 + 14));
+                            var pillX = cx + cw - pillW - 10;
+                            var pillY = cy + 10;
 
                             // Card background &amp; border
                             ctx.beginPath();
@@ -12672,61 +12801,94 @@
                             ctx.lineWidth = 1.5;
                             ctx.stroke();
 
-                            // Status pill
+                            // Accent strip
                             ctx.beginPath();
-                            if (ctx.roundRect) ctx.roundRect(cx + 12, cy + 10, pillW, 18, 9);
-                            else ctx.rect(cx + 12, cy + 10, pillW, 18);
-                            ctx.fillStyle = cCol.pillBg;
+                            if (ctx.roundRect) ctx.roundRect(cx + 2, cy + 2, 4, ch - 4, 2);
+                            else ctx.rect(cx + 2, cy + 2, 4, ch - 4);
+                            ctx.fillStyle = cCol.path;
                             ctx.fill();
-
-                            ctx.fillStyle = cCol.pillText;
-                            ctx.font = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                            ctx.textAlign = 'center';
-                            ctx.fillText(cSt, cx + 12 + pillW / 2, cy + 23);
 
                             // Stage title
                             ctx.textAlign = 'left';
                             ctx.fillStyle = textPrimary;
                             ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                            var maxW = cw - 24;
-                            var renderTitle = titleText;
-                            if (ctx.measureText(renderTitle).width &gt; maxW) {
-                                while (renderTitle.length &gt; 3 &amp;&amp; ctx.measureText(renderTitle + '...').width &gt; maxW) {
-                                    renderTitle = renderTitle.slice(0, -1);
+                            var maxTitleW = cw - pillW - 26;
+                            var displayTitle = rawTitle;
+                            if (ctx.measureText(displayTitle).width &gt; maxTitleW) {
+                                while (displayTitle.length &gt; 3 &amp;&amp; ctx.measureText(displayTitle + '...').width &gt; maxTitleW) {
+                                    displayTitle = displayTitle.slice(0, -1);
                                 }
-                                renderTitle += '...';
+                                displayTitle += '...';
                             }
-                            ctx.fillText(renderTitle, cx + 12, cy + 47);
+                            ctx.fillText(displayTitle, cx + 14, cy + 22);
 
-                            // Timing
+                            // Status pill
+                            ctx.beginPath();
+                            if (ctx.roundRect) ctx.roundRect(pillX, pillY, pillW, 16, 8);
+                            else ctx.rect(pillX, pillY, pillW, 16);
+                            ctx.fillStyle = cCol.pillBg;
+                            ctx.fill();
+
+                            ctx.fillStyle = cCol.pillText;
+                            ctx.font = 'bold 9px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(cSt, pillX + pillW / 2, pillY + 11.5);
+
+                            // Divider
+                            ctx.beginPath();
+                            ctx.strokeStyle = isDark ? '#334155' : '#e2e8f0';
+                            ctx.lineWidth = 1;
+                            ctx.moveTo(cx + 10, cy + 34);
+                            ctx.lineTo(cx + cw - 10, cy + 34);
+                            ctx.stroke();
+
+                            // Duration
+                            ctx.textAlign = 'left';
                             ctx.fillStyle = textSecondary;
                             ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                            ctx.fillText(timingText, cx + 12, cy + 65);
+                            ctx.fillText('Duration:', cx + 14, cy + 50);
+                            ctx.fillStyle = textPrimary;
+                            ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                            ctx.fillText(rawDuration, cx + 68, cy + 50);
 
                             // Agent
-                            if (agentText) {
+                            if (rawAgent) {
                                 ctx.fillStyle = textSecondary;
+                                ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                                ctx.fillText('Agent:', cx + 14, cy + 66);
+                                ctx.fillStyle = isDark ? '#38bdf8' : '#0284c7';
                                 ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                                ctx.textAlign = 'right';
-                                ctx.fillText(agentText, cx + cw - 12, cy + 65);
+                                var maxAgentW = cw - 70;
+                                var displayAgent = rawAgent;
+                                if (ctx.measureText(displayAgent).width &gt; maxAgentW) {
+                                    while (displayAgent.length &gt; 3 &amp;&amp; ctx.measureText(displayAgent + '...').width &gt; maxAgentW) {
+                                        displayAgent = displayAgent.slice(0, -1);
+                                    }
+                                    displayAgent += '...';
+                                }
+                                ctx.fillText(displayAgent, cx + 56, cy + 66);
                             }
                         }
 
                         // End Node
-                        var endNode = document.getElementById('terminal-node-end');
                         if (endNode) {
-                            var er = endNode.getBoundingClientRect();
                             var ecx = (er.left - canvasRect.left) / zoom + er.width / (zoom * 2);
                             var ecy = (er.top - canvasRect.top) / zoom + er.height / (zoom * 2);
-                            var endStatus = (endNode.getAttribute('data-status') || runStatus).toUpperCase();
+                            var endStatus = (endNode.getAttribute('data-status') || rawRunStatus).toUpperCase();
                             var endCol = getStageExportColors(endStatus, isDark);
+
                             ctx.beginPath();
-                            ctx.arc(ecx, ecy, 11, 0, Math.PI * 2);
+                            ctx.arc(ecx, ecy, 13, 0, Math.PI * 2);
+                            ctx.fillStyle = endCol.pillBg;
+                            ctx.fill();
+
+                            ctx.beginPath();
+                            ctx.arc(ecx, ecy, 9, 0, Math.PI * 2);
                             ctx.fillStyle = endCol.path;
                             ctx.fill();
 
                             ctx.beginPath();
-                            ctx.arc(ecx, ecy, 4, 0, Math.PI * 2);
+                            ctx.arc(ecx, ecy, 3.5, 0, Math.PI * 2);
                             ctx.fillStyle = '#ffffff';
                             ctx.fill();
 
