@@ -4826,6 +4826,22 @@
                         color: #94a3b8;
                     }
 
+                    /* Phase 4: Graph Canvas Snapshot and Telemetry Export Menu */
+                    .graph-export-menu {
+                        width: 250px;
+                        padding: 0.35rem;
+                    }
+                    .graph-export-menu .stage-picker-item {
+                        border-radius: 6px;
+                        padding: 0.5rem 0.65rem;
+                        gap: 0.65rem;
+                        justify-content: flex-start;
+                        background: transparent;
+                        border: none;
+                        width: 100%;
+                        text-align: left;
+                    }
+
                     /* Phase 3: Auto-Jump Notice and Failure Pulse */
                     .stage-badge-autojump {
                         background: rgba(239, 68, 68, 0.15) !important;
@@ -5056,6 +5072,17 @@
                     .inline-terminal-view .log-inline-link:hover {
                         color: #7dd3fc !important;
                         text-decoration: underline;
+                    }
+
+                    /* Phase 4: Virtualized Terminal Line Rendering Spacers */
+                    .virtual-spacer-top,
+                    .virtual-spacer-bottom {
+                        width: 100%;
+                        flex-shrink: 0;
+                        pointer-events: none;
+                    }
+                    .virtual-slice {
+                        width: 100%;
                     }
 
                     /* ANSI Terminal Color Support */
@@ -6870,6 +6897,44 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="stage-picker-dropdown-wrap" id="graph-export-wrap">
+                                <button type="button" class="ctrl-btn stage-picker-btn" id="btn-graph-export" onclick="toggleExportMenu(event)" aria-haspopup="true" aria-expanded="false" title="Export pipeline canvas or telemetry (Hotkey: e)">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    <span>Export</span>
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div id="graph-export-menu" class="stage-picker-menu graph-export-menu" style="display:none;" role="menu">
+                                    <button type="button" class="stage-picker-item" onclick="exportPipelineCanvas('png')" role="menuitem">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#38bdf8; flex-shrink:0;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                        <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                                            <span style="font-weight:600; color:#f1f5f9;">Export PNG Image</span>
+                                            <span style="font-size:0.7rem; color:#94a3b8;">High-resolution DAG snapshot</span>
+                                        </div>
+                                    </button>
+                                    <button type="button" class="stage-picker-item" onclick="exportPipelineCanvas('svg')" role="menuitem">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#c084fc; flex-shrink:0;"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                                        <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                                            <span style="font-weight:600; color:#f1f5f9;">Export SVG Vector</span>
+                                            <span style="font-size:0.7rem; color:#94a3b8;">Scalable vector graphics</span>
+                                        </div>
+                                    </button>
+                                    <div style="height:1px; background:rgba(255,255,255,0.08); margin:4px 0;"></div>
+                                    <button type="button" class="stage-picker-item" onclick="exportPipelineJson()" role="menuitem">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#34d399; flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                        <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                                            <span style="font-weight:600; color:#f1f5f9;">Export Telemetry JSON</span>
+                                            <span style="font-size:0.7rem; color:#94a3b8;">Full build nodes &amp; metrics</span>
+                                        </div>
+                                    </button>
+                                    <button type="button" class="stage-picker-item" onclick="copyPipelineJsonToClipboard()" role="menuitem">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#fbbf24; flex-shrink:0;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                                            <span style="font-weight:600; color:#f1f5f9;">Copy JSON to Clipboard</span>
+                                            <span style="font-size:0.7rem; color:#94a3b8;">Quick copy build model</span>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="graph-canvas-container" style="position:relative;">
@@ -7263,6 +7328,7 @@
                                     <div class="shortcut-row"><span class="shortcut-desc">Fit pipeline to screen</span><div class="shortcut-keys"><kbd class="hkbd">f</kbd></div></div>
                                     <div class="shortcut-row"><span class="shortcut-desc">Select previous / next stage</span><div class="shortcut-keys"><kbd class="hkbd">&#8592;</kbd><kbd class="hkbd">&#8594;</kbd></div></div>
                                     <div class="shortcut-row"><span class="shortcut-desc">Open stage jump picker</span><div class="shortcut-keys"><kbd class="hkbd">s</kbd></div></div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Open Export menu (PNG / SVG / JSON)</span><div class="shortcut-keys"><kbd class="hkbd">e</kbd></div></div>
                                 </div>
                                 <div class="shortcuts-section">
                                     <div class="shortcuts-section-title">Stage Steps &amp; Logs</div>
@@ -10779,13 +10845,17 @@
                 }
 
                 function scrollToStepTargetLine(stepId, lineNum) {
-                    var terminal = document.getElementById('terminal-' + stepId) || document.getElementById('terminal-view');
                     var item = document.getElementById('step-item-' + stepId) || document.getElementById('drawer-steps-container');
-
                     if (item) {
                         scrollWindowToElement(item, 'center');
                     }
 
+                    if (stepId &amp;&amp; typeof scrollVirtualTerminalToLine === 'function' &amp;&amp; stepTerminalVirtualizers &amp;&amp; stepTerminalVirtualizers[stepId]) {
+                        scrollVirtualTerminalToLine(stepId, lineNum, 'line');
+                        return;
+                    }
+
+                    var terminal = document.getElementById('terminal-' + stepId) || document.getElementById('terminal-view');
                     if (!terminal) return;
 
                     var lineEl = document.getElementById('log-line-' + stepId + '-' + lineNum) || document.getElementById('log-line-' + lineNum);
@@ -10834,16 +10904,20 @@
                     selectedLineStart = start;
                     selectedLineEnd = end || start;
 
-                    var allLines = document.querySelectorAll('.inline-terminal-view .log-line, .terminal-view .log-line');
-                    allLines.forEach(function(el) {
-                        var elStep = el.getAttribute('data-step');
-                        var num = parseInt(el.getAttribute('data-line'), 10);
-                        if ((!elStep || elStep === stepId) &amp;&amp; !isNaN(num) &amp;&amp; num &gt;= selectedLineStart &amp;&amp; num &lt;= selectedLineEnd) {
-                            el.classList.add('selected');
-                        } else {
-                            el.classList.remove('selected');
-                        }
-                    });
+                    if (stepId &amp;&amp; typeof renderVirtualSlice === 'function' &amp;&amp; stepTerminalVirtualizers &amp;&amp; stepTerminalVirtualizers[stepId]) {
+                        renderVirtualSlice(stepTerminalVirtualizers[stepId]);
+                    } else {
+                        var allLines = document.querySelectorAll('.inline-terminal-view .log-line, .terminal-view .log-line');
+                        allLines.forEach(function(el) {
+                            var elStep = el.getAttribute('data-step');
+                            var num = parseInt(el.getAttribute('data-line'), 10);
+                            if ((!elStep || elStep === stepId) &amp;&amp; !isNaN(num) &amp;&amp; num &gt;= selectedLineStart &amp;&amp; num &lt;= selectedLineEnd) {
+                                el.classList.add('selected');
+                            } else {
+                                el.classList.remove('selected');
+                            }
+                        });
+                    }
 
                     var shareLabel = document.getElementById('btn-share-label-' + stepId) || document.getElementById('btn-copy-step-link-text');
                     if (shareLabel) {
@@ -10878,8 +10952,12 @@
                 function clearLineSelection(updateHash) {
                     selectedLineStart = null;
                     selectedLineEnd = null;
-                    var allLines = document.querySelectorAll('.inline-terminal-view .log-line, .terminal-view .log-line');
-                    allLines.forEach(function(el) { el.classList.remove('selected'); });
+                    if (selectedStepId &amp;&amp; typeof renderVirtualSlice === 'function' &amp;&amp; stepTerminalVirtualizers &amp;&amp; stepTerminalVirtualizers[selectedStepId]) {
+                        renderVirtualSlice(stepTerminalVirtualizers[selectedStepId]);
+                    } else {
+                        var allLines = document.querySelectorAll('.inline-terminal-view .log-line, .terminal-view .log-line');
+                        allLines.forEach(function(el) { el.classList.remove('selected'); });
+                    }
                     if (selectedStepId) {
                         var shareLabel = document.getElementById('btn-share-label-' + selectedStepId) || document.getElementById('btn-copy-step-link-text');
                         if (shareLabel) shareLabel.innerText = "Share Step";
@@ -11853,6 +11931,101 @@
                     }
                 }
 
+                var stepTerminalVirtualizers = {};
+
+                function renderVirtualSlice(vState, forcedScrollTop) {
+                    var stepId = vState.stepId;
+                    var terminal = document.getElementById('terminal-' + stepId);
+                    var topSpacer = document.getElementById('v-top-' + stepId);
+                    var sliceContainer = document.getElementById('v-slice-' + stepId);
+                    var bottomSpacer = document.getElementById('v-bottom-' + stepId);
+                    if (!terminal || !topSpacer || !sliceContainer || !bottomSpacer) return;
+
+                    var totalItems = vState.filteredIndices ? vState.filteredIndices.length : vState.rawLines.length;
+                    if (totalItems === 0) {
+                        topSpacer.style.height = '0px';
+                        bottomSpacer.style.height = '0px';
+                        sliceContainer.innerHTML = '&lt;div class="log-placeholder" style="padding:1rem 1.25rem;"&gt;No matching log lines found.&lt;/div&gt;';
+                        return;
+                    }
+
+                    var scrollTop = (forcedScrollTop !== undefined &amp;&amp; forcedScrollTop !== null) ? forcedScrollTop : terminal.scrollTop;
+                    var clientHeight = terminal.clientHeight || 440;
+                    var lineHeight = vState.lineHeight || 24;
+
+                    var firstVisible = Math.floor(scrollTop / lineHeight);
+                    var visibleCount = Math.ceil(clientHeight / lineHeight);
+                    var OVERSCAN = 25;
+
+                    var startIndex = Math.max(0, firstVisible - OVERSCAN);
+                    var endIndex = Math.min(totalItems - 1, firstVisible + visibleCount + OVERSCAN);
+
+                    var topHeight = startIndex * lineHeight;
+                    var bottomHeight = Math.max(0, (totalItems - 1 - endIndex) * lineHeight);
+
+                    topSpacer.style.height = topHeight + 'px';
+                    bottomSpacer.style.height = bottomHeight + 'px';
+
+                    var html = [];
+                    for (var k = startIndex; k &lt;= endIndex; k++) {
+                        var rawIdx = vState.filteredIndices ? vState.filteredIndices[k] : k;
+                        var lineNum = rawIdx + 1;
+                        var lineText = vState.rawLines[rawIdx];
+                        var sevClass = getLogLineSeverityClass(lineText);
+                        var formattedText = formatLogLineText(lineText);
+
+                        var isSelected = (selectedStepId === stepId &amp;&amp; selectedLineStart !== null &amp;&amp; selectedLineEnd !== null &amp;&amp; lineNum &gt;= selectedLineStart &amp;&amp; lineNum &lt;= selectedLineEnd);
+                        var isMatch = (vState.activeMatchLineNum === lineNum);
+
+                        var extraClasses = sevClass;
+                        if (isSelected) extraClasses += ' selected';
+                        if (isMatch) extraClasses += ' active-search-match';
+
+                        html.push(
+                            '&lt;div class="log-line' + extraClasses + '" id="log-line-' + stepId + '-' + lineNum + '" data-step="' + stepId + '" data-line="' + lineNum + '"&gt;' +
+                            '&lt;span class="log-line-gutter" onclick="handleLineGutterClick(event, \'' + stepId + '\', ' + lineNum + ')" title="Click to share line #' + lineNum + ' (Shift+click for range)"&gt;' +
+                            '&lt;span class="log-line-num"&gt;' + lineNum + '&lt;/span&gt;' +
+                            '&lt;/span&gt;' +
+                            '&lt;span class="log-line-text"&gt;' + formattedText + '&lt;/span&gt;' +
+                            '&lt;/div&gt;'
+                        );
+                    }
+                    sliceContainer.innerHTML = html.join('');
+                }
+
+                function scrollVirtualTerminalToLine(stepId, lineNum, pulseType) {
+                    var v = stepTerminalVirtualizers[stepId];
+                    var terminal = document.getElementById('terminal-' + stepId);
+                    if (!v || !terminal) return;
+
+                    var rawIdx = lineNum - 1;
+                    var itemIdx = rawIdx;
+                    if (v.filteredIndices) {
+                        itemIdx = v.filteredIndices.indexOf(rawIdx);
+                        if (itemIdx === -1) return;
+                    }
+
+                    var lineHeight = v.lineHeight || 24;
+                    var clientHeight = terminal.clientHeight || 440;
+                    var targetScrollTop = Math.max(0, (itemIdx * lineHeight) - Math.floor(clientHeight / 3));
+
+                    terminal.scrollTop = targetScrollTop;
+                    renderVirtualSlice(v, targetScrollTop);
+
+                    setTimeout(function() {
+                        var lineEl = document.getElementById('log-line-' + stepId + '-' + lineNum);
+                        if (lineEl) {
+                            var className = (pulseType === 'error') ? 'error-pulse-highlight' : 'pulse-highlight';
+                            lineEl.classList.remove(className);
+                            void lineEl.offsetWidth;
+                            lineEl.classList.add(className);
+                            setTimeout(function() {
+                                lineEl.classList.remove(className);
+                            }, 2800);
+                        }
+                    }, 40);
+                }
+
                 function renderStepLogLines(stepId, text, initialLineRange) {
                     var terminal = document.getElementById('terminal-' + stepId);
                     var countEl = document.getElementById('log-count-' + stepId);
@@ -11867,163 +12040,149 @@
                         countEl.innerText = rawLines.length + (rawLines.length === 1 ? ' line' : ' lines');
                     }
 
-                    var html = [];
-                    for (var i = 0; i &lt; rawLines.length; i++) {
-                        var lineNum = i + 1;
-                        var lineText = rawLines[i];
-                        var sevClass = getLogLineSeverityClass(lineText);
-                        var formattedText = formatLogLineText(lineText);
-                        html.push(
-                            '&lt;div class="log-line' + sevClass + '" id="log-line-' + stepId + '-' + lineNum + '" data-step="' + stepId + '" data-line="' + lineNum + '"&gt;' +
-                            '&lt;span class="log-line-gutter" onclick="handleLineGutterClick(event, \'' + stepId + '\', ' + lineNum + ')" title="Click to share line #' + lineNum + ' (Shift+click for range)"&gt;' +
-                            '&lt;span class="log-line-num"&gt;' + lineNum + '&lt;/span&gt;' +
-                            '&lt;/span&gt;' +
-                            '&lt;span class="log-line-text"&gt;' + formattedText + '&lt;/span&gt;' +
-                            '&lt;/div&gt;'
-                        );
+                    var vState = stepTerminalVirtualizers[stepId];
+                    if (!vState) {
+                        vState = {
+                            stepId: stepId,
+                            rawLines: rawLines,
+                            filteredIndices: null,
+                            lineHeight: 24,
+                            ticking: false,
+                            activeMatchLineNum: -1,
+                            activeMatchIndex: -1
+                        };
+                        stepTerminalVirtualizers[stepId] = vState;
+                    } else {
+                        vState.rawLines = rawLines;
                     }
-                    terminal.innerHTML = html.join('');
+
+                    var sliceContainer = document.getElementById('v-slice-' + stepId);
+                    if (!sliceContainer) {
+                        terminal.innerHTML =
+                            '&lt;div class="virtual-spacer-top" id="v-top-' + stepId + '" style="height:0px;"&gt;&lt;/div&gt;' +
+                            '&lt;div class="virtual-slice" id="v-slice-' + stepId + '"&gt;&lt;/div&gt;' +
+                            '&lt;div class="virtual-spacer-bottom" id="v-bottom-' + stepId + '" style="height:0px;"&gt;&lt;/div&gt;';
+                    }
+
+                    if (!terminal._virtualScrollAttached) {
+                        terminal.addEventListener('scroll', function() {
+                            var v = stepTerminalVirtualizers[stepId];
+                            if (v &amp;&amp; !v.ticking) {
+                                v.ticking = true;
+                                window.requestAnimationFrame(function() {
+                                    v.ticking = false;
+                                    renderVirtualSlice(v);
+                                });
+                            }
+                            var tailBtn = document.getElementById('btn-tail-step-' + stepId);
+                            if (tailBtn) {
+                                var atBottom = (terminal.scrollHeight - terminal.scrollTop - terminal.clientHeight &lt;= 35);
+                                setStepLiveTailState(stepId, atBottom);
+                            }
+                        });
+                        terminal._virtualScrollAttached = true;
+                    }
 
                     if (initialLineRange) {
                         selectStepLineRange(stepId, initialLineRange.start, initialLineRange.end, false, false);
-                        setTimeout(function() {
-                            scrollToStepTargetLine(stepId, initialLineRange.start);
-                            for (var l = initialLineRange.start; l &lt;= initialLineRange.end; l++) {
-                                var el = document.getElementById('log-line-' + stepId + '-' + l);
-                                if (el) {
-                                    el.classList.remove('pulse-highlight');
-                                    void el.offsetWidth;
-                                    el.classList.add('pulse-highlight');
-                                    (function(targetEl) {
-                                        setTimeout(function() { targetEl.classList.remove('pulse-highlight'); }, 2800);
-                                    })(el);
-                                }
-                            }
-                        }, 90);
+                        scrollVirtualTerminalToLine(stepId, initialLineRange.start, 'line');
                     } else if (pendingLineRange) {
                         var r = pendingLineRange;
                         pendingLineRange = null;
                         selectStepLineRange(stepId, r.start, r.end, false, false);
-                        setTimeout(function() {
-                            scrollToStepTargetLine(stepId, r.start);
-                            for (var l = r.start; l &lt;= r.end; l++) {
-                                var el = document.getElementById('log-line-' + stepId + '-' + l);
-                                if (el) {
-                                    el.classList.remove('pulse-highlight');
-                                    void el.offsetWidth;
-                                    el.classList.add('pulse-highlight');
-                                    (function(targetEl) {
-                                        setTimeout(function() { targetEl.classList.remove('pulse-highlight'); }, 2800);
-                                    })(el);
-                                }
-                            }
-                        }, 90);
+                        scrollVirtualTerminalToLine(stepId, r.start, 'line');
                     } else {
                         clearLineSelection(false);
                         var tailBtn = document.getElementById('btn-tail-step-' + stepId);
                         var shouldTail = tailBtn &amp;&amp; (activeLiveTailSteps[stepId] !== false);
-                        var firstErrEl = terminal.querySelector('.log-line.log-line-error');
-                        if (firstErrEl) {
-                            setTimeout(function() {
-                                firstErrEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                                firstErrEl.classList.remove('error-pulse-highlight');
-                                void firstErrEl.offsetWidth;
-                                firstErrEl.classList.add('error-pulse-highlight');
-                                setTimeout(function() { firstErrEl.classList.remove('error-pulse-highlight'); }, 2800);
-                            }, 70);
+
+                        var firstErrIdx = -1;
+                        for (var eIdx = 0; eIdx &lt; vState.rawLines.length; eIdx++) {
+                            if (getLogLineSeverityClass(vState.rawLines[eIdx]).indexOf('log-line-error') !== -1) {
+                                firstErrIdx = eIdx;
+                                break;
+                            }
+                        }
+
+                        if (firstErrIdx !== -1) {
+                            var errLineNum = firstErrIdx + 1;
+                            scrollVirtualTerminalToLine(stepId, errLineNum, 'error');
                         } else if (shouldTail) {
                             terminal.scrollTop = terminal.scrollHeight;
+                            renderVirtualSlice(vState);
                         } else {
                             terminal.scrollTop = 0;
+                            renderVirtualSlice(vState, 0);
                         }
-                    }
-
-                    if (!terminal._scrollHandlerAttached) {
-                        terminal.addEventListener('scroll', function() {
-                            var tailBtn = document.getElementById('btn-tail-step-' + stepId);
-                            if (tailBtn) {
-                                var atBottom = (terminal.scrollHeight - terminal.scrollTop - terminal.clientHeight &lt;= 30);
-                                setStepLiveTailState(stepId, atBottom);
-                            }
-                        });
-                        terminal._scrollHandlerAttached = true;
                     }
                 }
 
-                var stepSearchMatches = {};
-                var stepSearchMatchIndex = {};
-
                 function filterStepLog(stepId, query) {
-                    query = (query || '').toLowerCase();
+                    var v = stepTerminalVirtualizers[stepId];
                     var terminal = document.getElementById('terminal-' + stepId);
                     var stepper = document.getElementById('log-match-stepper-' + stepId);
                     var stepperCount = document.getElementById('match-count-' + stepId);
                     var countEl = document.getElementById('log-count-' + stepId);
-                    if (!terminal) return;
+                    if (!v || !terminal) return;
 
-                    var lines = terminal.querySelectorAll('.log-line');
-                    var matches = [];
-
-                    // Clear any previous active match highlight in this terminal
-                    terminal.querySelectorAll('.log-line.active-search-match').forEach(function(el) {
-                        el.classList.remove('active-search-match');
-                    });
-
-                    lines.forEach(function(el) {
-                        if (!query) {
-                            el.style.display = 'flex';
-                        } else {
-                            var textSpan = el.querySelector('.log-line-text');
-                            var content = textSpan ? textSpan.innerText.toLowerCase() : '';
-                            if (content.indexOf(query) !== -1) {
-                                el.style.display = 'flex';
-                                matches.push(el);
-                            } else {
-                                el.style.display = 'none';
-                            }
-                        }
-                    });
-
-                    stepSearchMatches[stepId] = matches;
-                    stepSearchMatchIndex[stepId] = 0;
+                    query = (query || '').trim().toLowerCase();
 
                     if (!query) {
+                        v.filteredIndices = null;
+                        v.activeMatchLineNum = -1;
+                        v.activeMatchIndex = -1;
                         if (stepper) stepper.style.display = 'none';
-                        if (countEl) countEl.innerText = lines.length + (lines.length === 1 ? ' line' : ' lines');
-                    } else {
-                        if (stepper) stepper.style.display = 'inline-flex';
-                        if (matches.length &gt; 0) {
-                            matches[0].classList.add('active-search-match');
-                            matches[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
-                            if (stepperCount) stepperCount.innerText = '1 of ' + matches.length;
-                        } else {
-                            if (stepperCount) stepperCount.innerText = '0 of 0';
+                        if (countEl) countEl.innerText = v.rawLines.length + (v.rawLines.length === 1 ? ' line' : ' lines');
+                        terminal.scrollTop = 0;
+                        renderVirtualSlice(v, 0);
+                        return;
+                    }
+
+                    var matches = [];
+                    for (var i = 0; i &lt; v.rawLines.length; i++) {
+                        if (v.rawLines[i].toLowerCase().indexOf(query) !== -1) {
+                            matches.push(i);
                         }
-                        if (countEl) countEl.innerText = matches.length + ' matching';
+                    }
+
+                    v.filteredIndices = matches;
+                    v.activeMatchIndex = matches.length &gt; 0 ? 0 : -1;
+                    v.activeMatchLineNum = matches.length &gt; 0 ? (matches[0] + 1) : -1;
+
+                    if (stepper) stepper.style.display = 'inline-flex';
+                    if (stepperCount) {
+                        stepperCount.innerText = matches.length &gt; 0 ? ('1 of ' + matches.length) : '0 of 0';
+                    }
+                    if (countEl) {
+                        countEl.innerText = matches.length + ' matching';
+                    }
+
+                    terminal.scrollTop = 0;
+                    renderVirtualSlice(v, 0);
+
+                    if (matches.length &gt; 0) {
+                        scrollVirtualTerminalToLine(stepId, matches[0] + 1);
                     }
                 }
 
                 function stepSearchMatch(stepId, direction) {
-                    var matches = stepSearchMatches[stepId];
-                    if (!matches || matches.length === 0) return;
+                    var v = stepTerminalVirtualizers[stepId];
+                    if (!v || !v.filteredIndices || v.filteredIndices.length === 0) return;
 
-                    var curIdx = stepSearchMatchIndex[stepId] || 0;
-                    if (matches[curIdx]) {
-                        matches[curIdx].classList.remove('active-search-match');
-                    }
+                    var total = v.filteredIndices.length;
+                    var curIdx = (v.activeMatchIndex !== undefined &amp;&amp; v.activeMatchIndex &gt;= 0) ? v.activeMatchIndex : 0;
+                    curIdx = (curIdx + direction + total) % total;
+                    v.activeMatchIndex = curIdx;
 
-                    curIdx = (curIdx + direction + matches.length) % matches.length;
-                    stepSearchMatchIndex[stepId] = curIdx;
+                    var rawIdx = v.filteredIndices[curIdx];
+                    var lineNum = rawIdx + 1;
+                    v.activeMatchLineNum = lineNum;
 
-                    var targetEl = matches[curIdx];
-                    if (targetEl) {
-                        targetEl.classList.add('active-search-match');
-                        targetEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                    }
+                    scrollVirtualTerminalToLine(stepId, lineNum);
 
                     var stepperCount = document.getElementById('match-count-' + stepId);
                     if (stepperCount) {
-                        stepperCount.innerText = (curIdx + 1) + ' of ' + matches.length;
+                        stepperCount.innerText = (curIdx + 1) + ' of ' + total;
                     }
                 }
 
@@ -12127,6 +12286,227 @@
                     var btn = document.getElementById('btn-stage-picker');
                     if (menu) menu.style.display = 'none';
                     if (btn) btn.setAttribute('aria-expanded', 'false');
+                }
+
+                /* Phase 4: Canvas Snapshot (PNG/SVG) and Build Telemetry JSON Export */
+                function toggleExportMenu(event) {
+                    if (event) event.stopPropagation();
+                    var menu = document.getElementById('graph-export-menu');
+                    var btn = document.getElementById('btn-graph-export');
+                    if (!menu) return;
+                    var isOpen = menu.style.display !== 'none';
+                    if (isOpen) {
+                        closeExportMenu();
+                    } else {
+                        closeStagePicker();
+                        menu.style.display = 'flex';
+                        if (btn) btn.setAttribute('aria-expanded', 'true');
+                    }
+                }
+
+                function closeExportMenu() {
+                    var menu = document.getElementById('graph-export-menu');
+                    var btn = document.getElementById('btn-graph-export');
+                    if (menu) menu.style.display = 'none';
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                }
+
+                function exportPipelineCanvas(format) {
+                    closeExportMenu();
+                    var flow = document.getElementById('pipeline-flow');
+                    var canvas = document.getElementById('pipeline-flow-canvas');
+                    if (!flow || !canvas || !graphData) {
+                        showToast("Pipeline canvas not available to export", "error");
+                        return;
+                    }
+
+                    try {
+                        var svgEl = document.getElementById('pipeline-flow-svg');
+                        var baseW = Math.ceil(canvas.scrollWidth);
+                        var baseH = Math.ceil(canvas.scrollHeight);
+                        if (svgEl) {
+                            var svgW = parseInt(svgEl.getAttribute('width') || 0, 10);
+                            var svgH = parseInt(svgEl.getAttribute('height') || 0, 10);
+                            if (svgW &gt; baseW) baseW = svgW;
+                            if (svgH &gt; baseH) baseH = svgH;
+                        }
+
+                        var pad = 32;
+                        var totalW = baseW + (pad * 2);
+                        var totalH = baseH + (pad * 2);
+
+                        var isDark = document.querySelector('.horizon-container.theme-dark') !== null;
+                        var bgColor = isDark ? '#0b1120' : '#f8fafc';
+
+                        // Extract styling from document stylesheets
+                        var cssRules = [];
+                        for (var i = 0; i &lt; document.styleSheets.length; i++) {
+                            try {
+                                var sheet = document.styleSheets[i];
+                                var rules = sheet.cssRules || sheet.rules;
+                                if (rules) {
+                                    for (var r = 0; r &lt; rules.length; r++) {
+                                        cssRules.push(rules[r].cssText);
+                                    }
+                                }
+                            } catch (e) {}
+                        }
+                        var styleText = cssRules.join('\n').replace(/&lt;\/style&gt;/gi, '');
+
+                        var clone = canvas.cloneNode(true);
+                        clone.style.transform = 'none';
+                        clone.style.margin = '0px';
+                        clone.style.position = 'relative';
+                        clone.style.width = baseW + 'px';
+                        clone.style.height = baseH + 'px';
+                        clone.style.overflow = 'visible';
+
+                        // Clean interactive button visual cues in clone
+                        var panningNodes = clone.querySelectorAll('.is-panning');
+                        for (var p = 0; p &lt; panningNodes.length; p++) {
+                            panningNodes[p].classList.remove('is-panning');
+                        }
+
+                        var serializer = new XMLSerializer();
+                        var canvasHtml = serializer.serializeToString(clone);
+
+                        var svgXml = '&lt;svg xmlns="http://www.w3.org/2000/svg" width="' + totalW + '" height="' + totalH + '" viewBox="0 0 ' + totalW + ' ' + totalH + '"&gt;' +
+                            '&lt;defs&gt;&lt;style type="text/css"&gt;' + styleText + '&lt;/style&gt;&lt;/defs&gt;' +
+                            '&lt;rect width="100%" height="100%" fill="' + bgColor + '"/&gt;' +
+                            '&lt;foreignObject x="' + pad + '" y="' + pad + '" width="' + baseW + '" height="' + baseH + '"&gt;' +
+                            '&lt;div xmlns="http://www.w3.org/1999/xhtml" class="horizon-container ' + (isDark ? 'theme-dark' : '') + '" style="background:transparent; min-height:auto; width:100%; height:100%;"&gt;' +
+                            canvasHtml +
+                            '&lt;/div&gt;&lt;/foreignObject&gt;&lt;/svg&gt;';
+
+                        var svgBlob = new Blob([svgXml], { type: 'image/svg+xml;charset=utf-8' });
+                        var svgUrl = URL.createObjectURL(svgBlob);
+                        var buildNum = graphData.number || 'run';
+
+                        if (format === 'svg') {
+                            var downloadLink = document.createElement('a');
+                            downloadLink.href = svgUrl;
+                            downloadLink.download = 'pipeline-build-' + buildNum + '-dag.svg';
+                            document.body.appendChild(downloadLink);
+                            downloadLink.click();
+                            document.body.removeChild(downloadLink);
+                            setTimeout(function() { URL.revokeObjectURL(svgUrl); }, 15000);
+                            showToast("Exported pipeline DAG as SVG vector!", "success");
+                            return;
+                        }
+
+                        // Format is PNG - rasterize onto high-DPI canvas
+                        var img = new Image();
+                        img.onload = function() {
+                            try {
+                                var scale = 2; // Crisp 2x Retina resolution
+                                var offscreenCanvas = document.createElement('canvas');
+                                offscreenCanvas.width = totalW * scale;
+                                offscreenCanvas.height = totalH * scale;
+                                var ctx = offscreenCanvas.getContext('2d');
+                                ctx.imageSmoothingEnabled = true;
+                                ctx.imageSmoothingQuality = 'high';
+                                ctx.fillStyle = bgColor;
+                                ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                                ctx.scale(scale, scale);
+                                ctx.drawImage(img, 0, 0);
+                                URL.revokeObjectURL(svgUrl);
+
+                                if (offscreenCanvas.toBlob) {
+                                    offscreenCanvas.toBlob(function(pngBlob) {
+                                        if (!pngBlob) {
+                                            showToast("Failed generating PNG image", "error");
+                                            return;
+                                        }
+                                        var pngUrl = URL.createObjectURL(pngBlob);
+                                        var pngLink = document.createElement('a');
+                                        pngLink.href = pngUrl;
+                                        pngLink.download = 'pipeline-build-' + buildNum + '-dag.png';
+                                        document.body.appendChild(pngLink);
+                                        pngLink.click();
+                                        document.body.removeChild(pngLink);
+                                        setTimeout(function() { URL.revokeObjectURL(pngUrl); }, 15000);
+                                        showToast("Exported high-resolution PNG snapshot!", "success");
+                                    }, 'image/png');
+                                } else {
+                                    var dataUrl = offscreenCanvas.toDataURL('image/png');
+                                    var pngLink = document.createElement('a');
+                                    pngLink.href = dataUrl;
+                                    pngLink.download = 'pipeline-build-' + buildNum + '-dag.png';
+                                    document.body.appendChild(pngLink);
+                                    pngLink.click();
+                                    document.body.removeChild(pngLink);
+                                    showToast("Exported high-resolution PNG snapshot!", "success");
+                                }
+                            } catch (canvasErr) {
+                                console.error("Canvas export error:", canvasErr);
+                                showToast("Could not rasterize PNG. Exporting as SVG instead.", "warn");
+                                exportPipelineCanvas('svg');
+                            }
+                        };
+                        img.onerror = function(err) {
+                            console.error("Image load error during PNG export:", err);
+                            URL.revokeObjectURL(svgUrl);
+                            showToast("PNG rasterization unavailable. Exporting as SVG instead.", "warn");
+                            exportPipelineCanvas('svg');
+                        };
+                        img.src = svgUrl;
+                    } catch (err) {
+                        console.error("Canvas export exception:", err);
+                        showToast("Error exporting canvas: " + err.message, "error");
+                    }
+                }
+
+                function exportPipelineJson() {
+                    closeExportMenu();
+                    if (!graphData) {
+                        showToast("No pipeline telemetry data available to export", "error");
+                        return;
+                    }
+                    var exportPayload = {
+                        metadata: {
+                            exportedAt: new Date().toISOString(),
+                            horizonVersion: "999999-SNAPSHOT",
+                            pageUrl: window.location.href.split('#')[0]
+                        },
+                        pipeline: graphData
+                    };
+                    var jsonText = JSON.stringify(exportPayload, null, 2);
+                    var blob = new Blob([jsonText], { type: 'application/json;charset=utf-8' });
+                    var url = URL.createObjectURL(blob);
+                    var link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'pipeline-build-' + (graphData.number || 'run') + '-telemetry.json';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setTimeout(function() { URL.revokeObjectURL(url); }, 15000);
+                    showToast("Exported build telemetry JSON (" + (graphData.stages ? graphData.stages.length : 0) + " stages)!", "success");
+                }
+
+                function copyPipelineJsonToClipboard() {
+                    closeExportMenu();
+                    if (!graphData) {
+                        showToast("No pipeline telemetry data available to copy", "error");
+                        return;
+                    }
+                    var exportPayload = {
+                        metadata: {
+                            exportedAt: new Date().toISOString(),
+                            horizonVersion: "999999-SNAPSHOT",
+                            pageUrl: window.location.href.split('#')[0]
+                        },
+                        pipeline: graphData
+                    };
+                    var jsonText = JSON.stringify(exportPayload, null, 2);
+                    if (navigator.clipboard &amp;&amp; navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(jsonText).then(function() {
+                            showToast("Copied full telemetry JSON to clipboard!", "success");
+                        }).catch(function() {
+                            promptCopyText(jsonText);
+                        });
+                    } else {
+                        promptCopyText(jsonText);
+                    }
                 }
 
                 function renderStagePickerList(filterQuery) {
@@ -12386,6 +12766,10 @@
                     var pickerWrap = document.getElementById('stage-picker-wrap');
                     if (pickerWrap &amp;&amp; !pickerWrap.contains(e.target)) {
                         closeStagePicker();
+                    }
+                    var exportWrap = document.getElementById('graph-export-wrap');
+                    if (exportWrap &amp;&amp; !exportWrap.contains(e.target)) {
+                        closeExportMenu();
                     }
                 });
 
@@ -13434,6 +13818,16 @@
                             return;
                         }
                     }
+                    var exportMenu = document.getElementById('graph-export-menu');
+                    if (exportMenu &amp;&amp; exportMenu.style.display !== 'none') {
+                        if (e.key === 'Escape') {
+                            e.preventDefault();
+                            closeExportMenu();
+                            var btn = document.getElementById('btn-graph-export');
+                            if (btn) btn.focus();
+                            return;
+                        }
+                    }
                     var shortcutsModal = document.getElementById('shortcuts-modal');
                     if (shortcutsModal &amp;&amp; shortcutsModal.classList.contains('active')) {
                         if (e.key === 'Escape') {
@@ -13589,6 +13983,12 @@
                     if (e.key === 's' || e.key === 'S') {
                         e.preventDefault();
                         toggleStagePicker();
+                        return;
+                    }
+
+                    if (e.key === 'e' || e.key === 'E') {
+                        e.preventDefault();
+                        toggleExportMenu();
                         return;
                     }
                 });
