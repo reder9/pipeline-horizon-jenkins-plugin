@@ -12311,6 +12311,66 @@
                     if (btn) btn.setAttribute('aria-expanded', 'false');
                 }
 
+                function getStageExportColors(status, isDark) {
+                    var st = (status || 'SUCCESS').toUpperCase();
+                    if (st === 'SUCCESS') {
+                        return {
+                            pillBg: isDark ? '#064e3b' : '#d1fae5',
+                            pillText: isDark ? '#34d399' : '#065f46',
+                            border: isDark ? '#065f46' : '#a7f3d0',
+                            path: '#10b981'
+                        };
+                    }
+                    if (st === 'FAILED' || st === 'FAILURE') {
+                        return {
+                            pillBg: isDark ? '#450a0a' : '#fee2e2',
+                            pillText: isDark ? '#f87171' : '#991b1b',
+                            border: isDark ? '#991b1b' : '#fca5a5',
+                            path: '#ef4444'
+                        };
+                    }
+                    if (st === 'UNSTABLE') {
+                        return {
+                            pillBg: isDark ? '#451a03' : '#fef3c7',
+                            pillText: isDark ? '#fbbf24' : '#92400e',
+                            border: isDark ? '#92400e' : '#fcd34d',
+                            path: '#f59e0b'
+                        };
+                    }
+                    if (st === 'IN_PROGRESS') {
+                        return {
+                            pillBg: isDark ? '#172554' : '#dbeafe',
+                            pillText: isDark ? '#60a5fa' : '#1e40af',
+                            border: isDark ? '#1e40af' : '#93c5fd',
+                            path: '#3b82f6'
+                        };
+                    }
+                    if (st === 'PAUSED_INPUT') {
+                        return {
+                            pillBg: isDark ? '#2e1065' : '#ede9fe',
+                            pillText: isDark ? '#a78bfa' : '#5b21b6',
+                            border: isDark ? '#5b21b6' : '#c4b5fd',
+                            path: '#8b5cf6'
+                        };
+                    }
+                    return {
+                        pillBg: isDark ? '#1e293b' : '#f1f5f9',
+                        pillText: isDark ? '#94a3b8' : '#64748b',
+                        border: isDark ? '#334155' : '#cbd5e1',
+                        path: '#64748b'
+                    };
+                }
+
+                function getConnectorPathColor(cls) {
+                    if (!cls) return '#64748b';
+                    if (cls.indexOf('flow-failed') !== -1) return '#ef4444';
+                    if (cls.indexOf('flow-success') !== -1) return '#10b981';
+                    if (cls.indexOf('flow-unstable') !== -1) return '#f59e0b';
+                    if (cls.indexOf('flow-in-progress') !== -1) return '#3b82f6';
+                    if (cls.indexOf('flow-paused-input') !== -1) return '#8b5cf6';
+                    return '#64748b';
+                }
+
                 function exportPipelineCanvas(format) {
                     closeExportMenu();
                     var flow = document.getElementById('pipeline-flow');
@@ -12322,6 +12382,8 @@
 
                     try {
                         var svgEl = document.getElementById('pipeline-flow-svg');
+                        var zoom = currentZoom || 1.0;
+                        var canvasRect = canvas.getBoundingClientRect();
                         var baseW = Math.ceil(canvas.scrollWidth);
                         var baseH = Math.ceil(canvas.scrollHeight);
                         if (svgEl) {
@@ -12331,58 +12393,135 @@
                             if (svgH &gt; baseH) baseH = svgH;
                         }
 
-                        var pad = 32;
+                        var pad = 40;
+                        var headerH = 48;
                         var totalW = baseW + (pad * 2);
-                        var totalH = baseH + (pad * 2);
+                        var totalH = baseH + headerH + (pad * 2);
 
                         var isDark = document.querySelector('.horizon-container.theme-dark') !== null;
                         var bgColor = isDark ? '#0b1120' : '#f8fafc';
-
-                        // Extract styling from document stylesheets
-                        var cssRules = [];
-                        for (var i = 0; i &lt; document.styleSheets.length; i++) {
-                            try {
-                                var sheet = document.styleSheets[i];
-                                var rules = sheet.cssRules || sheet.rules;
-                                if (rules) {
-                                    for (var r = 0; r &lt; rules.length; r++) {
-                                        cssRules.push(rules[r].cssText);
-                                    }
-                                }
-                            } catch (e) {}
-                        }
-                        var styleText = cssRules.join('\n').replace(/&lt;\/style&gt;/gi, '');
-
-                        var clone = canvas.cloneNode(true);
-                        clone.style.transform = 'none';
-                        clone.style.margin = '0px';
-                        clone.style.position = 'relative';
-                        clone.style.width = baseW + 'px';
-                        clone.style.height = baseH + 'px';
-                        clone.style.overflow = 'visible';
-
-                        // Clean interactive button visual cues in clone
-                        var panningNodes = clone.querySelectorAll('.is-panning');
-                        for (var p = 0; p &lt; panningNodes.length; p++) {
-                            panningNodes[p].classList.remove('is-panning');
-                        }
-
-                        var serializer = new XMLSerializer();
-                        var canvasHtml = serializer.serializeToString(clone);
-
-                        var svgXml = '&lt;svg xmlns="http://www.w3.org/2000/svg" width="' + totalW + '" height="' + totalH + '" viewBox="0 0 ' + totalW + ' ' + totalH + '"&gt;' +
-                            '&lt;defs&gt;&lt;style type="text/css"&gt;' + styleText + '&lt;/style&gt;&lt;/defs&gt;' +
-                            '&lt;rect width="100%" height="100%" fill="' + bgColor + '"/&gt;' +
-                            '&lt;foreignObject x="' + pad + '" y="' + pad + '" width="' + baseW + '" height="' + baseH + '"&gt;' +
-                            '&lt;div xmlns="http://www.w3.org/1999/xhtml" class="horizon-container ' + (isDark ? 'theme-dark' : '') + '" style="background:transparent; min-height:auto; width:100%; height:100%;"&gt;' +
-                            canvasHtml +
-                            '&lt;/div&gt;&lt;/foreignObject&gt;&lt;/svg&gt;';
-
-                        var svgBlob = new Blob([svgXml], { type: 'image/svg+xml;charset=utf-8' });
-                        var svgUrl = URL.createObjectURL(svgBlob);
+                        var textPrimary = isDark ? '#f8fafc' : '#0f172a';
+                        var textSecondary = isDark ? '#94a3b8' : '#64748b';
                         var buildNum = graphData.number || 'run';
 
+                        // -------------------------------------------------------------
+                        // EXPORT FORMAT: SVG (Pure Native Vector SVG)
+                        // -------------------------------------------------------------
                         if (format === 'svg') {
+                            var svg = '&lt;svg xmlns="http://www.w3.org/2000/svg" width="' + totalW + '" height="' + totalH + '" viewBox="0 0 ' + totalW + ' ' + totalH + '"&gt;\n';
+                            svg += '  &lt;defs&gt;\n';
+                            svg += '    &lt;style type="text/css"&gt;\n';
+                            svg += '      text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }\n';
+                            svg += '    &lt;/style&gt;\n';
+                            svg += '  &lt;/defs&gt;\n';
+                            svg += '  &lt;rect width="100%" height="100%" fill="' + bgColor + '"/&gt;\n';
+
+                            // Title &amp; Telemetry Header
+                            var titleStr = escapeHtml((graphData.fullName || graphData.name || 'Pipeline') + ' #' + buildNum);
+                            var runStatus = (graphData.status || 'SUCCESS').toUpperCase();
+                            var statusCol = getStageExportColors(runStatus, isDark);
+                            var durationStr = escapeHtml(graphData.durationFormatted || formatDuration(graphData.duration || 0));
+
+                            svg += '  &lt;g transform="translate(' + pad + ',' + (pad - 8) + ')"&gt;\n';
+                            svg += '    &lt;text x="0" y="16" fill="' + textPrimary + '" font-size="16" font-weight="700"&gt;' + titleStr + '&lt;/text&gt;\n';
+                            svg += '    &lt;rect x="' + (titleStr.length * 9 + 12) + '" y="2" width="68" height="18" rx="9" fill="' + statusCol.pillBg + '"/&gt;\n';
+                            svg += '    &lt;text x="' + (titleStr.length * 9 + 46) + '" y="15" fill="' + statusCol.pillText + '" font-size="10" font-weight="bold" text-anchor="middle"&gt;' + runStatus + '&lt;/text&gt;\n';
+                            svg += '    &lt;text x="' + (titleStr.length * 9 + 90) + '" y="15" fill="' + textSecondary + '" font-size="12"&gt;Duration: ' + durationStr + '&lt;/text&gt;\n';
+                            svg += '  &lt;/g&gt;\n';
+
+                            svg += '  &lt;g transform="translate(' + pad + ',' + (pad + headerH) + ')"&gt;\n';
+
+                            // Connecting lines
+                            if (svgEl) {
+                                var paths = svgEl.querySelectorAll('path');
+                                for (var p = 0; p &lt; paths.length; p++) {
+                                    var path = paths[p];
+                                    var d = path.getAttribute('d');
+                                    var cls = path.getAttribute('class') || '';
+                                    var col = getConnectorPathColor(cls);
+                                    svg += '    &lt;path d="' + d + '" stroke="' + col + '" stroke-width="2.5" fill="none" stroke-linecap="round"/&gt;\n';
+                                }
+                                var circles = svgEl.querySelectorAll('circle');
+                                for (var ci = 0; ci &lt; circles.length; ci++) {
+                                    var dot = circles[ci];
+                                    var dotCls = dot.getAttribute('class') || '';
+                                    var dotCol = getConnectorPathColor(dotCls);
+                                    svg += '    &lt;circle cx="' + dot.getAttribute('cx') + '" cy="' + dot.getAttribute('cy') + '" r="' + (dot.getAttribute('r') || '3.5') + '" fill="' + dotCol + '"/&gt;\n';
+                                }
+                            }
+
+                            // Start Terminal Node
+                            var startNode = document.getElementById('terminal-node-start');
+                            if (startNode) {
+                                var sr = startNode.getBoundingClientRect();
+                                var scx = (sr.left - canvasRect.left) / zoom + sr.width / (zoom * 2);
+                                var scy = (sr.top - canvasRect.top) / zoom + sr.height / (zoom * 2);
+                                svg += '    &lt;circle cx="' + scx + '" cy="' + scy + '" r="9" fill="#10b981"/&gt;\n';
+                                svg += '    &lt;text x="' + scx + '" y="' + (scy - 14) + '" fill="' + textSecondary + '" font-size="11" font-weight="bold" text-anchor="middle"&gt;Start&lt;/text&gt;\n';
+                            }
+
+                            // Parallel Stacks
+                            var pLabels = canvas.querySelectorAll('.parallel-label');
+                            for (var pl = 0; pl &lt; pLabels.length; pl++) {
+                                var plEl = pLabels[pl];
+                                var plr = plEl.getBoundingClientRect();
+                                var plx = (plr.left - canvasRect.left) / zoom;
+                                var ply = (plr.top - canvasRect.top) / zoom;
+                                var plNameEl = plEl.querySelector('.parallel-label-name');
+                                var plName = plNameEl ? escapeHtml(plNameEl.textContent.trim()) : 'Parallel';
+                                svg += '    &lt;g transform="translate(' + plx + ',' + ply + ')"&gt;\n';
+                                svg += '      &lt;text x="4" y="14" fill="' + textSecondary + '" font-size="11" font-weight="600"&gt;' + plName + '&lt;/text&gt;\n';
+                                svg += '    &lt;/g&gt;\n';
+                            }
+
+                            // Stage Node Cards
+                            var cards = canvas.querySelectorAll('.stage-node-card');
+                            for (var c = 0; c &lt; cards.length; c++) {
+                                var card = cards[c];
+                                var cr = card.getBoundingClientRect();
+                                var cx = (cr.left - canvasRect.left) / zoom;
+                                var cy = (cr.top - canvasRect.top) / zoom;
+                                var cw = cr.width / zoom;
+                                var ch = cr.height / zoom;
+                                var cSt = (card.getAttribute('data-status') || 'SUCCESS').toUpperCase();
+                                var cCol = getStageExportColors(cSt, isDark);
+                                var titleEl = card.querySelector('.stage-card-title');
+                                var titleText = titleEl ? escapeHtml(titleEl.textContent.trim()) : '';
+                                var timingEl = card.querySelector('.stage-card-timing');
+                                var timingText = timingEl ? escapeHtml(timingEl.textContent.trim()) : '';
+                                var agentEl = card.querySelector('.stage-agent-pill') || card.querySelector('.agent-badge');
+                                var agentText = agentEl ? escapeHtml(agentEl.textContent.trim()) : '';
+                                var pillW = Math.max(54, Math.min(cw - 24, cSt.length * 7 + 16));
+
+                                svg += '    &lt;g transform="translate(' + cx + ',' + cy + ')"&gt;\n';
+                                svg += '      &lt;rect width="' + cw + '" height="' + ch + '" rx="10" fill="' + (isDark ? '#1e293b' : '#ffffff') + '" stroke="' + cCol.border + '" stroke-width="1.5"/&gt;\n';
+                                svg += '      &lt;rect x="12" y="10" width="' + pillW + '" height="18" rx="9" fill="' + cCol.pillBg + '"/&gt;\n';
+                                svg += '      &lt;text x="' + (12 + pillW / 2) + '" y="23" fill="' + cCol.pillText + '" font-size="10" font-weight="bold" text-anchor="middle"&gt;' + cSt + '&lt;/text&gt;\n';
+                                svg += '      &lt;text x="12" y="47" fill="' + textPrimary + '" font-size="12" font-weight="600"&gt;' + titleText + '&lt;/text&gt;\n';
+                                svg += '      &lt;text x="12" y="65" fill="' + textSecondary + '" font-size="11"&gt;' + timingText + '&lt;/text&gt;\n';
+                                if (agentText) {
+                                    svg += '      &lt;text x="' + (cw - 12) + '" y="65" fill="' + textSecondary + '" font-size="10" text-anchor="end"&gt;' + agentText + '&lt;/text&gt;\n';
+                                }
+                                svg += '    &lt;/g&gt;\n';
+                            }
+
+                            // End Terminal Node
+                            var endNode = document.getElementById('terminal-node-end');
+                            if (endNode) {
+                                var er = endNode.getBoundingClientRect();
+                                var ecx = (er.left - canvasRect.left) / zoom + er.width / (zoom * 2);
+                                var ecy = (er.top - canvasRect.top) / zoom + er.height / (zoom * 2);
+                                var endStatus = (endNode.getAttribute('data-status') || runStatus).toUpperCase();
+                                var endCol = getStageExportColors(endStatus, isDark);
+                                svg += '    &lt;circle cx="' + ecx + '" cy="' + ecy + '" r="11" fill="' + endCol.path + '"/&gt;\n';
+                                svg += '    &lt;circle cx="' + ecx + '" cy="' + ecy + '" r="4" fill="#ffffff"/&gt;\n';
+                                svg += '    &lt;text x="' + ecx + '" y="' + (ecy - 16) + '" fill="' + textSecondary + '" font-size="11" font-weight="bold" text-anchor="middle"&gt;End&lt;/text&gt;\n';
+                            }
+
+                            svg += '  &lt;/g&gt;\n&lt;/svg&gt;';
+
+                            var svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+                            var svgUrl = URL.createObjectURL(svgBlob);
                             var downloadLink = document.createElement('a');
                             downloadLink.href = svgUrl;
                             downloadLink.download = 'pipeline-build-' + buildNum + '-dag.svg';
@@ -12390,66 +12529,242 @@
                             downloadLink.click();
                             document.body.removeChild(downloadLink);
                             setTimeout(function() { URL.revokeObjectURL(svgUrl); }, 15000);
-                            showToast("Exported pipeline DAG as SVG vector!", "success");
+                            showToast("Exported pipeline DAG as pure Vector SVG!", "success");
                             return;
                         }
 
-                        // Format is PNG - rasterize onto high-DPI canvas
-                        var img = new Image();
-                        img.onload = function() {
-                            try {
-                                var scale = 2; // Crisp 2x Retina resolution
-                                var offscreenCanvas = document.createElement('canvas');
-                                offscreenCanvas.width = totalW * scale;
-                                offscreenCanvas.height = totalH * scale;
-                                var ctx = offscreenCanvas.getContext('2d');
-                                ctx.imageSmoothingEnabled = true;
-                                ctx.imageSmoothingQuality = 'high';
-                                ctx.fillStyle = bgColor;
-                                ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-                                ctx.scale(scale, scale);
-                                ctx.drawImage(img, 0, 0);
-                                URL.revokeObjectURL(svgUrl);
+                        // -------------------------------------------------------------
+                        // EXPORT FORMAT: PNG (Direct Canvas 2D 2x Retina Rendering)
+                        // -------------------------------------------------------------
+                        var scale = 2;
+                        var offscreenCanvas = document.createElement('canvas');
+                        offscreenCanvas.width = totalW * scale;
+                        offscreenCanvas.height = totalH * scale;
+                        var ctx = offscreenCanvas.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.scale(scale, scale);
 
-                                if (offscreenCanvas.toBlob) {
-                                    offscreenCanvas.toBlob(function(pngBlob) {
-                                        if (!pngBlob) {
-                                            showToast("Failed generating PNG image", "error");
-                                            return;
-                                        }
-                                        var pngUrl = URL.createObjectURL(pngBlob);
-                                        var pngLink = document.createElement('a');
-                                        pngLink.href = pngUrl;
-                                        pngLink.download = 'pipeline-build-' + buildNum + '-dag.png';
-                                        document.body.appendChild(pngLink);
-                                        pngLink.click();
-                                        document.body.removeChild(pngLink);
-                                        setTimeout(function() { URL.revokeObjectURL(pngUrl); }, 15000);
-                                        showToast("Exported high-resolution PNG snapshot!", "success");
-                                    }, 'image/png');
-                                } else {
-                                    var dataUrl = offscreenCanvas.toDataURL('image/png');
-                                    var pngLink = document.createElement('a');
-                                    pngLink.href = dataUrl;
-                                    pngLink.download = 'pipeline-build-' + buildNum + '-dag.png';
-                                    document.body.appendChild(pngLink);
-                                    pngLink.click();
-                                    document.body.removeChild(pngLink);
-                                    showToast("Exported high-resolution PNG snapshot!", "success");
-                                }
-                            } catch (canvasErr) {
-                                console.error("Canvas export error:", canvasErr);
-                                showToast("Could not rasterize PNG. Exporting as SVG instead.", "warn");
-                                exportPipelineCanvas('svg');
+                        // Background fill
+                        ctx.fillStyle = bgColor;
+                        ctx.fillRect(0, 0, totalW, totalH);
+
+                        // Title &amp; Telemetry Header
+                        var runStatus = (graphData.status || 'SUCCESS').toUpperCase();
+                        var statusCol = getStageExportColors(runStatus, isDark);
+                        var titleStr = (graphData.fullName || graphData.name || 'Pipeline') + ' #' + buildNum;
+                        var durationStr = graphData.durationFormatted || formatDuration(graphData.duration || 0);
+
+                        ctx.fillStyle = textPrimary;
+                        ctx.font = '700 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                        ctx.textAlign = 'left';
+                        ctx.fillText(titleStr, pad, pad + 16);
+
+                        var titleMetrics = ctx.measureText(titleStr);
+                        var pillX = pad + titleMetrics.width + 12;
+                        var pillW = Math.max(56, runStatus.length * 7 + 16);
+
+                        ctx.beginPath();
+                        if (ctx.roundRect) ctx.roundRect(pillX, pad + 2, pillW, 18, 9);
+                        else ctx.rect(pillX, pad + 2, pillW, 18);
+                        ctx.fillStyle = statusCol.pillBg;
+                        ctx.fill();
+
+                        ctx.fillStyle = statusCol.pillText;
+                        ctx.font = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(runStatus, pillX + pillW / 2, pad + 15);
+
+                        ctx.textAlign = 'left';
+                        ctx.fillStyle = textSecondary;
+                        ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                        ctx.fillText('Duration: ' + durationStr, pillX + pillW + 12, pad + 15);
+
+                        // Connecting paths
+                        ctx.save();
+                        ctx.translate(pad, pad + headerH);
+                        if (svgEl) {
+                            var paths = svgEl.querySelectorAll('path');
+                            for (var p = 0; p &lt; paths.length; p++) {
+                                var path = paths[p];
+                                var d = path.getAttribute('d');
+                                var cls = path.getAttribute('class') || '';
+                                var col = getConnectorPathColor(cls);
+                                ctx.beginPath();
+                                ctx.strokeStyle = col;
+                                ctx.lineWidth = 2.5;
+                                ctx.lineCap = 'round';
+                                ctx.stroke(new Path2D(d));
                             }
-                        };
-                        img.onerror = function(err) {
-                            console.error("Image load error during PNG export:", err);
-                            URL.revokeObjectURL(svgUrl);
-                            showToast("PNG rasterization unavailable. Exporting as SVG instead.", "warn");
-                            exportPipelineCanvas('svg');
-                        };
-                        img.src = svgUrl;
+                            var circles = svgEl.querySelectorAll('circle');
+                            for (var ci = 0; ci &lt; circles.length; ci++) {
+                                var dot = circles[ci];
+                                var dotCls = dot.getAttribute('class') || '';
+                                var dotCol = getConnectorPathColor(dotCls);
+                                var dcx = parseFloat(dot.getAttribute('cx') || 0);
+                                var dcy = parseFloat(dot.getAttribute('cy') || 0);
+                                var dr = parseFloat(dot.getAttribute('r') || 3.5);
+                                ctx.beginPath();
+                                ctx.arc(dcx, dcy, dr, 0, Math.PI * 2);
+                                ctx.fillStyle = dotCol;
+                                ctx.fill();
+                            }
+                        }
+
+                        // Start Node
+                        var startNode = document.getElementById('terminal-node-start');
+                        if (startNode) {
+                            var sr = startNode.getBoundingClientRect();
+                            var scx = (sr.left - canvasRect.left) / zoom + sr.width / (zoom * 2);
+                            var scy = (sr.top - canvasRect.top) / zoom + sr.height / (zoom * 2);
+                            ctx.beginPath();
+                            ctx.arc(scx, scy, 9, 0, Math.PI * 2);
+                            ctx.fillStyle = '#10b981';
+                            ctx.fill();
+
+                            ctx.fillStyle = textSecondary;
+                            ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('Start', scx, scy - 14);
+                        }
+
+                        // Parallel labels
+                        var pLabels = canvas.querySelectorAll('.parallel-label');
+                        for (var pl = 0; pl &lt; pLabels.length; pl++) {
+                            var plEl = pLabels[pl];
+                            var plr = plEl.getBoundingClientRect();
+                            var plx = (plr.left - canvasRect.left) / zoom;
+                            var ply = (plr.top - canvasRect.top) / zoom;
+                            var plNameEl = plEl.querySelector('.parallel-label-name');
+                            var plName = plNameEl ? plNameEl.textContent.trim() : 'Parallel';
+                            ctx.fillStyle = textSecondary;
+                            ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                            ctx.textAlign = 'left';
+                            ctx.fillText(plName, plx + 4, ply + 14);
+                        }
+
+                        // Stage Cards
+                        var cards = canvas.querySelectorAll('.stage-node-card');
+                        for (var c = 0; c &lt; cards.length; c++) {
+                            var card = cards[c];
+                            var cr = card.getBoundingClientRect();
+                            var cx = (cr.left - canvasRect.left) / zoom;
+                            var cy = (cr.top - canvasRect.top) / zoom;
+                            var cw = cr.width / zoom;
+                            var ch = cr.height / zoom;
+                            var cSt = (card.getAttribute('data-status') || 'SUCCESS').toUpperCase();
+                            var cCol = getStageExportColors(cSt, isDark);
+                            var titleEl = card.querySelector('.stage-card-title');
+                            var titleText = titleEl ? titleEl.textContent.trim() : '';
+                            var timingEl = card.querySelector('.stage-card-timing');
+                            var timingText = timingEl ? timingEl.textContent.trim() : '';
+                            var agentEl = card.querySelector('.stage-agent-pill') || card.querySelector('.agent-badge');
+                            var agentText = agentEl ? agentEl.textContent.trim() : '';
+                            var pillW = Math.max(54, Math.min(cw - 24, cSt.length * 7 + 16));
+
+                            // Card background &amp; border
+                            ctx.beginPath();
+                            if (ctx.roundRect) ctx.roundRect(cx, cy, cw, ch, 10);
+                            else ctx.rect(cx, cy, cw, ch);
+                            ctx.fillStyle = isDark ? '#1e293b' : '#ffffff';
+                            ctx.fill();
+                            ctx.strokeStyle = cCol.border;
+                            ctx.lineWidth = 1.5;
+                            ctx.stroke();
+
+                            // Status pill
+                            ctx.beginPath();
+                            if (ctx.roundRect) ctx.roundRect(cx + 12, cy + 10, pillW, 18, 9);
+                            else ctx.rect(cx + 12, cy + 10, pillW, 18);
+                            ctx.fillStyle = cCol.pillBg;
+                            ctx.fill();
+
+                            ctx.fillStyle = cCol.pillText;
+                            ctx.font = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(cSt, cx + 12 + pillW / 2, cy + 23);
+
+                            // Stage title
+                            ctx.textAlign = 'left';
+                            ctx.fillStyle = textPrimary;
+                            ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                            var maxW = cw - 24;
+                            var renderTitle = titleText;
+                            if (ctx.measureText(renderTitle).width &gt; maxW) {
+                                while (renderTitle.length &gt; 3 &amp;&amp; ctx.measureText(renderTitle + '...').width &gt; maxW) {
+                                    renderTitle = renderTitle.slice(0, -1);
+                                }
+                                renderTitle += '...';
+                            }
+                            ctx.fillText(renderTitle, cx + 12, cy + 47);
+
+                            // Timing
+                            ctx.fillStyle = textSecondary;
+                            ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                            ctx.fillText(timingText, cx + 12, cy + 65);
+
+                            // Agent
+                            if (agentText) {
+                                ctx.fillStyle = textSecondary;
+                                ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                                ctx.textAlign = 'right';
+                                ctx.fillText(agentText, cx + cw - 12, cy + 65);
+                            }
+                        }
+
+                        // End Node
+                        var endNode = document.getElementById('terminal-node-end');
+                        if (endNode) {
+                            var er = endNode.getBoundingClientRect();
+                            var ecx = (er.left - canvasRect.left) / zoom + er.width / (zoom * 2);
+                            var ecy = (er.top - canvasRect.top) / zoom + er.height / (zoom * 2);
+                            var endStatus = (endNode.getAttribute('data-status') || runStatus).toUpperCase();
+                            var endCol = getStageExportColors(endStatus, isDark);
+                            ctx.beginPath();
+                            ctx.arc(ecx, ecy, 11, 0, Math.PI * 2);
+                            ctx.fillStyle = endCol.path;
+                            ctx.fill();
+
+                            ctx.beginPath();
+                            ctx.arc(ecx, ecy, 4, 0, Math.PI * 2);
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fill();
+
+                            ctx.fillStyle = textSecondary;
+                            ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('End', ecx, ecy - 16);
+                        }
+
+                        ctx.restore();
+
+                        // Save PNG
+                        if (offscreenCanvas.toBlob) {
+                            offscreenCanvas.toBlob(function(pngBlob) {
+                                if (!pngBlob) {
+                                    showToast("Failed generating PNG image", "error");
+                                    return;
+                                }
+                                var pngUrl = URL.createObjectURL(pngBlob);
+                                var pngLink = document.createElement('a');
+                                pngLink.href = pngUrl;
+                                pngLink.download = 'pipeline-build-' + buildNum + '-dag.png';
+                                document.body.appendChild(pngLink);
+                                pngLink.click();
+                                document.body.removeChild(pngLink);
+                                setTimeout(function() { URL.revokeObjectURL(pngUrl); }, 15000);
+                                showToast("Exported high-resolution PNG snapshot!", "success");
+                            }, 'image/png');
+                        } else {
+                            var dataUrl = offscreenCanvas.toDataURL('image/png');
+                            var pngLink = document.createElement('a');
+                            pngLink.href = dataUrl;
+                            pngLink.download = 'pipeline-build-' + buildNum + '-dag.png';
+                            document.body.appendChild(pngLink);
+                            pngLink.click();
+                            document.body.removeChild(pngLink);
+                            showToast("Exported high-resolution PNG snapshot!", "success");
+                        }
                     } catch (err) {
                         console.error("Canvas export exception:", err);
                         showToast("Error exporting canvas: " + err.message, "error");
