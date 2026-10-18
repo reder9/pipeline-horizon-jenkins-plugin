@@ -4497,10 +4497,10 @@
                         align-items: center;
                         gap: 0.35rem;
                         flex: 1;
-                        max-width: 260px;
+                        max-width: 320px;
                         position: relative;
                     }
-                    .inline-log-search-wrap svg {
+                    .inline-log-search-wrap svg.search-mag-icon {
                         position: absolute;
                         left: 8px;
                         color: #64748b;
@@ -4511,14 +4511,156 @@
                         background: #0f172a;
                         border: 1px solid #1e293b;
                         border-radius: 6px;
-                        padding: 0.25rem 0.5rem 0.25rem 1.75rem;
+                        padding: 0.25rem 5.25rem 0.25rem 1.75rem;
                         font-size: 0.775rem;
                         color: #f1f5f9;
                         outline: none;
-                        transition: border-color 0.15s;
+                        transition: border-color 0.15s, box-shadow 0.15s;
                     }
                     .inline-log-search:focus {
                         border-color: #38bdf8;
+                        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+                    }
+                    .inline-log-match-stepper {
+                        position: absolute;
+                        right: 6px;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 2px;
+                        background: rgba(30, 41, 59, 0.85);
+                        border: 1px solid rgba(71, 85, 105, 0.4);
+                        border-radius: 4px;
+                        padding: 1px 4px;
+                    }
+                    .match-stepper-count {
+                        font-size: 0.68rem;
+                        font-weight: 600;
+                        color: #38bdf8;
+                        padding: 0 4px;
+                        white-space: nowrap;
+                        font-variant-numeric: tabular-nums;
+                    }
+                    .match-stepper-btn {
+                        background: transparent;
+                        border: none;
+                        color: #94a3b8;
+                        cursor: pointer;
+                        font-size: 0.65rem;
+                        padding: 1px 3px;
+                        border-radius: 3px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: all 0.15s ease;
+                    }
+                    .match-stepper-btn:hover {
+                        color: #f8fafc;
+                        background: rgba(255, 255, 255, 0.14);
+                    }
+                    .log-line.active-search-match {
+                        background: rgba(245, 158, 11, 0.24) !important;
+                        border-left: 3.5px solid #f59e0b !important;
+                        box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.35);
+                    }
+                    .hdr-shortcut-kbd {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-width: 15px;
+                        height: 15px;
+                        padding: 0 4px;
+                        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                        font-size: 0.68rem;
+                        font-weight: 700;
+                        background: rgba(148, 163, 184, 0.15);
+                        border: 1px solid rgba(148, 163, 184, 0.3);
+                        border-radius: 3px;
+                        margin-right: 4px;
+                        line-height: 1;
+                    }
+                    .shortcuts-modal-dialog {
+                        max-width: 660px;
+                        width: 95%;
+                    }
+                    .shortcuts-grid {
+                        display: grid;
+                        grid-template-columns: 1fr;
+                        gap: 1rem;
+                    }
+                    @media (min-width: 580px) {
+                        .shortcuts-grid {
+                            grid-template-columns: 1fr 1fr;
+                        }
+                        .shortcuts-section.full-span {
+                            grid-column: span 2;
+                        }
+                    }
+                    .shortcuts-section {
+                        background: rgba(248, 250, 252, 0.85);
+                        border: 1px solid #e2e8f0;
+                        border-radius: 8px;
+                        padding: 0.85rem 1rem;
+                    }
+                    .horizon-container.theme-dark .shortcuts-section {
+                        background: rgba(15, 23, 42, 0.55);
+                        border-color: #1e293b;
+                    }
+                    .shortcuts-section-title {
+                        font-size: 0.72rem;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                        color: #0284c7;
+                        margin-bottom: 0.6rem;
+                    }
+                    .horizon-container.theme-dark .shortcuts-section-title {
+                        color: #38bdf8;
+                    }
+                    .shortcut-row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 0.32rem 0;
+                        border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+                    }
+                    .horizon-container.theme-dark .shortcut-row {
+                        border-bottom-color: rgba(30, 41, 59, 0.6);
+                    }
+                    .shortcut-row:last-child {
+                        border-bottom: none;
+                    }
+                    .shortcut-desc {
+                        font-size: 0.8rem;
+                        color: #334155;
+                        font-weight: 500;
+                    }
+                    .horizon-container.theme-dark .shortcut-desc {
+                        color: #cbd5e1;
+                    }
+                    .shortcut-keys {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 4px;
+                    }
+                    .hkbd {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 2px 6px;
+                        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                        font-size: 0.7rem;
+                        font-weight: 600;
+                        border-radius: 4px;
+                        background: #ffffff;
+                        color: #0f172a;
+                        border: 1px solid #cbd5e1;
+                        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+                    }
+                    .horizon-container.theme-dark .hkbd {
+                        background: #1e293b;
+                        color: #f1f5f9;
+                        border-color: #334155;
+                        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
                     }
                     .inline-log-actions {
                         display: flex;
@@ -6393,6 +6535,9 @@
 
                             <!-- Compact Utility Controls -->
                             <div class="horizon-utility-group" role="toolbar" aria-label="View and tools">
+                                <button id="btn-shortcuts" class="horizon-btn" onclick="openShortcutsModal()" title="Keyboard Shortcuts (?) [Press ?]" aria-label="Keyboard Shortcuts">
+                                    <kbd class="hdr-shortcut-kbd">?</kbd> Shortcuts
+                                </button>
                                 <button id="btn-share-markdown" class="horizon-btn" onclick="copyRunMarkdownSummary()" title="Copy formatted Markdown summary for Slack / Jira / GitHub" aria-label="Copy formatted Markdown summary">
                                     <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share
                                 </button>
@@ -6817,6 +6962,67 @@
                         <div class="horizon-modal-footer" style="padding:0.75rem 1.25rem; display:flex; justify-content:space-between; align-items:center;">
                             <span style="font-size:0.75rem; color:#64748b;">Click any failed test case to expand its assertion error and full stacktrace</span>
                             <button class="btn-modal-cancel" onclick="closeTestsModal()">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keyboard Shortcuts Cheat Sheet Modal Dialog -->
+                <div id="shortcuts-modal" class="horizon-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="shortcuts-modal-title" onclick="if(event.target===this)closeShortcutsModal()">
+                    <div class="horizon-modal-dialog shortcuts-modal-dialog">
+                        <div class="horizon-modal-header">
+                            <div style="display:flex; align-items:center; gap:0.65rem; min-width:0;">
+                                <div class="artifact-icon" style="width:32px; height:32px; border-radius:8px; flex-shrink:0; background:rgba(56, 189, 248, 0.14); color:#38bdf8;">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="2" y="4" width="20" height="16" rx="2" ry="2"/>
+                                        <line x1="6" y1="8" x2="6.01" y2="8"/>
+                                        <line x1="10" y1="8" x2="10.01" y2="8"/>
+                                        <line x1="14" y1="8" x2="14.01" y2="8"/>
+                                        <line x1="18" y1="8" x2="18.01" y2="8"/>
+                                        <line x1="6" y1="12" x2="6.01" y2="12"/>
+                                        <line x1="10" y1="12" x2="10.01" y2="12"/>
+                                        <line x1="14" y1="12" x2="14.01" y2="12"/>
+                                        <line x1="18" y1="12" x2="18.01" y2="12"/>
+                                        <line x1="7" y1="16" x2="17" y2="16"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="horizon-modal-title" id="shortcuts-modal-title">Keyboard Shortcuts</h2>
+                                    <div style="font-size:0.75rem; color:#94a3b8; font-weight:500;">Fast, keyboard-first navigation for Pipeline Horizon</div>
+                                </div>
+                            </div>
+                            <button class="horizon-modal-close" onclick="closeShortcutsModal()" aria-label="Close shortcuts cheat sheet" title="Close (Esc)">
+                                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </div>
+                        <div class="horizon-modal-body" style="padding:1.25rem; overflow-y:auto; max-height:calc(85vh - 120px);">
+                            <div class="shortcuts-grid">
+                                <div class="shortcuts-section">
+                                    <div class="shortcuts-section-title">Navigation &amp; Views</div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Canvas Flow layout</span><div class="shortcut-keys"><kbd class="hkbd">1</kbd></div></div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Wrap Rows layout</span><div class="shortcut-keys"><kbd class="hkbd">2</kbd></div></div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Fit pipeline to screen</span><div class="shortcut-keys"><kbd class="hkbd">f</kbd></div></div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Select previous / next stage</span><div class="shortcut-keys"><kbd class="hkbd">&#8592;</kbd><kbd class="hkbd">&#8594;</kbd></div></div>
+                                </div>
+                                <div class="shortcuts-section">
+                                    <div class="shortcuts-section-title">Stage Steps &amp; Logs</div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Expand / collapse focused step</span><div class="shortcut-keys"><kbd class="hkbd">Enter</kbd></div></div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Focus step log search</span><div class="shortcut-keys"><kbd class="hkbd">/</kbd></div></div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Next search match</span><div class="shortcut-keys"><kbd class="hkbd">Enter</kbd></div></div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Previous search match</span><div class="shortcut-keys"><kbd class="hkbd">Shift</kbd><span>+</span><kbd class="hkbd">Enter</kbd></div></div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Toggle Live Tail auto-scroll</span><div class="shortcut-keys"><kbd class="hkbd">t</kbd></div></div>
+                                </div>
+                                <div class="shortcuts-section full-span">
+                                    <div class="shortcuts-section-title">Modals &amp; Actions</div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Toggle keyboard shortcuts cheat sheet</span><div class="shortcut-keys"><kbd class="hkbd">?</kbd></div></div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Close modal or clear log search</span><div class="shortcut-keys"><kbd class="hkbd">Esc</kbd></div></div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Submit Replay / Input Approval</span><div class="shortcut-keys"><kbd class="hkbd">Ctrl</kbd><span>+</span><kbd class="hkbd">Enter</kbd></div></div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Validate script in Replay editor</span><div class="shortcut-keys"><kbd class="hkbd">Ctrl</kbd><span>+</span><kbd class="hkbd">S</kbd></div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="horizon-modal-footer" style="padding:0.75rem 1.25rem; display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:0.75rem; color:#64748b;">Press <kbd class="hkbd" style="font-size:0.7rem;">Esc</kbd> anytime to dismiss</span>
+                            <button class="btn-modal-cancel" onclick="closeShortcutsModal()">Got it</button>
                         </div>
                     </div>
                 </div>
@@ -10965,8 +11171,13 @@
                         html += '&lt;div class="step-inline-log" id="step-log-' + step.id + '" role="region" aria-label="Console log for ' + escapeHtml(titleStr) + '"&gt;';
                         html += '&lt;div class="inline-log-toolbar"&gt;';
                         html += '&lt;div class="inline-log-search-wrap"&gt;';
-                        html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;circle cx="11" cy="11" r="8"/&gt;&lt;line x1="21" y1="21" x2="16.65" y2="16.65"/&gt;&lt;/svg&gt;';
-                        html += '&lt;input type="text" class="inline-log-search" id="log-search-' + step.id + '" placeholder="Search log..." oninput="filterStepLog(\'' + step.id + '\', this.value)" /&gt;';
+                        html += '&lt;svg class="search-mag-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;circle cx="11" cy="11" r="8"/&gt;&lt;line x1="21" y1="21" x2="16.65" y2="16.65"/&gt;&lt;/svg&gt;';
+                        html += '&lt;input type="text" class="inline-log-search" id="log-search-' + step.id + '" placeholder="Search logs (Enter / Shift+Enter)..." oninput="filterStepLog(\'' + step.id + '\', this.value)" onkeydown="handleStepSearchKey(event, \'' + step.id + '\')" /&gt;';
+                        html += '&lt;div class="inline-log-match-stepper" id="log-match-stepper-' + step.id + '" style="display:none;"&gt;';
+                        html += '&lt;span class="match-stepper-count" id="match-count-' + step.id + '"&gt;0 of 0&lt;/span&gt;';
+                        html += '&lt;button type="button" class="match-stepper-btn" onclick="stepSearchMatch(\'' + step.id + '\', -1)" title="Previous match (Shift+Enter)"&gt;&amp;#9650;&lt;/button&gt;';
+                        html += '&lt;button type="button" class="match-stepper-btn" onclick="stepSearchMatch(\'' + step.id + '\', 1)" title="Next match (Enter)"&gt;&amp;#9660;&lt;/button&gt;';
+                        html += '&lt;/div&gt;';
                         html += '&lt;/div&gt;';
                         html += '&lt;div class="inline-log-actions"&gt;';
                         html += '&lt;span class="inline-log-line-count" id="log-count-' + step.id + '"&gt;0 lines&lt;/span&gt;';
@@ -11438,34 +11649,149 @@
                     }
                 }
 
+                var stepSearchMatches = {};
+                var stepSearchMatchIndex = {};
+
                 function filterStepLog(stepId, query) {
                     query = (query || '').toLowerCase();
                     var terminal = document.getElementById('terminal-' + stepId);
+                    var stepper = document.getElementById('log-match-stepper-' + stepId);
+                    var stepperCount = document.getElementById('match-count-' + stepId);
+                    var countEl = document.getElementById('log-count-' + stepId);
                     if (!terminal) return;
+
                     var lines = terminal.querySelectorAll('.log-line');
-                    var matchCount = 0;
+                    var matches = [];
+
+                    // Clear any previous active match highlight in this terminal
+                    terminal.querySelectorAll('.log-line.active-search-match').forEach(function(el) {
+                        el.classList.remove('active-search-match');
+                    });
+
                     lines.forEach(function(el) {
                         if (!query) {
                             el.style.display = 'flex';
-                            matchCount++;
                         } else {
                             var textSpan = el.querySelector('.log-line-text');
                             var content = textSpan ? textSpan.innerText.toLowerCase() : '';
                             if (content.indexOf(query) !== -1) {
                                 el.style.display = 'flex';
-                                matchCount++;
+                                matches.push(el);
                             } else {
                                 el.style.display = 'none';
                             }
                         }
                     });
-                    var countEl = document.getElementById('log-count-' + stepId);
-                    if (countEl) {
-                        if (query) {
-                            countEl.innerText = matchCount + ' matching';
+
+                    stepSearchMatches[stepId] = matches;
+                    stepSearchMatchIndex[stepId] = 0;
+
+                    if (!query) {
+                        if (stepper) stepper.style.display = 'none';
+                        if (countEl) countEl.innerText = lines.length + (lines.length === 1 ? ' line' : ' lines');
+                    } else {
+                        if (stepper) stepper.style.display = 'inline-flex';
+                        if (matches.length &gt; 0) {
+                            matches[0].classList.add('active-search-match');
+                            matches[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
+                            if (stepperCount) stepperCount.innerText = '1 of ' + matches.length;
                         } else {
-                            countEl.innerText = lines.length + (lines.length === 1 ? ' line' : ' lines');
+                            if (stepperCount) stepperCount.innerText = '0 of 0';
                         }
+                        if (countEl) countEl.innerText = matches.length + ' matching';
+                    }
+                }
+
+                function stepSearchMatch(stepId, direction) {
+                    var matches = stepSearchMatches[stepId];
+                    if (!matches || matches.length === 0) return;
+
+                    var curIdx = stepSearchMatchIndex[stepId] || 0;
+                    if (matches[curIdx]) {
+                        matches[curIdx].classList.remove('active-search-match');
+                    }
+
+                    curIdx = (curIdx + direction + matches.length) % matches.length;
+                    stepSearchMatchIndex[stepId] = curIdx;
+
+                    var targetEl = matches[curIdx];
+                    if (targetEl) {
+                        targetEl.classList.add('active-search-match');
+                        targetEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                    }
+
+                    var stepperCount = document.getElementById('match-count-' + stepId);
+                    if (stepperCount) {
+                        stepperCount.innerText = (curIdx + 1) + ' of ' + matches.length;
+                    }
+                }
+
+                function handleStepSearchKey(event, stepId) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        stepSearchMatch(stepId, event.shiftKey ? -1 : 1);
+                    } else if (event.key === 'Escape') {
+                        event.preventDefault();
+                        var input = document.getElementById('log-search-' + stepId);
+                        if (input) {
+                            input.value = '';
+                            filterStepLog(stepId, '');
+                            input.blur();
+                        }
+                    }
+                }
+
+                function focusStepLogSearch(stepId) {
+                    var targetId = stepId || selectedStepId;
+                    if (!targetId &amp;&amp; graphData &amp;&amp; graphData.stages) {
+                        var exp = document.querySelector('.step-accordion-item.expanded');
+                        if (exp &amp;&amp; exp.id) {
+                            targetId = exp.id.replace('step-item-', '');
+                        }
+                    }
+                    if (targetId) {
+                        var input = document.getElementById('log-search-' + targetId);
+                        if (input) {
+                            input.focus();
+                            input.select();
+                        }
+                    }
+                }
+
+                function openShortcutsModal() {
+                    var modal = document.getElementById('shortcuts-modal');
+                    if (modal) modal.classList.add('active');
+                }
+
+                function closeShortcutsModal() {
+                    var modal = document.getElementById('shortcuts-modal');
+                    if (modal) modal.classList.remove('active');
+                }
+
+                function toggleShortcutsModal() {
+                    var modal = document.getElementById('shortcuts-modal');
+                    if (modal &amp;&amp; modal.classList.contains('active')) {
+                        closeShortcutsModal();
+                    } else {
+                        openShortcutsModal();
+                    }
+                }
+
+                function navigateStageByArrow(direction) {
+                    if (!graphData || !graphData.stages) return;
+                    var allStages = Array.from(document.querySelectorAll('.stage-node'));
+                    if (allStages.length === 0) return;
+                    var currentIdx = allStages.findIndex(function(el) { return el.id === 'stage-card-' + selectedStageId; });
+                    var nextIdx;
+                    if (currentIdx === -1) {
+                        nextIdx = (direction &gt; 0) ? 0 : (allStages.length - 1);
+                    } else {
+                        nextIdx = Math.max(0, Math.min(allStages.length - 1, currentIdx + direction));
+                    }
+                    var nextEl = allStages[nextIdx];
+                    if (nextEl) {
+                        nextEl.focus();
+                        selectStage(nextEl.id.replace('stage-card-', ''));
                     }
                 }
 
@@ -12546,11 +12872,23 @@
                             return;
                         }
                     }
+                    var shortcutsModal = document.getElementById('shortcuts-modal');
+                    if (shortcutsModal &amp;&amp; shortcutsModal.classList.contains('active')) {
+                        if (e.key === 'Escape') {
+                            e.preventDefault();
+                            closeShortcutsModal();
+                            return;
+                        }
+                    }
                     var inputModal = document.getElementById('input-approval-modal');
                     if (inputModal &amp;&amp; inputModal.classList.contains('active')) {
                         if (e.key === 'Escape') {
                             e.preventDefault();
                             closeInputApprovalModal();
+                            return;
+                        } else if ((e.ctrlKey || e.metaKey) &amp;&amp; e.key === 'Enter') {
+                            e.preventDefault();
+                            submitModalInputProceed();
                             return;
                         }
                     }
@@ -12591,29 +12929,99 @@
 
                     var replayModal = document.getElementById('replay-modal');
                     var isReplayOpen = replayModal &amp;&amp; replayModal.classList.contains('active');
-                    if (!isReplayOpen) return;
-
-                    if (e.key === 'Escape') {
-                        e.preventDefault();
-                        closeReplayModal();
-                    } else if ((e.ctrlKey || e.metaKey) &amp;&amp; e.key === 'Enter') {
-                        e.preventDefault();
-                        submitReplayRun();
-                    } else if ((e.ctrlKey || e.metaKey) &amp;&amp; (e.key === 's' || e.key === 'S')) {
-                        e.preventDefault();
-                        validateReplayScript(true);
-                    } else if (e.key === 'Tab') {
-                        var editor = document.getElementById('replay-script-editor');
-                        if (document.activeElement === editor) {
-                            // Support indentation inside the script editor
+                    if (isReplayOpen) {
+                        if (e.key === 'Escape') {
                             e.preventDefault();
-                            var start = editor.selectionStart;
-                            var end = editor.selectionEnd;
-                            editor.value = editor.value.substring(0, start) + "    " + editor.value.substring(end);
-                            editor.selectionStart = editor.selectionEnd = start + 4;
-                            updateReplayGutter();
-                            scheduleReplayLint();
+                            closeReplayModal();
+                            return;
+                        } else if ((e.ctrlKey || e.metaKey) &amp;&amp; e.key === 'Enter') {
+                            e.preventDefault();
+                            submitReplayRun();
+                            return;
+                        } else if ((e.ctrlKey || e.metaKey) &amp;&amp; (e.key === 's' || e.key === 'S')) {
+                            e.preventDefault();
+                            validateReplayScript(true);
+                            return;
+                        } else if (e.key === 'Tab') {
+                            var editor = document.getElementById('replay-script-editor');
+                            if (document.activeElement === editor) {
+                                // Support indentation inside the script editor
+                                e.preventDefault();
+                                var start = editor.selectionStart;
+                                var end = editor.selectionEnd;
+                                editor.value = editor.value.substring(0, start) + "    " + editor.value.substring(end);
+                                editor.selectionStart = editor.selectionEnd = start + 4;
+                                updateReplayGutter();
+                                scheduleReplayLint();
+                                return;
+                            }
                         }
+                        return;
+                    }
+
+                    // Guard: Never trigger global single-key shortcuts while typing in inputs/textareas
+                    var targetTag = e.target &amp;&amp; e.target.tagName ? e.target.tagName.toLowerCase() : '';
+                    var isInput = targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select' || (e.target &amp;&amp; e.target.isContentEditable);
+                    if (isInput) return;
+
+                    // Guard: Avoid overriding modifier keys (e.g. Ctrl+F, Ctrl+T, Alt+Left)
+                    if (e.ctrlKey || e.metaKey || e.altKey) return;
+                    if (e.defaultPrevented) return;
+
+                    // Global hotkeys
+                    if (e.key === '?') {
+                        e.preventDefault();
+                        toggleShortcutsModal();
+                        return;
+                    }
+
+                    if (e.key === '1') {
+                        e.preventDefault();
+                        setLayoutMode('scroll');
+                        return;
+                    }
+
+                    if (e.key === '2') {
+                        e.preventDefault();
+                        setLayoutMode('wrap');
+                        return;
+                    }
+
+                    if (e.key === 'f' || e.key === 'F') {
+                        e.preventDefault();
+                        fitFlowToScreen();
+                        return;
+                    }
+
+                    if (e.key === '/') {
+                        e.preventDefault();
+                        focusStepLogSearch();
+                        return;
+                    }
+
+                    if (e.key === 't' || e.key === 'T') {
+                        var targetStep = selectedStepId;
+                        if (!targetStep) {
+                            var firstExp = document.querySelector('.step-accordion-item.expanded');
+                            if (firstExp) targetStep = firstExp.id.replace('step-item-', '');
+                        }
+                        if (targetStep) {
+                            e.preventDefault();
+                            toggleStepLiveTail(targetStep);
+                        }
+                        return;
+                    }
+
+                    if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        navigateStageByArrow(-1);
+                        return;
+                    }
+
+                    if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        navigateStageByArrow(1);
+                        return;
                     }
                 });
 
