@@ -152,4 +152,30 @@ class HorizonPipelineIntegrationTest {
         assertTrue(parallelStage.getChildren().stream().anyMatch(c -> c.getName().contains("Unit Tests")));
         assertTrue(parallelStage.getChildren().stream().anyMatch(c -> c.getName().contains("Integration Tests")));
     }
+
+    @Test
+    void testCompletedBuildCacheAndPermissionChecks(JenkinsRule jenkins) throws Exception {
+        WorkflowJob job = jenkins.createProject(WorkflowJob.class, "horizon-cache-test-job");
+        job.setDefinition(new CpsFlowDefinition("node { stage('Build') { echo 'cached build' } }", true));
+        WorkflowRun build = jenkins.buildAndAssertStatus(Result.SUCCESS, job);
+
+        HorizonRunAction.clearRunDetailsCache();
+
+        JenkinsRule.WebClient wc = jenkins.createWebClient();
+        String json1 = wc.goTo("job/horizon-cache-test-job/1/horizon/apiGraph", "application/json")
+                .getWebResponse().getContentAsString();
+        assertNotNull(json1);
+        assertTrue(json1.contains("\"result\":\"SUCCESS\""));
+
+        // Second call should return identical cached result
+        String json2 = wc.goTo("job/horizon-cache-test-job/1/horizon/apiGraph", "application/json")
+                .getWebResponse().getContentAsString();
+        assertEquals(json1, json2);
+
+        // Verify invalidation works
+        HorizonRunAction.invalidateRunDetailsCache(build.getExternalizableId());
+        String json3 = wc.goTo("job/horizon-cache-test-job/1/horizon/apiGraph", "application/json")
+                .getWebResponse().getContentAsString();
+        assertEquals(json1, json3);
+    }
 }

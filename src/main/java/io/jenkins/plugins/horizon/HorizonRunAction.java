@@ -1,5 +1,6 @@
 package io.jenkins.plugins.horizon;
 
+import hudson.model.Item;
 import hudson.model.Run;
 import io.jenkins.plugins.horizon.analysis.PipelineGraphAnalyzer;
 import io.jenkins.plugins.horizon.model.RunDetailsModel;
@@ -21,7 +22,11 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class HorizonRunAction implements RunAction2 {
 
@@ -60,14 +65,54 @@ public class HorizonRunAction implements RunAction2 {
         return "horizon";
     }
 
+    private static final Logger LOGGER = Logger.getLogger(HorizonRunAction.class.getName());
+
+    /**
+     * Bounded thread-safe LRU cache storing pre-analyzed RunDetailsModel for completed builds.
+     * Avoids running costly FlowGraph / DepthFirstScanner traversals on repeated views.
+     */
+    private static final Map<String, RunDetailsModel> COMPLETED_RUN_DETAILS_CACHE =
+            Collections.synchronizedMap(new LinkedHashMap<String, RunDetailsModel>(128, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, RunDetailsModel> eldest) {
+                    return size() > 256;
+                }
+            });
+
+    public static void invalidateRunDetailsCache(String runExternalizableId) {
+        if (runExternalizableId != null) {
+            COMPLETED_RUN_DETAILS_CACHE.remove(runExternalizableId);
+        }
+    }
+
+    public static void clearRunDetailsCache() {
+        COMPLETED_RUN_DETAILS_CACHE.clear();
+    }
+
     /**
      * REST API: Returns graph, stages, steps, status, timings, and agents for this build.
      */
     public void doApiGraph(StaplerRequest2 req, StaplerResponse2 rsp) throws IOException {
         rsp.setContentType("application/json;charset=UTF-8");
         rsp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        if (run != null) {
+            run.checkPermission(Item.READ);
+        }
         if (run instanceof WorkflowRun) {
-            RunDetailsModel details = PipelineGraphAnalyzer.buildRunDetails((WorkflowRun) run);
+            WorkflowRun wfRun = (WorkflowRun) run;
+            RunDetailsModel details;
+            if (!wfRun.isBuilding()) {
+                String cacheKey = wfRun.getExternalizableId();
+                details = (cacheKey != null) ? COMPLETED_RUN_DETAILS_CACHE.get(cacheKey) : null;
+                if (details == null) {
+                    details = PipelineGraphAnalyzer.buildRunDetails(wfRun);
+                    if (cacheKey != null && !wfRun.isBuilding()) {
+                        COMPLETED_RUN_DETAILS_CACHE.put(cacheKey, details);
+                    }
+                }
+            } else {
+                details = PipelineGraphAnalyzer.buildRunDetails(wfRun);
+            }
             JSONObject.fromObject(details).write(rsp.getWriter());
         } else {
             rsp.setStatus(400);
@@ -87,6 +132,9 @@ public class HorizonRunAction implements RunAction2 {
                          @QueryParameter(fixEmpty = true) String download) throws IOException {
         rsp.setContentType("text/plain;charset=UTF-8");
         rsp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        if (run != null) {
+            run.checkPermission(Item.READ);
+        }
         if (!(run instanceof WorkflowRun) || nodeId == null) {
             rsp.getWriter().write("");
             return;

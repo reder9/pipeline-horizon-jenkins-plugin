@@ -1,6 +1,7 @@
 package io.jenkins.plugins.horizon;
 
 import hudson.model.Action;
+import hudson.model.Item;
 import hudson.model.Job;
 import io.jenkins.plugins.horizon.analysis.PipelineGraphAnalyzer;
 import io.jenkins.plugins.horizon.model.JobSummaryModel;
@@ -45,6 +46,9 @@ public class HorizonJobAction implements Action {
     public void doApiRuns(StaplerRequest2 req, StaplerResponse2 rsp) throws IOException {
         rsp.setContentType("application/json;charset=UTF-8");
         rsp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        if (job != null) {
+            job.checkPermission(Item.READ);
+        }
         if (job instanceof WorkflowJob) {
             JobSummaryModel summary = PipelineGraphAnalyzer.buildJobSummary((WorkflowJob) job);
             JSONObject.fromObject(summary).write(rsp.getWriter());

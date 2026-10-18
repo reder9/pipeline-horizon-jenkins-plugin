@@ -41,13 +41,20 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PipelineGraphAnalyzer {
+
+    private static final Logger LOGGER = Logger.getLogger(PipelineGraphAnalyzer.class.getName());
 
     /**
      * Builds full details and graph representation for a specific build run.
      */
     public static RunDetailsModel buildRunDetails(WorkflowRun run) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, "Analyzing pipeline graph for build {0}", run != null ? run.getFullDisplayName() : "null");
+        }
         RunDetailsModel details = new RunDetailsModel();
         populateSummaryMetadata(run, details);
         details.setAbortEnabled(run.isBuilding());

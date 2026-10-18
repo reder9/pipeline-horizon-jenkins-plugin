@@ -7832,11 +7832,19 @@
                             renderHeader(data);
                             renderGraph(data);
                             if (data.building) {
-                                document.getElementById('refresh-indicator').innerText = data.pausedForInput ? "Paused (Awaiting Input)" : "Live (Refreshing)";
-                                if (!pollTimer) {
-                                    pollTimer = setInterval(fetchGraph, 3000);
+                                var isHidden = (typeof document.hidden !== 'undefined' &amp;&amp; document.hidden);
+                                document.getElementById('refresh-indicator').innerText = isHidden
+                                    ? "Paused (Tab Inactive)"
+                                    : (data.pausedForInput ? "Paused (Awaiting Input)" : "Live (Refreshing)");
+                                if (!isHidden) {
+                                    if (!pollTimer) {
+                                        pollTimer = setInterval(fetchGraph, 3000);
+                                    }
+                                    pollActiveStepLogs();
+                                } else if (pollTimer) {
+                                    clearInterval(pollTimer);
+                                    pollTimer = null;
                                 }
-                                pollActiveStepLogs();
                             } else {
                                 document.getElementById('refresh-indicator').innerText = "Finished";
                                 if (pollTimer) {
@@ -7849,6 +7857,27 @@
                             console.error("Failed to load graph:", err);
                         });
                 }
+
+                document.addEventListener('visibilitychange', function() {
+                    if (document.hidden) {
+                        if (pollTimer) {
+                            clearInterval(pollTimer);
+                            pollTimer = null;
+                        }
+                        var ind = document.getElementById('refresh-indicator');
+                        if (ind &amp;&amp; graphData &amp;&amp; graphData.building) {
+                            ind.innerText = "Paused (Tab Inactive)";
+                        }
+                    } else {
+                        if (graphData &amp;&amp; graphData.building) {
+                            var ind = document.getElementById('refresh-indicator');
+                            if (ind) {
+                                ind.innerText = graphData.pausedForInput ? "Paused (Awaiting Input)" : "Live (Refreshing)";
+                            }
+                            fetchGraph();
+                        }
+                    }
+                });
 
                 function renderHeader(data) {
                     var resultStr = data.result || "IN_PROGRESS";

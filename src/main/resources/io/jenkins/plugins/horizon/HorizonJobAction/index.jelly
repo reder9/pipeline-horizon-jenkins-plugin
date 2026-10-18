@@ -1133,8 +1133,14 @@
                             renderRunsTable(runs);
                             var anyBuilding = runs.some(function(r) { return r.building === true; });
                             if (anyBuilding) {
-                                if (!jobPollTimer) {
-                                    jobPollTimer = setInterval(loadJobRuns, 4000);
+                                var isHidden = (typeof document.hidden !== 'undefined' &amp;&amp; document.hidden);
+                                if (!isHidden) {
+                                    if (!jobPollTimer) {
+                                        jobPollTimer = setInterval(loadJobRuns, 4000);
+                                    }
+                                } else if (jobPollTimer) {
+                                    clearInterval(jobPollTimer);
+                                    jobPollTimer = null;
                                 }
                             } else if (jobPollTimer) {
                                 clearInterval(jobPollTimer);
@@ -1145,6 +1151,19 @@
                             console.error("Failed to load runs:", err);
                         });
                 }
+
+                document.addEventListener('visibilitychange', function() {
+                    if (document.hidden) {
+                        if (jobPollTimer) {
+                            clearInterval(jobPollTimer);
+                            jobPollTimer = null;
+                        }
+                    } else {
+                        if (jobData &amp;&amp; jobData.runs &amp;&amp; jobData.runs.some(function(r) { return r.building === true; })) {
+                            loadJobRuns();
+                        }
+                    }
+                });
 
                 function renderRunsTable(runs) {
                     var tbody = document.getElementById('runs-tbody');

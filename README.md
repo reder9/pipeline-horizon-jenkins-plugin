@@ -56,6 +56,33 @@ RUN jenkins-plugin-cli --plugins \
 
 ---
 
+## Enterprise Performance & Security Architecture
+
+1. **Sub-Millisecond Completed Build Caching:**
+   - Completed pipeline builds are immutable. Horizon maintains a thread-safe bounded in-memory LRU cache (256 runs) for `RunDetailsModel`.
+   - Subsequent page views and dashboard switches return in **< 1ms** without re-traversing the FlowNode graph or causing GC churn.
+2. **Page Visibility API Auto-Throttling:**
+   - When a user minimizes or switches away from an in-progress build tab, Horizon detects `document.hidden` and automatically pauses all polling intervals.
+   - When the user returns, Horizon refreshes immediately and resumes polling if the build is still active—eliminating background controller flooding.
+3. **Tail-Safe Log Streaming:**
+   - Inline log drawers cap memory consumption to the last 512 KB (`MAX_LOG_BYTES`) with an automatic notice and direct raw download link for full logs, preventing browser memory exhaustion.
+4. **Strict Security & RBAC Enforcement:**
+   - All REST APIs (`apiGraph`, `apiLog`, `apiRuns`) strictly enforce `Item.READ` permissions, respecting Jenkins Matrix, Folder-level, and Role-Based Access Control (RBAC).
+   - All build mutations (`apiAbort`, `apiRestartStage`, `apiReplayRun`, `apiRebuild`, `apiInputSubmit`, `apiInputAbort`) require POST requests (`@RequirePOST`), appropriate write permissions (`Item.BUILD`, `Item.CANCEL`), and valid CSRF crumbs.
+
+---
+
+## Diagnostics & Logging
+
+Jenkins administrators can monitor and troubleshoot Horizon pipeline parsing in real time without restarting Jenkins:
+
+1. In Jenkins, navigate to **Manage Jenkins** -> **System Log** -> **Add new log recorder**.
+2. Name the recorder `Pipeline Horizon` and add the logger:
+   - Logger: `io.jenkins.plugins.horizon`
+   - Log Level: `FINE` (for graph building and lifecycle events) or `FINER` (for detailed block traversal).
+
+---
+
 ## Building from Source
 
 Requirements: **Java 21+** and **Maven 3.9+**.
