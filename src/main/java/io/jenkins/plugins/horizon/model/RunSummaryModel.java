@@ -135,6 +135,34 @@ public class RunSummaryModel {
         this.commitAuthor = commitAuthor;
     }
 
+    private String commitUrl;
+    private String branchUrl;
+    private String repositoryUrl;
+
+    public String getCommitUrl() {
+        return commitUrl;
+    }
+
+    public void setCommitUrl(String commitUrl) {
+        this.commitUrl = commitUrl;
+    }
+
+    public String getBranchUrl() {
+        return branchUrl;
+    }
+
+    public void setBranchUrl(String branchUrl) {
+        this.branchUrl = branchUrl;
+    }
+
+    public String getRepositoryUrl() {
+        return repositoryUrl;
+    }
+
+    public void setRepositoryUrl(String repositoryUrl) {
+        this.repositoryUrl = repositoryUrl;
+    }
+
     public int getChangeSetCount() {
         return changeSetCount;
     }

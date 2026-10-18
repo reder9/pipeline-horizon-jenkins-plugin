@@ -13,6 +13,7 @@ import io.jenkins.plugins.horizon.model.StageModel;
 import io.jenkins.plugins.horizon.model.StepModel;
 import io.jenkins.plugins.horizon.model.TestCaseModel;
 import io.jenkins.plugins.horizon.util.EncodingUtils;
+import io.jenkins.plugins.horizon.util.ScmLinkResolver;
 import org.jenkinsci.plugins.workflow.actions.ArgumentsAction;
 import org.jenkinsci.plugins.workflow.actions.ErrorAction;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
@@ -779,36 +780,62 @@ public class PipelineGraphAnalyzer {
         // Fallback Git action extraction if commit SHA or branch not found from ChangeLog
         if (summary.getCommitSha() == null || summary.getBranch() == null) {
             for (hudson.model.Action a : run.getAllActions()) {
-                if (a != null && a.getClass().getName().contains("BuildData")) {
-                    try {
-                        Object rev = a.getClass().getMethod("getLastBuiltRevision").invoke(a);
-                        if (rev != null) {
-                            if (summary.getCommitSha() == null) {
-                                Object sha = rev.getClass().getMethod("getSha1String").invoke(rev);
-                                if (sha != null) {
-                                    summary.setCommitSha(String.valueOf(sha));
+                if (a != null) {
+                    String actionName = a.getClass().getName();
+                    if (summary.getCommitSha() == null && actionName.contains("SCMRevisionAction")) {
+                        try {
+                            Object rev = a.getClass().getMethod("getRevision").invoke(a);
+                            if (rev != null) {
+                                try {
+                                    Object h = rev.getClass().getMethod("getHash").invoke(rev);
+                                    if (h != null) {
+                                        summary.setCommitSha(String.valueOf(h));
+                                    }
+                                } catch (Throwable t) {
+                                    summary.setCommitSha(String.valueOf(rev));
                                 }
                             }
-                            if (summary.getBranch() == null) {
-                                java.util.Collection<?> branches = (java.util.Collection<?>) rev.getClass().getMethod("getBranches").invoke(rev);
-                                if (branches != null && !branches.isEmpty()) {
-                                    Object firstBranch = branches.iterator().next();
-                                    if (firstBranch != null) {
-                                        Object bName = firstBranch.getClass().getMethod("getName").invoke(firstBranch);
-                                        if (bName != null) {
-                                            String branchStr = String.valueOf(bName);
-                                            // strip remote prefix like "refs/remotes/origin/"
-                                            int lastSlash = branchStr.lastIndexOf('/');
-                                            summary.setBranch(lastSlash >= 0 ? branchStr.substring(lastSlash + 1) : branchStr);
+                        } catch (Throwable ignored) {
+                        }
+                    } else if (actionName.contains("BuildData")) {
+                        try {
+                            Object rev = a.getClass().getMethod("getLastBuiltRevision").invoke(a);
+                            if (rev != null) {
+                                if (summary.getCommitSha() == null) {
+                                    Object sha = rev.getClass().getMethod("getSha1String").invoke(rev);
+                                    if (sha != null) {
+                                        summary.setCommitSha(String.valueOf(sha));
+                                    }
+                                }
+                                if (summary.getBranch() == null) {
+                                    java.util.Collection<?> branches = (java.util.Collection<?>) rev.getClass().getMethod("getBranches").invoke(rev);
+                                    if (branches != null && !branches.isEmpty()) {
+                                        Object firstBranch = branches.iterator().next();
+                                        if (firstBranch != null) {
+                                            Object bName = firstBranch.getClass().getMethod("getName").invoke(firstBranch);
+                                            if (bName != null) {
+                                                String branchStr = String.valueOf(bName);
+                                                // strip remote prefix like "refs/remotes/origin/"
+                                                int lastSlash = branchStr.lastIndexOf('/');
+                                                summary.setBranch(lastSlash >= 0 ? branchStr.substring(lastSlash + 1) : branchStr);
+                                            }
                                         }
                                     }
                                 }
                             }
+                        } catch (Throwable ignored) {
                         }
-                    } catch (Throwable ignored) {
                     }
                 }
             }
+        }
+
+        // SCM Web Links (GitHub, GitLab, Bitbucket, Azure DevOps, Gitea, etc.)
+        ScmLinkResolver.ScmLinks scmLinks = ScmLinkResolver.resolve(run, summary.getCommitSha(), summary.getBranch());
+        if (scmLinks != null) {
+            summary.setRepositoryUrl(scmLinks.getRepositoryUrl());
+            summary.setCommitUrl(scmLinks.getCommitUrl());
+            summary.setBranchUrl(scmLinks.getBranchUrl());
         }
 
         // Culprits

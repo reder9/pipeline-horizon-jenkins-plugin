@@ -578,15 +578,22 @@
                                 <j:forEach var="b" items="${summary.branches}">
                                     <tr class="branch-row" data-name="${b.name}" data-status="${b.lastBuildResult}" data-commit="${b.commitMessage}" data-author="${b.commitAuthor}">
                                         <td>
-                                            <a class="branch-link" href="${rootURL}/${b.url}horizon/">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <line x1="6" y1="3" x2="6" y2="15"></line>
-                                                    <circle cx="18" cy="6" r="3"></circle>
-                                                    <circle cx="6" cy="18" r="3"></circle>
-                                                    <path d="M18 9a9 9 0 0 1-9 9"></path>
-                                                </svg>
-                                                <span>${b.displayName}</span>
-                                            </a>
+                                            <div style="display:flex; align-items:center; gap:6px;">
+                                                <a class="branch-link" href="${rootURL}/${b.url}horizon/">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <line x1="6" y1="3" x2="6" y2="15"></line>
+                                                        <circle cx="18" cy="6" r="3"></circle>
+                                                        <circle cx="6" cy="18" r="3"></circle>
+                                                        <path d="M18 9a9 9 0 0 1-9 9"></path>
+                                                    </svg>
+                                                    <span>${b.displayName}</span>
+                                                </a>
+                                                <j:if test="${b.branchUrl != null}">
+                                                    <a href="${b.branchUrl}" target="_blank" rel="noopener noreferrer" style="color:#64748b; display:inline-flex; align-items:center; text-decoration:none;" title="View branch on SCM">
+                                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                                    </a>
+                                                </j:if>
+                                            </div>
                                         </td>
                                         <td>
                                             <j:if test="${b.lastBuildNumber != null}">
@@ -599,12 +606,31 @@
                                         </td>
                                         <td>
                                             <j:if test="${b.commitMessage != null}">
-                                                <div style="font-weight:600; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${b.commitMessage}</div>
+                                                <div style="font-weight:600; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                                    <j:if test="${b.commitUrl != null}">
+                                                        <a href="${b.commitUrl}" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline;" title="View commit on SCM">${b.commitMessage} ↗</a>
+                                                    </j:if>
+                                                    <j:if test="${b.commitUrl == null}">
+                                                        ${b.commitMessage}
+                                                    </j:if>
+                                                </div>
                                                 <j:if test="${b.commitAuthor != null}">
                                                     <div style="font-size:0.75rem; color:#64748b;">${b.commitAuthor}</div>
                                                 </j:if>
                                             </j:if>
-                                            <j:if test="${b.commitMessage == null}">—</j:if>
+                                            <j:if test="${b.commitMessage == null}">
+                                                <j:if test="${b.commitSha != null}">
+                                                    <div style="font-weight:600; font-family:monospace; font-size:0.8rem;">
+                                                        <j:if test="${b.commitUrl != null}">
+                                                            <a href="${b.commitUrl}" target="_blank" rel="noopener noreferrer" style="color:#2563eb; text-decoration:underline;" title="View commit on SCM">${b.commitSha.substring(0, 7)} ↗</a>
+                                                        </j:if>
+                                                        <j:if test="${b.commitUrl == null}">
+                                                            ${b.commitSha.substring(0, 7)}
+                                                        </j:if>
+                                                    </div>
+                                                </j:if>
+                                                <j:if test="${b.commitSha == null}">—</j:if>
+                                            </j:if>
                                         </td>
                                         <td>${b.formattedDuration}</td>
                                         <td>${b.timeAgo}</td>
@@ -641,15 +667,22 @@
                                 <j:forEach var="pr" items="${summary.pullRequests}">
                                     <tr class="pr-row" data-name="${pr.name}" data-title="${pr.pullRequestTitle}" data-status="${pr.lastBuildResult}" data-author="${pr.pullRequestAuthor}">
                                         <td>
-                                            <a class="branch-link" href="${rootURL}/${pr.url}horizon/">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <circle cx="18" cy="18" r="3"></circle>
-                                                    <circle cx="6" cy="6" r="3"></circle>
-                                                    <path d="M13 6h3a2 2 0 0 1 2 2v7"></path>
-                                                    <line x1="6" y1="9" x2="6" y2="21"></line>
-                                                </svg>
-                                                <span>${pr.displayName}</span>
-                                            </a>
+                                            <div style="display:flex; align-items:center; gap:6px;">
+                                                <a class="branch-link" href="${rootURL}/${pr.url}horizon/">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <circle cx="18" cy="18" r="3"></circle>
+                                                        <circle cx="6" cy="6" r="3"></circle>
+                                                        <path d="M13 6h3a2 2 0 0 1 2 2v7"></path>
+                                                        <line x1="6" y1="9" x2="6" y2="21"></line>
+                                                    </svg>
+                                                    <span>${pr.displayName}</span>
+                                                </a>
+                                                <j:if test="${pr.branchUrl != null}">
+                                                    <a href="${pr.branchUrl}" target="_blank" rel="noopener noreferrer" style="color:#64748b; display:inline-flex; align-items:center; text-decoration:none;" title="Open Pull Request on SCM">
+                                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                                    </a>
+                                                </j:if>
+                                            </div>
                                             <j:if test="${pr.pullRequestTitle != null}">
                                                 <div class="pr-title">${pr.pullRequestTitle}</div>
                                             </j:if>

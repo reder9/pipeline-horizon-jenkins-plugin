@@ -5152,6 +5152,17 @@
                         font-size: 0.75rem;
                         font-weight: 600;
                     }
+                    .commit-branch-link {
+                        text-decoration: none;
+                        transition: all 0.15s ease;
+                        cursor: pointer;
+                    }
+                    .commit-branch-link:hover {
+                        background: rgba(56, 189, 248, 0.25);
+                        border-color: #38bdf8;
+                        text-decoration: none;
+                        color: #7dd3fc;
+                    }
                     .commit-sha-code {
                         font-family: ui-monospace, monospace;
                         font-size: 0.75rem;
@@ -5160,6 +5171,15 @@
                         padding: 1px 5px;
                         border-radius: 4px;
                         color: #f1f5f9;
+                    }
+                    .commit-sha-link {
+                        text-decoration: none;
+                        cursor: pointer;
+                    }
+                    .commit-sha-link:hover .commit-sha-code {
+                        background: rgba(255, 255, 255, 0.18);
+                        border-color: rgba(255, 255, 255, 0.4);
+                        color: #ffffff;
                     }
 
                     /* Light Theme Overrides */
@@ -8525,14 +8545,26 @@
                         if (data.commitSha || data.branch) {
                             var commitHtml = '';
                             if (data.branch) {
-                                commitHtml += '&lt;span class="commit-branch-tag" title="Branch: ' + escapeHtml(data.branch) + '"&gt;&lt;svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:3px;"&gt;&lt;line x1="6" y1="3" x2="6" y2="15"/&gt;&lt;circle cx="18" cy="6" r="3"/&gt;&lt;circle cx="6" cy="18" r="3"/&gt;&lt;path d="M18 9a9 9 0 0 1-9 9"/&gt;&lt;/svg&gt;' + escapeHtml(data.branch) + '&lt;/span&gt; ';
+                                var bSvg = '&lt;svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:3px;"&gt;&lt;line x1="6" y1="3" x2="6" y2="15"/&gt;&lt;circle cx="18" cy="6" r="3"/&gt;&lt;circle cx="6" cy="18" r="3"/&gt;&lt;path d="M18 9a9 9 0 0 1-9 9"/&gt;&lt;/svg&gt;';
+                                var bTitle = 'Branch: ' + escapeHtml(data.branch);
+                                if (data.branchUrl) {
+                                    commitHtml += '&lt;a href="' + escapeHtml(data.branchUrl) + '" target="_blank" rel="noopener noreferrer" class="commit-branch-tag commit-branch-link" title="' + bTitle + ' (Open in SCM)"&gt;' + bSvg + escapeHtml(data.branch) + ' &lt;svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:0px; opacity:0.75; margin-left:3px;"&gt;&lt;path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/&gt;&lt;polyline points="15 3 21 3 21 9"/&gt;&lt;line x1="10" y1="14" x2="21" y2="3"/&gt;&lt;/svg&gt;&lt;/a&gt; ';
+                                } else {
+                                    commitHtml += '&lt;span class="commit-branch-tag" title="' + bTitle + '"&gt;' + bSvg + escapeHtml(data.branch) + '&lt;/span&gt; ';
+                                }
                             }
                             if (data.commitSha) {
                                 var shortSha = data.commitSha.length &gt; 7 ? data.commitSha.substring(0, 7) : data.commitSha;
                                 var tip = 'Commit: ' + data.commitSha;
                                 if (data.commitAuthor) tip += ' by ' + data.commitAuthor;
                                 if (data.commitMessage) tip += '\n' + data.commitMessage;
-                                commitHtml += '&lt;code class="commit-sha-code" title="' + escapeHtml(tip) + '"&gt;' + escapeHtml(shortSha) + '&lt;/code&gt;';
+                                if (data.commitUrl) tip += '\n(Click to view commit in SCM)';
+                                var shaCode = '&lt;code class="commit-sha-code" title="' + escapeHtml(tip) + '"&gt;' + escapeHtml(shortSha) + '&lt;/code&gt;';
+                                if (data.commitUrl) {
+                                    commitHtml += '&lt;a href="' + escapeHtml(data.commitUrl) + '" target="_blank" rel="noopener noreferrer" class="commit-sha-link" style="text-decoration:none;" title="' + escapeHtml(tip) + '"&gt;' + shaCode + ' &lt;svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:0px; opacity:0.7; color:#94a3b8; margin-left:2px;"&gt;&lt;path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/&gt;&lt;polyline points="15 3 21 3 21 9"/&gt;&lt;line x1="10" y1="14" x2="21" y2="3"/&gt;&lt;/svg&gt;&lt;/a&gt;';
+                                } else {
+                                    commitHtml += shaCode;
+                                }
                             }
                             if (data.commitAuthor) {
                                 commitHtml += ' &lt;span style="font-size:0.75rem; color:#94a3b8;" title="Commit author: ' + escapeHtml(data.commitAuthor) + '"&gt;(' + escapeHtml(data.commitAuthor) + ')&lt;/span&gt;';

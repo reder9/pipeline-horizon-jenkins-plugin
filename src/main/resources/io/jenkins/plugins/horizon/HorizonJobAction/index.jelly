@@ -1203,8 +1203,27 @@
                         var statusLower = r.pausedForInput ? "paused_input" : status.toLowerCase();
                         var pillClass = "pill-" + (statusLower === 'failure' ? 'failed' : statusLower);
                         var causeStr = (r.causes &amp;&amp; r.causes.length) ? r.causes[0] : "Direct trigger";
+                        var scmBadges = '';
+                        if (r.branch) {
+                            var bSvg = '&lt;svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:2px;"&gt;&lt;line x1="6" y1="3" x2="6" y2="15"/&gt;&lt;circle cx="18" cy="6" r="3"/&gt;&lt;circle cx="6" cy="18" r="3"/&gt;&lt;path d="M18 9a9 9 0 0 1-9 9"/&gt;&lt;/svg&gt;';
+                            if (r.branchUrl) {
+                                scmBadges += '&lt;a href="' + escapeHtml(r.branchUrl) + '" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; background:rgba(56,189,248,0.12); color:#0284c7; border:1px solid rgba(56,189,248,0.3); border-radius:4px; padding:1px 5px; font-size:0.75rem; text-decoration:none; margin-right:6px; font-weight:600;" title="Open branch in SCM"&gt;' + bSvg + escapeHtml(r.branch) + ' ↗&lt;/a&gt;';
+                            } else {
+                                scmBadges += '&lt;span style="display:inline-flex; align-items:center; background:rgba(56,189,248,0.12); color:#0284c7; border:1px solid rgba(56,189,248,0.3); border-radius:4px; padding:1px 5px; font-size:0.75rem; margin-right:6px; font-weight:600;"&gt;' + bSvg + escapeHtml(r.branch) + '&lt;/span&gt;';
+                            }
+                        }
                         if (r.commitMessage) {
-                            causeStr = '&lt;strong&gt;' + escapeHtml(r.commitMessage) + '&lt;/strong&gt;&lt;br/&gt;&lt;span class="run-subtext" style="font-size:0.75rem;"&gt;' + escapeHtml(causeStr) + '&lt;/span&gt;';
+                            var commitText = escapeHtml(r.commitMessage);
+                            if (r.commitUrl) {
+                                commitText = '&lt;a href="' + escapeHtml(r.commitUrl) + '" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline;" title="Open commit in SCM"&gt;' + commitText + ' ↗&lt;/a&gt;';
+                            }
+                            causeStr = '&lt;strong&gt;' + commitText + '&lt;/strong&gt;&lt;br/&gt;' + (scmBadges ? (scmBadges + ' ') : '') + '&lt;span class="run-subtext" style="font-size:0.75rem;"&gt;' + escapeHtml(causeStr) + '&lt;/span&gt;';
+                        } else if (r.commitSha) {
+                            var shortSha = escapeHtml(r.commitSha.length &gt; 7 ? r.commitSha.substring(0, 7) : r.commitSha);
+                            var shaHtml = r.commitUrl ? ('&lt;a href="' + escapeHtml(r.commitUrl) + '" target="_blank" rel="noopener noreferrer" style="font-family:monospace; color:#2563eb; text-decoration:underline;" title="Open commit in SCM"&gt;' + shortSha + ' ↗&lt;/a&gt;') : ('&lt;span style="font-family:monospace;"&gt;' + shortSha + '&lt;/span&gt;');
+                            causeStr = '&lt;strong&gt;Commit ' + shaHtml + '&lt;/strong&gt;&lt;br/&gt;' + (scmBadges ? (scmBadges + ' ') : '') + '&lt;span class="run-subtext" style="font-size:0.75rem;"&gt;' + escapeHtml(causeStr) + '&lt;/span&gt;';
+                        } else if (scmBadges) {
+                            causeStr = scmBadges + '&lt;br/&gt;&lt;span class="run-subtext"&gt;' + escapeHtml(causeStr) + '&lt;/span&gt;';
                         } else {
                             causeStr = '&lt;span class="run-subtext"&gt;' + escapeHtml(causeStr) + '&lt;/span&gt;';
                         }

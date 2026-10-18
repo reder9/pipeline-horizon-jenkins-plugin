@@ -8,6 +8,7 @@ import hudson.scm.ChangeLogSet;
 import io.jenkins.plugins.horizon.analysis.PipelineGraphAnalyzer;
 import io.jenkins.plugins.horizon.model.BranchSummaryModel;
 import io.jenkins.plugins.horizon.model.MultiBranchSummaryModel;
+import io.jenkins.plugins.horizon.util.ScmLinkResolver;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -132,6 +133,9 @@ public class HorizonMultiBranchAction implements Action {
                                     if (entry.getAuthor() != null) {
                                         bModel.setCommitAuthor(entry.getAuthor().getDisplayName());
                                     }
+                                    if (bModel.getCommitSha() == null && entry.getCommitId() != null) {
+                                        bModel.setCommitSha(entry.getCommitId());
+                                    }
                                     break;
                                 }
                             }
@@ -142,10 +146,60 @@ public class HorizonMultiBranchAction implements Action {
                     }
                 } catch (Throwable ignored) {
                 }
+
+                // Fallback to SCMRevisionAction or BuildData if commitSha not extracted from changelog
+                if (bModel.getCommitSha() == null) {
+                    for (hudson.model.Action a : lastRun.getAllActions()) {
+                        if (a != null) {
+                            String actionName = a.getClass().getName();
+                            if (actionName.contains("SCMRevisionAction")) {
+                                try {
+                                    Object rev = a.getClass().getMethod("getRevision").invoke(a);
+                                    if (rev != null) {
+                                        try {
+                                            Object h = rev.getClass().getMethod("getHash").invoke(rev);
+                                            if (h != null) {
+                                                bModel.setCommitSha(String.valueOf(h));
+                                            }
+                                        } catch (Throwable t) {
+                                            bModel.setCommitSha(String.valueOf(rev));
+                                        }
+                                    }
+                                } catch (Throwable ignored) {
+                                }
+                            } else if (actionName.contains("BuildData")) {
+                                try {
+                                    Object rev = a.getClass().getMethod("getLastBuiltRevision").invoke(a);
+                                    if (rev != null) {
+                                        Object sha = rev.getClass().getMethod("getSha1String").invoke(rev);
+                                        if (sha != null) {
+                                            bModel.setCommitSha(String.valueOf(sha));
+                                        }
+                                    }
+                                } catch (Throwable ignored) {
+                                }
+                            }
+                            if (bModel.getCommitSha() != null) {
+                                break;
+                            }
+                        }
+                    }
+                }
             } else {
                 bModel.setLastBuildResult("NOT_BUILT");
                 bModel.setFormattedDuration("—");
                 bModel.setTimeAgo("Never built");
+            }
+
+            // SCM Web Links (GitHub, GitLab, Bitbucket, Azure DevOps, Gitea)
+            try {
+                ScmLinkResolver.ScmLinks scmLinks = ScmLinkResolver.resolveForBranch(project, branchJob, lastRun, bModel.getName());
+                if (scmLinks != null) {
+                    bModel.setRepositoryUrl(scmLinks.getRepositoryUrl());
+                    bModel.setBranchUrl(scmLinks.getBranchUrl());
+                    bModel.setCommitUrl(scmLinks.getCommitUrl());
+                }
+            } catch (Throwable ignored) {
             }
 
             if (isPr) {
