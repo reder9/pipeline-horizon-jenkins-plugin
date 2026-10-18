@@ -139,6 +139,9 @@ public class PipelineGraphAnalyzer {
         // Pre-scan to find which branch nodes have inner stages
         Set<String> branchNodesWithInnerStages = new HashSet<>();
         for (FlowNode node : allNodes) {
+            if (!(node instanceof BlockStartNode)) {
+                continue;
+            }
             LabelAction la = node.getAction(LabelAction.class);
             String laDisp = la != null ? la.getDisplayName() : null;
             if (laDisp != null && !laDisp.trim().startsWith("Branch: ")) {
@@ -153,6 +156,10 @@ public class PipelineGraphAnalyzer {
         }
 
         for (FlowNode node : allNodes) {
+            // Atomic steps (e.g. `sh label: '...'`) carry a LabelAction too, but are not stages
+            if (!(node instanceof BlockStartNode)) {
+                continue;
+            }
             LabelAction labelAction = node.getAction(LabelAction.class);
             ThreadNameAction threadNameAction = node.getAction(ThreadNameAction.class);
 

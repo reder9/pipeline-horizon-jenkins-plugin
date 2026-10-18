@@ -270,4 +270,30 @@ class HorizonPipelineIntegrationTest {
         assertTrue(stages.stream().anyMatch(s -> s.getName().contains("Checkout")));
         assertTrue(stages.stream().anyMatch(s -> s.getName().contains("Add Git Tag")));
     }
+
+    @Test
+    void testLabeledStepsInParallelBranchesAreNotStages(JenkinsRule jenkins) throws Exception {
+        WorkflowJob job = jenkins.createProject(WorkflowJob.class, "labeled-steps-parallel-job");
+        job.setDefinition(new CpsFlowDefinition(
+                "node {\n" +
+                "    stage('Validation') {\n" +
+                "        parallel(\n" +
+                "            'Dry Run': { sh label: 'Create placeholder HTML report files', script: 'echo a' },\n" +
+                "            'UAT': { sh label: 'Create placeholder HTML report files', script: 'echo b' }\n" +
+                "        )\n" +
+                "    }\n" +
+                "}", true));
+
+        WorkflowRun build = jenkins.buildAndAssertStatus(Result.SUCCESS, job);
+        RunDetailsModel details = PipelineGraphAnalyzer.buildRunDetails(build);
+        List<StageModel> stages = details.getStages();
+        assertNotNull(stages);
+
+        assertTrue(stages.stream().noneMatch(s -> s.getName().contains("Create placeholder")),
+                "Labeled steps must not appear as top-level stages");
+        StageModel validation = stages.stream()
+                .filter(s -> s.getName().equals("Validation")).findFirst().orElseThrow();
+        assertTrue(validation.getChildren().size() == 2, "Two parallel branches expected");
+    }
 }
+
