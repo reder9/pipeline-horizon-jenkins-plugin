@@ -4,6 +4,8 @@ import hudson.model.Item;
 import hudson.model.Run;
 import io.jenkins.plugins.horizon.analysis.PipelineGraphAnalyzer;
 import io.jenkins.plugins.horizon.model.RunDetailsModel;
+import io.jenkins.plugins.horizon.model.StageModel;
+import io.jenkins.plugins.horizon.model.StepModel;
 import io.jenkins.plugins.horizon.util.EncodingUtils;
 import jenkins.model.RunAction2;
 import net.sf.json.JSONObject;
@@ -100,23 +102,48 @@ public class HorizonRunAction implements RunAction2 {
         }
         if (run instanceof WorkflowRun) {
             WorkflowRun wfRun = (WorkflowRun) run;
-            RunDetailsModel details;
-            if (!wfRun.isBuilding()) {
-                String cacheKey = wfRun.getExternalizableId();
-                details = (cacheKey != null) ? COMPLETED_RUN_DETAILS_CACHE.get(cacheKey) : null;
-                if (details == null) {
-                    details = PipelineGraphAnalyzer.buildRunDetails(wfRun);
-                    if (cacheKey != null && !wfRun.isBuilding()) {
-                        COMPLETED_RUN_DETAILS_CACHE.put(cacheKey, details);
-                    }
-                }
-            } else {
-                details = PipelineGraphAnalyzer.buildRunDetails(wfRun);
-            }
+            RunDetailsModel details = getOrBuildRunDetails(wfRun);
             JSONObject.fromObject(details).write(rsp.getWriter());
         } else {
             rsp.setStatus(400);
             rsp.getWriter().write("{\"error\": \"Horizon only supports Pipeline (WorkflowRun) builds\"}");
+        }
+    }
+
+    public RunDetailsModel getOrBuildRunDetails(WorkflowRun wfRun) {
+        if (wfRun == null) {
+            return null;
+        }
+        if (!wfRun.isBuilding()) {
+            String cacheKey = wfRun.getExternalizableId();
+            RunDetailsModel details = (cacheKey != null) ? COMPLETED_RUN_DETAILS_CACHE.get(cacheKey) : null;
+            if (details == null) {
+                details = PipelineGraphAnalyzer.buildRunDetails(wfRun);
+                if (cacheKey != null && !wfRun.isBuilding()) {
+                    COMPLETED_RUN_DETAILS_CACHE.put(cacheKey, details);
+                }
+            }
+            return details;
+        } else {
+            return PipelineGraphAnalyzer.buildRunDetails(wfRun);
+        }
+    }
+
+    private void collectStageStepIds(StageModel stage, List<String> stepIds) {
+        if (stage == null) {
+            return;
+        }
+        if (stage.getSteps() != null) {
+            for (StepModel s : stage.getSteps()) {
+                if (s != null && s.getId() != null) {
+                    stepIds.add(s.getId());
+                }
+            }
+        }
+        if (stage.getChildren() != null) {
+            for (StageModel child : stage.getChildren()) {
+                collectStageStepIds(child, stepIds);
+            }
         }
     }
 
@@ -125,13 +152,16 @@ public class HorizonRunAction implements RunAction2 {
     /**
      * REST API: Returns log output for a specific step or entire stage FlowNode.
      * When nodeId points to a stage, aggregates logs across all enclosed steps in chronological order.
-     * Applies tail-safe truncation (last 512 KB) for inline viewing while preserving full logs for downloads.
+     * Supports incremental byte-offset polling via startOffset parameter, tail-safe inline truncation (last 512 KB),
+     * and full streams for downloads.
      */
     public void doApiLog(StaplerRequest2 req, StaplerResponse2 rsp,
                          @QueryParameter(fixEmpty = true) String nodeId,
-                         @QueryParameter(fixEmpty = true) String download) throws IOException {
+                         @QueryParameter(fixEmpty = true) String download,
+                         @QueryParameter(fixEmpty = true) String startOffset) throws IOException {
         rsp.setContentType("text/plain;charset=UTF-8");
         rsp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        rsp.setHeader("Access-Control-Expose-Headers", "X-Text-Size, X-More-Data");
         if (run != null) {
             run.checkPermission(Item.READ);
         }
@@ -164,13 +194,42 @@ public class HorizonRunAction implements RunAction2 {
             rsp.setHeader("Content-Disposition", "attachment; filename=\"" + safeFileName + "\"");
         }
 
+        if (startOffset == null && req != null) {
+            startOffset = req.getParameter("startOffset");
+        }
+        long reqOffset = -1L;
+        if (startOffset != null && !startOffset.trim().isEmpty()) {
+            try {
+                reqOffset = Long.parseLong(startOffset.trim());
+            } catch (NumberFormatException ignored) {}
+        }
+
         LogAction logAction = node.getAction(LogAction.class);
         if (logAction != null && logAction.getLogText() != null) {
             hudson.console.AnnotatedLargeText<? extends FlowNode> logText = logAction.getLogText();
-            long totalLen = logText.length();
-            long startOffset = (!isDownload && totalLen > MAX_LOG_BYTES) ? (totalLen - MAX_LOG_BYTES) : 0L;
+            long totalLen = Math.max(0L, logText.length());
+            boolean hasMore = !logText.isComplete();
+            rsp.setHeader("X-Text-Size", String.valueOf(totalLen));
+            rsp.setHeader("X-More-Data", String.valueOf(hasMore));
+
+            if (reqOffset >= 0) {
+                // Incremental byte-offset streaming: return empty if no new bytes
+                if (reqOffset >= totalLen) {
+                    return;
+                }
+                try (OutputStream os = rsp.getOutputStream()) {
+                    long written = logText.writeLogTo(reqOffset, os);
+                    if (written < 0) {
+                        os.flush();
+                    }
+                }
+                return;
+            }
+
+            // Initial view or download (reqOffset < 0)
+            long fromByte = (!isDownload && totalLen > MAX_LOG_BYTES) ? (totalLen - MAX_LOG_BYTES) : 0L;
             try (OutputStream os = rsp.getOutputStream()) {
-                if (startOffset > 0) {
+                if (fromByte > 0) {
                     String banner = String.format(
                             java.util.Locale.US,
                             "[... Log truncated for inline performance: showing last %s of %s total. Use 'Raw' or 'Download' for full output ...]%n",
@@ -179,31 +238,52 @@ public class HorizonRunAction implements RunAction2 {
                     );
                     os.write(banner.getBytes(StandardCharsets.UTF_8));
                 }
-                long written = logText.writeLogTo(startOffset, os);
+                long written = logText.writeLogTo(fromByte, os);
                 if (written < 0) {
                     os.flush();
                 }
             }
         } else {
             // Node has no direct LogAction (e.g. it is a Stage or Container block).
-            // Aggregate logs from all enclosed descendant FlowNodes in chronological order.
+            // Directly resolve enclosed step FlowNodes in O(1) via StageModel; fall back to FlowGraphWalker if unmodeled.
             List<FlowNode> enclosedNodes = new ArrayList<>();
-            try {
-                for (FlowNode n : new FlowGraphWalker(exec)) {
+            RunDetailsModel details = getOrBuildRunDetails(wfRun);
+            StageModel targetStage = (details != null && details.getStages() != null)
+                    ? PipelineGraphAnalyzer.findStageById(details.getStages(), nodeId)
+                    : null;
+
+            if (targetStage != null) {
+                List<String> stepIds = new ArrayList<>();
+                collectStageStepIds(targetStage, stepIds);
+                for (String stepId : stepIds) {
                     try {
-                        List<String> enclosing = n.getAllEnclosingIds();
-                        if (enclosing.contains(nodeId)) {
-                            LogAction la = n.getAction(LogAction.class);
+                        FlowNode sn = exec.getNode(stepId);
+                        if (sn != null) {
+                            LogAction la = sn.getAction(LogAction.class);
                             if (la != null && la.getLogText() != null) {
-                                enclosedNodes.add(n);
+                                enclosedNodes.add(sn);
                             }
                         }
                     } catch (Throwable ignored) {}
                 }
-            } catch (Throwable ignored) {}
+            } else {
+                try {
+                    for (FlowNode n : new FlowGraphWalker(exec)) {
+                        try {
+                            List<String> enclosing = n.getAllEnclosingIds();
+                            if (enclosing.contains(nodeId)) {
+                                LogAction la = n.getAction(LogAction.class);
+                                if (la != null && la.getLogText() != null) {
+                                    enclosedNodes.add(n);
+                                }
+                            }
+                        } catch (Throwable ignored) {}
+                    }
+                    Collections.reverse(enclosedNodes); // Chronological order
+                } catch (Throwable ignored) {}
+            }
 
             if (!enclosedNodes.isEmpty()) {
-                Collections.reverse(enclosedNodes); // Chronological order
                 long totalStageBytes = 0L;
                 for (FlowNode en : enclosedNodes) {
                     LogAction la = en.getAction(LogAction.class);
@@ -211,11 +291,19 @@ public class HorizonRunAction implements RunAction2 {
                         totalStageBytes += Math.max(0L, la.getLogText().length());
                     }
                 }
-                long bytesToSkip = (!isDownload && totalStageBytes > MAX_LOG_BYTES)
-                        ? (totalStageBytes - MAX_LOG_BYTES)
-                        : 0L;
+                rsp.setHeader("X-Text-Size", String.valueOf(totalStageBytes));
+                rsp.setHeader("X-More-Data", String.valueOf(wfRun.isBuilding()));
+
+                if (reqOffset >= 0 && reqOffset >= totalStageBytes) {
+                    return; // No new log data
+                }
+
+                long bytesToSkip = (reqOffset >= 0)
+                        ? reqOffset
+                        : ((!isDownload && totalStageBytes > MAX_LOG_BYTES) ? (totalStageBytes - MAX_LOG_BYTES) : 0L);
+
                 try (OutputStream os = rsp.getOutputStream()) {
-                    if (bytesToSkip > 0) {
+                    if (reqOffset < 0 && bytesToSkip > 0) {
                         String banner = String.format(
                                 java.util.Locale.US,
                                 "[... Stage log truncated for inline performance: showing last %s of %s total. Use 'Download' for full output ...]%n",
@@ -243,6 +331,8 @@ public class HorizonRunAction implements RunAction2 {
                     }
                 }
             } else {
+                rsp.setHeader("X-Text-Size", "0");
+                rsp.setHeader("X-More-Data", String.valueOf(wfRun.isBuilding()));
                 rsp.getWriter().write("[No console output recorded for this stage]");
             }
         }

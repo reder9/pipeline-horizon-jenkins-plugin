@@ -899,6 +899,27 @@ public class PipelineGraphAnalyzer {
         return stage;
     }
 
+    /**
+     * Recursively searches for a stage by ID across top-level and parallel child stages.
+     */
+    public static StageModel findStageById(List<StageModel> stages, String stageId) {
+        if (stages == null || stageId == null || stageId.isEmpty()) {
+            return null;
+        }
+        for (StageModel st : stages) {
+            if (stageId.equals(st.getId())) {
+                return st;
+            }
+            if (st.getChildren() != null && !st.getChildren().isEmpty()) {
+                StageModel found = findStageById(st.getChildren(), stageId);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
     private static StepModel createStepModel(FlowNode node, Map<String, BlockEndNode> startToEndMap, List<FlowNode> allNodes, int nodeIndex) {
         StepModel step = new StepModel();
         step.setId(node.getId());

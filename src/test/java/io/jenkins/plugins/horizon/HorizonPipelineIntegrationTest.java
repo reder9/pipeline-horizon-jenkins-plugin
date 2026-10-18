@@ -178,4 +178,60 @@ class HorizonPipelineIntegrationTest {
                 .getWebResponse().getContentAsString();
         assertEquals(json1, json3);
     }
+
+    @Test
+    void testByteOffsetStreamingAndStageLogsDirectResolution(JenkinsRule jenkins) throws Exception {
+        WorkflowJob job = jenkins.createProject(WorkflowJob.class, "horizon-log-streaming-job");
+        job.setDefinition(new CpsFlowDefinition(
+                "node {\n" +
+                "    stage('Build') {\n" +
+                "        echo 'Line 1: Building project Alpha'\n" +
+                "        echo 'Line 2: Compiling sources'\n" +
+                "    }\n" +
+                "}", true));
+        WorkflowRun build = jenkins.buildAndAssertStatus(Result.SUCCESS, job);
+        assertNotNull(build);
+
+        RunDetailsModel details = PipelineGraphAnalyzer.buildRunDetails(build);
+        assertNotNull(details);
+        List<StageModel> stages = details.getStages();
+        assertNotNull(stages);
+        assertFalse(stages.isEmpty());
+
+        StageModel buildStage = stages.get(0);
+        assertNotNull(buildStage.getSteps());
+        assertFalse(buildStage.getSteps().isEmpty());
+        String stepNodeId = buildStage.getSteps().get(0).getId();
+        String stageNodeId = buildStage.getId();
+
+        JenkinsRule.WebClient wc = jenkins.createWebClient();
+
+        // 1. Initial Step Log Fetch
+        var fullRes = wc.goTo("job/horizon-log-streaming-job/1/horizon/apiLog?nodeId=" + stepNodeId, "text/plain")
+                .getWebResponse();
+        String fullContent = fullRes.getContentAsString();
+        String textSizeHeader = fullRes.getResponseHeaderValue("X-Text-Size");
+        assertNotNull(textSizeHeader, "X-Text-Size header must be present");
+        long textSize = Long.parseLong(textSizeHeader);
+        assertTrue(textSize > 0, "Text size must be > 0");
+        assertTrue(fullContent.contains("Line 1: Building project Alpha") || fullContent.contains("Building"));
+
+        // 2. Incremental Step Log Fetch with startOffset == textSize (Should return empty string)
+        var emptyRes = wc.goTo("job/horizon-log-streaming-job/1/horizon/apiLog?nodeId=" + stepNodeId + "&startOffset=" + textSize, "text/plain")
+                .getWebResponse();
+        assertEquals("", emptyRes.getContentAsString(), "No delta bytes should be returned when offset equals total length");
+
+        // 3. Incremental Step Log Fetch with partial offset
+        long partialOffset = Math.max(0, textSize / 2);
+        var partialRes = wc.goTo("job/horizon-log-streaming-job/1/horizon/apiLog?nodeId=" + stepNodeId + "&startOffset=" + partialOffset, "text/plain")
+                .getWebResponse();
+        assertTrue(partialRes.getContentAsString().length() <= fullContent.length());
+
+        // 4. Stage-Level Log Fetch (aggregated via direct StageModel resolution)
+        var stageRes = wc.goTo("job/horizon-log-streaming-job/1/horizon/apiLog?nodeId=" + stageNodeId, "text/plain")
+                .getWebResponse();
+        String stageContent = stageRes.getContentAsString();
+        assertNotNull(stageRes.getResponseHeaderValue("X-Text-Size"));
+        assertTrue(stageContent.contains("Line 1: Building project Alpha") || stageContent.contains("Line 2: Compiling sources"));
+    }
 }

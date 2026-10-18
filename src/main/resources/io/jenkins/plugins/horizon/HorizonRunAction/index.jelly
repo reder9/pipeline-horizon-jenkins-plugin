@@ -7811,8 +7811,11 @@
                             if (s.steps) {
                                 for (var k = 0; k &lt; s.steps.length; k++) {
                                     var step = s.steps[k];
-                                    if (step.status === 'IN_PROGRESS' || step.status === 'PAUSED_INPUT' || data.building) {
+                                    var el = document.getElementById('step-item-' + step.id);
+                                    var isExpanded = el &amp;&amp; el.classList.contains('expanded');
+                                    if (!isExpanded &amp;&amp; (step.status === 'IN_PROGRESS' || step.status === 'PAUSED_INPUT')) {
                                         delete stepLogsCache[step.id];
+                                        delete stepLogsOffset[step.id];
                                     }
                                 }
                             }
@@ -10627,6 +10630,7 @@
                 }
 
                 var stepLogsCache = {};
+                var stepLogsOffset = {};
                 var stepSearchQueries = {};
 
                 function copyCurrentDeepLink(targetType, stepId) {
@@ -11044,7 +11048,13 @@
                             } else {
                                 terminal.innerHTML = '&lt;div class="log-placeholder"&gt;Loading log stream...&lt;/div&gt;';
                                 fetch(horizonBaseUrl + 'apiLog?nodeId=' + encodeURIComponent(stepId))
-                                    .then(function(res) { return res.text(); })
+                                    .then(function(res) {
+                                        var sizeHeader = res.headers ? res.headers.get('X-Text-Size') : null;
+                                        if (sizeHeader) {
+                                            stepLogsOffset[stepId] = parseInt(sizeHeader, 10);
+                                        }
+                                        return res.text();
+                                    })
                                     .then(function(text) {
                                         var currentStage = selectedStageId &amp;&amp; graphData ? findStage(graphData.stages, selectedStageId) : null;
                                         var processedText = fixMojibake(text);
@@ -11056,6 +11066,9 @@
                                             }
                                         }
                                         stepLogsCache[stepId] = processedText;
+                                        if (stepLogsOffset[stepId] === undefined) {
+                                            stepLogsOffset[stepId] = (text ? text.length : 0);
+                                        }
                                         renderStepLogLines(stepId, processedText, targetLineRange);
                                     })
                                     .catch(function(err) {
@@ -11241,18 +11254,39 @@
                         var stepId = idAttr.replace('step-item-', '');
                         if (!stepId) return;
 
-                        fetch(horizonBaseUrl + 'apiLog?nodeId=' + encodeURIComponent(stepId))
-                            .then(function(res) { return res.text(); })
-                            .then(function(newText) {
-                                var cleanText = fixMojibake(newText);
-                                if (cleanText &amp;&amp; stepLogsCache[stepId] !== cleanText) {
-                                    var term = document.getElementById('terminal-' + stepId);
-                                    var wasTail = (activeLiveTailSteps[stepId] !== false);
-                                    stepLogsCache[stepId] = cleanText;
-                                    renderStepLogLines(stepId, cleanText, null);
-                                    if (term &amp;&amp; wasTail) {
-                                        term.scrollTop = term.scrollHeight;
-                                    }
+                        var curOffset = (stepLogsOffset[stepId] !== undefined) ? stepLogsOffset[stepId] : -1;
+                        var url = horizonBaseUrl + 'apiLog?nodeId=' + encodeURIComponent(stepId);
+                        if (curOffset &gt;= 0) {
+                            url += '&amp;startOffset=' + encodeURIComponent(curOffset);
+                        }
+
+                        fetch(url)
+                            .then(function(res) {
+                                var sizeHeader = res.headers ? res.headers.get('X-Text-Size') : null;
+                                if (sizeHeader) {
+                                    stepLogsOffset[stepId] = parseInt(sizeHeader, 10);
+                                }
+                                return res.text();
+                            })
+                            .then(function(deltaText) {
+                                if (!deltaText || deltaText.length === 0) {
+                                    return;
+                                }
+                                var cleanDelta = fixMojibake(deltaText);
+                                if (!cleanDelta) return;
+
+                                var existingText = stepLogsCache[stepId] || '';
+                                if (curOffset &gt;= 0 &amp;&amp; existingText &amp;&amp; existingText !== "[No console output recorded for this step]") {
+                                    stepLogsCache[stepId] = existingText + cleanDelta;
+                                } else {
+                                    stepLogsCache[stepId] = cleanDelta;
+                                }
+
+                                var term = document.getElementById('terminal-' + stepId);
+                                var wasTail = (activeLiveTailSteps[stepId] !== false);
+                                renderStepLogLines(stepId, stepLogsCache[stepId], null);
+                                if (term &amp;&amp; wasTail) {
+                                    term.scrollTop = term.scrollHeight;
                                 }
                             })
                             .catch(function() {});
