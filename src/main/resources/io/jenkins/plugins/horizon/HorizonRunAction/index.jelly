@@ -4621,7 +4621,79 @@
                         border-bottom-right-radius: 0;
                     }
                     .step-toolbar-spacer { flex: 1; }
-                    .step-toolbar-summary { font-weight: 600; letter-spacing: 0.01em; }
+                    .step-toolbar-summary { font-weight: 600; letter-spacing: 0.01em; white-space: nowrap; flex-shrink: 0; }
+                    .step-stage-search-wrap {
+                        display: flex;
+                        align-items: center;
+                        position: relative;
+                        flex: 1;
+                        min-width: 180px;
+                        max-width: 360px;
+                        margin: 0 0.5rem;
+                    }
+                    .step-stage-search-wrap svg.search-mag-icon {
+                        position: absolute;
+                        left: 8px;
+                        color: #64748b;
+                        pointer-events: none;
+                        z-index: 2;
+                    }
+                    .step-stage-search-input {
+                        width: 100%;
+                        background: #0f172a;
+                        border: 1px solid #1e293b;
+                        border-radius: 6px;
+                        padding: 0.25rem 5.6rem 0.25rem 1.75rem;
+                        font-size: 0.775rem;
+                        color: #f1f5f9;
+                        outline: none;
+                        transition: border-color 0.15s, box-shadow 0.15s;
+                    }
+                    .step-stage-search-input:focus {
+                        border-color: #38bdf8;
+                        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+                    }
+                    .step-stage-search-stepper {
+                        position: absolute;
+                        right: 5px;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 2px;
+                        background: rgba(30, 41, 59, 0.9);
+                        border: 1px solid rgba(71, 85, 105, 0.4);
+                        border-radius: 4px;
+                        padding: 1px 4px;
+                        z-index: 2;
+                    }
+                    .step-row-match-badge {
+                        display: inline-flex;
+                        align-items: center;
+                        padding: 1px 6px;
+                        font-size: 0.68rem;
+                        font-weight: 700;
+                        border-radius: 999px;
+                        background: rgba(56, 189, 248, 0.18);
+                        color: #38bdf8;
+                        border: 1px solid rgba(56, 189, 248, 0.4);
+                        letter-spacing: 0.02em;
+                        margin-right: 0.5rem;
+                    }
+                    .inline-log-meta-left {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    }
+                    .step-match-pill {
+                        display: inline-flex;
+                        align-items: center;
+                        padding: 1px 6px;
+                        font-size: 0.68rem;
+                        font-weight: 600;
+                        border-radius: 4px;
+                        background: rgba(56, 189, 248, 0.14);
+                        color: #38bdf8;
+                        border: 1px solid rgba(56, 189, 248, 0.3);
+                    }
                     .step-now-running {
                         display: inline-flex;
                         align-items: center;
@@ -4726,6 +4798,32 @@
                     .horizon-container:not(.theme-dark) .step-tool-btn:hover { background: #e0f2fe; border-color: #0284c7; color: #0369a1; }
                     .horizon-container:not(.theme-dark) .step-tool-btn.follow-active { background: #ecfdf5; border-color: #10b981; color: #047857; }
                     .horizon-container:not(.theme-dark) .step-tool-btn.follow-paused { background: #fffbeb; border-color: #f59e0b; color: #b45309; }
+                    .horizon-container:not(.theme-dark) .step-stage-search-input {
+                        background: #ffffff;
+                        border-color: #cbd5e1;
+                        color: #0f172a;
+                    }
+                    .horizon-container:not(.theme-dark) .step-stage-search-input:focus {
+                        border-color: #0284c7;
+                        box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.18);
+                    }
+                    .horizon-container:not(.theme-dark) .step-stage-search-stepper {
+                        background: #f1f5f9;
+                        border-color: #cbd5e1;
+                    }
+                    .horizon-container:not(.theme-dark) .step-stage-search-wrap svg.search-mag-icon {
+                        color: #94a3b8;
+                    }
+                    .horizon-container:not(.theme-dark) .step-row-match-badge {
+                        background: rgba(2, 132, 199, 0.12);
+                        color: #0284c7;
+                        border-color: rgba(2, 132, 199, 0.3);
+                    }
+                    .horizon-container:not(.theme-dark) .step-match-pill {
+                        background: rgba(2, 132, 199, 0.1);
+                        color: #0284c7;
+                        border-color: rgba(2, 132, 199, 0.25);
+                    }
                     .horizon-container:not(.theme-dark) .step-accordion-item.step-running > .accordion-step-row {
                         background: #e0f2fe;
                         box-shadow: inset 3px 0 0 #0284c7;
@@ -7358,10 +7456,19 @@
                         </div>
                     </div>
 
-                    <!-- Step Toolbar: live summary, follow toggle, block collapse -->
+                    <!-- Step Toolbar: live summary, stage search, follow toggle, block collapse -->
                     <div id="step-toolbar" class="step-toolbar" style="display:none;" role="toolbar" aria-label="Step list controls">
                         <span id="step-toolbar-summary" class="step-toolbar-summary"></span>
                         <span id="step-now-running" class="step-now-running" style="display:none;" role="button" tabindex="0" title="Scroll to the running step"></span>
+                        <div class="step-stage-search-wrap" id="step-stage-search-wrap">
+                            <svg class="search-mag-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" class="step-stage-search-input" id="stage-log-search" placeholder="Search stage logs (Enter / Shift+Enter)..." oninput="filterStageLogs(this.value)" onkeydown="handleStageSearchKey(event)" onclick="event.stopPropagation();" />
+                            <div class="step-stage-search-stepper" id="stage-log-match-stepper" style="display:none;">
+                                <span class="match-stepper-count" id="stage-match-count">0 of 0</span>
+                                <button type="button" class="match-stepper-btn" onclick="stageSearchMatch(-1)" title="Previous match (Shift+Enter)">&#9650;</button>
+                                <button type="button" class="match-stepper-btn" onclick="stageSearchMatch(1)" title="Next match (Enter)">&#9660;</button>
+                            </div>
+                        </div>
                         <span class="step-toolbar-spacer"></span>
                         <button type="button" id="btn-step-groups" class="step-tool-btn" style="display:none;" onclick="toggleAllClosureGroups()" title="Collapse or expand closure blocks (withCredentials, dir, timeout, ...)">Collapse blocks</button>
                         <button type="button" id="btn-step-follow" class="step-tool-btn follow-active" style="display:none;" onclick="toggleStepFollow()"></button>
@@ -11703,6 +11810,11 @@
                     selectedStageId = stageId;
                     if (!isRefresh) {
                         switchDrawerTab('steps');
+                        if (stageChanged) {
+                            var searchInput = document.getElementById('stage-log-search');
+                            if (searchInput) searchInput.value = '';
+                            filterStageLogs('');
+                        }
                     }
                     // Update visual highlight and ARIA pressed on flow stage cards
                     var nodes = document.querySelectorAll('.stage-node');
@@ -12094,6 +12206,7 @@
                     html += '&lt;/div&gt;';
 
                     html += '&lt;div class="accordion-step-right"&gt;';
+                    html += '&lt;span class="step-row-match-badge" id="step-row-match-' + step.id + '" style="display:none;"&gt;&lt;/span&gt;';
                     html += '&lt;span class="step-dur-wrap" id="step-dur-' + step.id + '"&gt;' + buildStepDurationHtml(step) + '&lt;/span&gt;';
                     html += '&lt;a href="' + classicLogUrl + '" target="_blank" class="step-external-link" title="Open classic step log in new tab" onclick="event.stopPropagation();"&gt;';
                     html += '&lt;svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/&gt;&lt;polyline points="15 3 21 3 21 9"/&gt;&lt;line x1="10" y1="14" x2="21" y2="3"/&gt;&lt;/svg&gt;';
@@ -12104,17 +12217,11 @@
                     // Step Inline Log (hidden by CSS for closures that merely wrap other steps)
                     html += '&lt;div class="step-inline-log" id="step-log-' + step.id + '" role="region" aria-label="Console log for ' + escapeHtml(titleStr) + '"&gt;';
                     html += '&lt;div class="inline-log-toolbar"&gt;';
-                    html += '&lt;div class="inline-log-search-wrap"&gt;';
-                    html += '&lt;svg class="search-mag-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;circle cx="11" cy="11" r="8"/&gt;&lt;line x1="21" y1="21" x2="16.65" y2="16.65"/&gt;&lt;/svg&gt;';
-                    html += '&lt;input type="text" class="inline-log-search" id="log-search-' + step.id + '" placeholder="Search logs (Enter / Shift+Enter)..." oninput="filterStepLog(\'' + step.id + '\', this.value)" onkeydown="handleStepSearchKey(event, \'' + step.id + '\')" /&gt;';
-                    html += '&lt;div class="inline-log-match-stepper" id="log-match-stepper-' + step.id + '" style="display:none;"&gt;';
-                    html += '&lt;span class="match-stepper-count" id="match-count-' + step.id + '"&gt;0 of 0&lt;/span&gt;';
-                    html += '&lt;button type="button" class="match-stepper-btn" onclick="stepSearchMatch(\'' + step.id + '\', -1)" title="Previous match (Shift+Enter)"&gt;&amp;#9650;&lt;/button&gt;';
-                    html += '&lt;button type="button" class="match-stepper-btn" onclick="stepSearchMatch(\'' + step.id + '\', 1)" title="Next match (Enter)"&gt;&amp;#9660;&lt;/button&gt;';
-                    html += '&lt;/div&gt;';
+                    html += '&lt;div class="inline-log-meta-left"&gt;';
+                    html += '&lt;span class="inline-log-line-count" id="log-count-' + step.id + '"&gt;0 lines&lt;/span&gt;';
+                    html += '&lt;span class="step-match-pill" id="step-match-pill-' + step.id + '" style="display:none;"&gt;&lt;/span&gt;';
                     html += '&lt;/div&gt;';
                     html += '&lt;div class="inline-log-actions"&gt;';
-                    html += '&lt;span class="inline-log-line-count" id="log-count-' + step.id + '"&gt;0 lines&lt;/span&gt;';
 
                     var isStepActive = isRunLive() &amp;&amp; (isStepActiveStatus(st) || (stage &amp;&amp; stage.status === 'IN_PROGRESS' &amp;&amp; !(st === 'SUCCESS' || st === 'FAILED' || st === 'FAILURE' || st === 'ABORTED' || st === 'UNSTABLE' || st.indexOf('SKIPPED') !== -1 || st === 'NOT_EXECUTED')));
                     if (isStepActive) {
@@ -12984,6 +13091,19 @@
                         vState.forceNextRender = true;
                     }
 
+                    if (currentStageSearchQuery) {
+                        var stageMatches = [];
+                        for (var mIdx = 0; mIdx &lt; rawLines.length; mIdx++) {
+                            if (rawLines[mIdx].toLowerCase().indexOf(currentStageSearchQuery) !== -1) {
+                                stageMatches.push(mIdx);
+                            }
+                        }
+                        vState.filteredIndices = stageMatches;
+                        if (countEl) {
+                            countEl.innerText = stageMatches.length + ' matching of ' + rawLines.length;
+                        }
+                    }
+
                     var sliceContainer = document.getElementById('v-slice-' + stepId);
                     if (!sliceContainer) {
                         terminal.innerHTML =
@@ -13067,107 +13187,232 @@
                     }
                 }
 
-                function filterStepLog(stepId, query) {
-                    var v = stepTerminalVirtualizers[stepId];
-                    var terminal = document.getElementById('terminal-' + stepId);
-                    var stepper = document.getElementById('log-match-stepper-' + stepId);
-                    var stepperCount = document.getElementById('match-count-' + stepId);
-                    var countEl = document.getElementById('log-count-' + stepId);
-                    if (!v || !terminal) return;
+                var currentStageSearchQuery = '';
+                var stageSearchMatches = [];
+                var stageSearchActiveIndex = -1;
 
-                    query = (query || '').trim().toLowerCase();
+                function filterStageLogs(query) {
+                    currentStageSearchQuery = (query || '').trim().toLowerCase();
+                    runStageLogFilter(currentStageSearchQuery);
+                }
+
+                function runStageLogFilter(query) {
+                    var stepper = document.getElementById('stage-log-match-stepper');
+                    var stepperCount = document.getElementById('stage-match-count');
+                    var currentStage = selectedStageId &amp;&amp; graphData ? findStage(graphData.stages, selectedStageId) : null;
+                    var steps = (currentStage &amp;&amp; currentStage.steps) ? currentStage.steps : [];
+
+                    stageSearchMatches = [];
 
                     if (!query) {
-                        v.filteredIndices = null;
-                        v.activeMatchLineNum = -1;
-                        v.activeMatchIndex = -1;
-                        v.forceNextRender = true;
+                        stageSearchActiveIndex = -1;
                         if (stepper) stepper.style.display = 'none';
-                        if (countEl) countEl.innerText = v.rawLines.length + (v.rawLines.length === 1 ? ' line' : ' lines');
-                        terminal.scrollTop = 0;
-                        renderVirtualSlice(v, 0);
+
+                        for (var i = 0; i &lt; steps.length; i++) {
+                            var step = steps[i];
+                            var stepId = step.id;
+                            var v = stepTerminalVirtualizers[stepId];
+                            var countEl = document.getElementById('log-count-' + stepId);
+                            var rowBadge = document.getElementById('step-row-match-' + stepId);
+                            var pillBadge = document.getElementById('step-match-pill-' + stepId);
+                            if (rowBadge) rowBadge.style.display = 'none';
+                            if (pillBadge) pillBadge.style.display = 'none';
+
+                            if (v) {
+                                v.filteredIndices = null;
+                                v.activeMatchLineNum = -1;
+                                v.activeMatchIndex = -1;
+                                v.forceNextRender = true;
+                                if (countEl) countEl.innerText = v.rawLines.length + (v.rawLines.length === 1 ? ' line' : ' lines');
+                                renderVirtualSlice(v, 0);
+                            }
+                        }
                         return;
                     }
 
-                    var matches = [];
-                    for (var i = 0; i &lt; v.rawLines.length; i++) {
-                        if (v.rawLines[i].toLowerCase().indexOf(query) !== -1) {
-                            matches.push(i);
+                    var pendingFetches = 0;
+
+                    for (var j = 0; j &lt; steps.length; j++) {
+                        var stp = steps[j];
+                        var sId = stp.id;
+                        if (isStepGroup(stp)) continue;
+
+                        if (stepLogsCache[sId] === undefined) {
+                            pendingFetches++;
+                            (function(targetId, qRef) {
+                                fetch(horizonBaseUrl + 'apiLog?nodeId=' + encodeURIComponent(targetId))
+                                    .then(function(res) { return res.text(); })
+                                    .then(function(txt) {
+                                        var proc = fixMojibake(txt);
+                                        stepLogsCache[targetId] = proc;
+                                        if (currentStageSearchQuery === qRef) {
+                                            runStageLogFilter(qRef);
+                                        }
+                                    })
+                                    .catch(function() {});
+                            })(sId, query);
+                            continue;
+                        }
+
+                        var text = stepLogsCache[sId] || '';
+                        var rawLines = text.split('\n');
+                        if (rawLines.length &gt; 1 &amp;&amp; rawLines[rawLines.length - 1] === '') rawLines.pop();
+
+                        var stepMatches = [];
+                        for (var lineIdx = 0; lineIdx &lt; rawLines.length; lineIdx++) {
+                            if (rawLines[lineIdx].toLowerCase().indexOf(query) !== -1) {
+                                stepMatches.push(lineIdx);
+                                stageSearchMatches.push({
+                                    stepId: sId,
+                                    stepName: stp.displayName || stp.name || 'Step',
+                                    lineIndex: lineIdx,
+                                    lineNumber: lineIdx + 1,
+                                    text: rawLines[lineIdx]
+                                });
+                            }
+                        }
+
+                        var sRowBadge = document.getElementById('step-row-match-' + sId);
+                        var sPillBadge = document.getElementById('step-match-pill-' + sId);
+                        var sCountEl = document.getElementById('log-count-' + sId);
+
+                        if (stepMatches.length &gt; 0) {
+                            var badgeText = stepMatches.length + (stepMatches.length === 1 ? ' match' : ' matches');
+                            if (sRowBadge) {
+                                sRowBadge.innerText = badgeText;
+                                sRowBadge.style.display = 'inline-flex';
+                            }
+                            if (sPillBadge) {
+                                sPillBadge.innerText = badgeText;
+                                sPillBadge.style.display = 'inline-flex';
+                            }
+                            if (sCountEl) {
+                                sCountEl.innerText = stepMatches.length + ' matching of ' + rawLines.length;
+                            }
+                        } else {
+                            if (sRowBadge) sRowBadge.style.display = 'none';
+                            if (sPillBadge) sPillBadge.style.display = 'none';
+                            if (sCountEl) sCountEl.innerText = '0 matching of ' + rawLines.length;
+                        }
+
+                        var sVirt = stepTerminalVirtualizers[sId];
+                        if (sVirt) {
+                            sVirt.filteredIndices = stepMatches;
+                            sVirt.activeMatchIndex = stepMatches.length &gt; 0 ? 0 : -1;
+                            sVirt.activeMatchLineNum = stepMatches.length &gt; 0 ? (stepMatches[0] + 1) : -1;
+                            sVirt.forceNextRender = true;
+                            renderVirtualSlice(sVirt, 0);
                         }
                     }
 
-                    v.filteredIndices = matches;
-                    v.activeMatchIndex = matches.length &gt; 0 ? 0 : -1;
-                    v.activeMatchLineNum = matches.length &gt; 0 ? (matches[0] + 1) : -1;
-
+                    var total = stageSearchMatches.length;
                     if (stepper) stepper.style.display = 'inline-flex';
-                    if (stepperCount) {
-                        stepperCount.innerText = matches.length &gt; 0 ? ('1 of ' + matches.length) : '0 of 0';
-                    }
-                    if (countEl) {
-                        countEl.innerText = matches.length + ' matching';
-                    }
 
-                    terminal.scrollTop = 0;
-                    v.forceNextRender = true;
-                    renderVirtualSlice(v, 0);
+                    if (total &gt; 0) {
+                        if (stageSearchActiveIndex &lt; 0 || stageSearchActiveIndex &gt;= total) {
+                            stageSearchActiveIndex = 0;
+                        }
+                        var uniqueSteps = {};
+                        for (var u = 0; u &lt; total; u++) uniqueSteps[stageSearchMatches[u].stepId] = true;
+                        var uniqueCount = Object.keys(uniqueSteps).length;
+                        var stepSuffix = (uniqueCount &gt; 1) ? (' (' + uniqueCount + ' steps)') : '';
 
-                    if (matches.length &gt; 0) {
-                        scrollVirtualTerminalToLine(stepId, matches[0] + 1);
-                    }
-                }
-
-                function stepSearchMatch(stepId, direction) {
-                    var v = stepTerminalVirtualizers[stepId];
-                    if (!v || !v.filteredIndices || v.filteredIndices.length === 0) return;
-
-                    var total = v.filteredIndices.length;
-                    var curIdx = (v.activeMatchIndex !== undefined &amp;&amp; v.activeMatchIndex &gt;= 0) ? v.activeMatchIndex : 0;
-                    curIdx = (curIdx + direction + total) % total;
-                    v.activeMatchIndex = curIdx;
-
-                    var rawIdx = v.filteredIndices[curIdx];
-                    var lineNum = rawIdx + 1;
-                    v.activeMatchLineNum = lineNum;
-
-                    scrollVirtualTerminalToLine(stepId, lineNum);
-
-                    var stepperCount = document.getElementById('match-count-' + stepId);
-                    if (stepperCount) {
-                        stepperCount.innerText = (curIdx + 1) + ' of ' + total;
+                        if (stepperCount) {
+                            stepperCount.innerText = (stageSearchActiveIndex + 1) + ' of ' + total + stepSuffix;
+                        }
+                        jumpToStageMatch(stageSearchActiveIndex, false);
+                    } else {
+                        stageSearchActiveIndex = -1;
+                        if (stepperCount) {
+                            stepperCount.innerText = pendingFetches &gt; 0 ? 'Searching...' : '0 of 0';
+                        }
                     }
                 }
 
-                function handleStepSearchKey(event, stepId) {
+                function jumpToStageMatch(matchIdx, scrollPage) {
+                    if (!stageSearchMatches || stageSearchMatches.length === 0) return;
+                    if (matchIdx &lt; 0 || matchIdx &gt;= stageSearchMatches.length) return;
+
+                    stageSearchActiveIndex = matchIdx;
+                    var m = stageSearchMatches[matchIdx];
+
+                    var item = document.getElementById('step-item-' + m.stepId);
+                    if (item &amp;&amp; !item.classList.contains('expanded')) {
+                        toggleStepAccordion(m.stepId, null, true, true);
+                    }
+
+                    var v = stepTerminalVirtualizers[m.stepId];
+                    if (v) {
+                        v.activeMatchLineNum = m.lineNumber;
+                        if (v.filteredIndices) {
+                            v.activeMatchIndex = v.filteredIndices.indexOf(m.lineIndex);
+                        }
+                        v.forceNextRender = true;
+                    }
+
+                    setTimeout(function() {
+                        scrollVirtualTerminalToLine(m.stepId, m.lineNumber);
+                        if (scrollPage) {
+                            var row = document.getElementById('step-row-' + m.stepId);
+                            if (row &amp;&amp; !isElementComfortablyInView(row)) {
+                                scrollWindowToElement(row, 'nearest');
+                            }
+                        }
+                    }, 40);
+
+                    var total = stageSearchMatches.length;
+                    var uniqueSteps = {};
+                    for (var u = 0; u &lt; total; u++) uniqueSteps[stageSearchMatches[u].stepId] = true;
+                    var uniqueCount = Object.keys(uniqueSteps).length;
+                    var stepSuffix = (uniqueCount &gt; 1) ? (' (' + uniqueCount + ' steps)') : '';
+
+                    var stepperCount = document.getElementById('stage-match-count');
+                    if (stepperCount) {
+                        stepperCount.innerText = (matchIdx + 1) + ' of ' + total + stepSuffix;
+                    }
+                }
+
+                function stageSearchMatch(direction) {
+                    if (!stageSearchMatches || stageSearchMatches.length === 0) return;
+                    var total = stageSearchMatches.length;
+                    stageSearchActiveIndex = (stageSearchActiveIndex + direction + total) % total;
+                    jumpToStageMatch(stageSearchActiveIndex, true);
+                }
+
+                function handleStageSearchKey(event) {
                     if (event.key === 'Enter') {
                         event.preventDefault();
-                        stepSearchMatch(stepId, event.shiftKey ? -1 : 1);
+                        stageSearchMatch(event.shiftKey ? -1 : 1);
                     } else if (event.key === 'Escape') {
                         event.preventDefault();
-                        var input = document.getElementById('log-search-' + stepId);
+                        var input = document.getElementById('stage-log-search');
                         if (input) {
                             input.value = '';
-                            filterStepLog(stepId, '');
+                            filterStageLogs('');
                             input.blur();
                         }
                     }
                 }
 
+                function focusStageLogSearch() {
+                    var input = document.getElementById('stage-log-search');
+                    if (input) {
+                        input.focus();
+                        input.select();
+                    }
+                }
+
+                function filterStepLog(stepId, query) {
+                    filterStageLogs(query);
+                }
+                function stepSearchMatch(stepId, direction) {
+                    stageSearchMatch(direction);
+                }
+                function handleStepSearchKey(event, stepId) {
+                    handleStageSearchKey(event);
+                }
                 function focusStepLogSearch(stepId) {
-                    var targetId = stepId || selectedStepId;
-                    if (!targetId &amp;&amp; graphData &amp;&amp; graphData.stages) {
-                        var exp = document.querySelector('.step-accordion-item.expanded');
-                        if (exp &amp;&amp; exp.id) {
-                            targetId = exp.id.replace('step-item-', '');
-                        }
-                    }
-                    if (targetId) {
-                        var input = document.getElementById('log-search-' + targetId);
-                        if (input) {
-                            input.focus();
-                            input.select();
-                        }
-                    }
+                    focusStageLogSearch();
                 }
 
                 function openShortcutsModal() {
