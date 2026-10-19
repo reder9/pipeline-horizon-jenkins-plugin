@@ -1879,6 +1879,12 @@
                         color: #f1f5f9;
                         border: 1px solid rgba(255, 255, 255, 0.28);
                     }
+                    #meta-agents {
+                        display: inline-flex;
+                        flex-wrap: wrap;
+                        align-items: center;
+                        gap: 0.35rem;
+                    }
                     .agent-chip {
                         display: inline-flex;
                         align-items: center;
@@ -1886,7 +1892,7 @@
                         background: rgba(255, 255, 255, 0.14) !important;
                         color: #ffffff !important;
                         border: 1px solid rgba(255, 255, 255, 0.28) !important;
-                        padding: 0.2rem 0.6rem;
+                        padding: 0.2rem 0.55rem;
                         border-radius: 6px;
                         font-family: monospace;
                         font-size: 0.8rem;
@@ -1894,6 +1900,8 @@
                         cursor: pointer;
                         transition: all 0.15s ease;
                         user-select: none;
+                        max-width: 175px;
+                        box-sizing: border-box;
                     }
                     .agent-chip:hover {
                         background: rgba(255, 255, 255, 0.26) !important;
@@ -1903,6 +1911,35 @@
                     }
                     .agent-chip svg {
                         color: #ffffff !important;
+                        flex-shrink: 0;
+                    }
+                    .agent-chip-name {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    .agent-chip-more {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.25rem;
+                        background: rgba(255, 255, 255, 0.22) !important;
+                        color: #ffffff !important;
+                        border: 1px solid rgba(255, 255, 255, 0.38) !important;
+                        padding: 0.2rem 0.55rem;
+                        border-radius: 6px;
+                        font-family: monospace;
+                        font-size: 0.78rem;
+                        font-weight: 700;
+                        cursor: pointer;
+                        transition: all 0.15s ease;
+                        user-select: none;
+                        flex-shrink: 0;
+                    }
+                    .agent-chip-more:hover {
+                        background: rgba(255, 255, 255, 0.36) !important;
+                        border-color: rgba(255, 255, 255, 0.6) !important;
+                        transform: translateY(-1px);
+                        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
                     }
 
                     /* Graph Canvas */
@@ -4560,6 +4597,145 @@
                         background: rgba(56, 189, 248, 0.1);
                     }
 
+                    /* Step toolbar: live summary / follow / block collapse */
+                    .step-toolbar {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.65rem;
+                        flex-wrap: wrap;
+                        margin-top: 0.75rem;
+                        padding: 0.45rem 0.8rem;
+                        background: #0b1120;
+                        border: 1px solid #1e293b;
+                        border-radius: 8px;
+                        font-size: 0.78rem;
+                        color: #94a3b8;
+                    }
+                    .step-toolbar.has-steps + .step-accordion-container {
+                        margin-top: -1px;
+                        border-top-left-radius: 0;
+                        border-top-right-radius: 0;
+                    }
+                    .step-toolbar.has-steps {
+                        border-bottom-left-radius: 0;
+                        border-bottom-right-radius: 0;
+                    }
+                    .step-toolbar-spacer { flex: 1; }
+                    .step-toolbar-summary { font-weight: 600; letter-spacing: 0.01em; }
+                    .step-now-running {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.4rem;
+                        min-width: 0;
+                        max-width: 55%;
+                        color: #38bdf8;
+                        cursor: pointer;
+                        overflow: hidden;
+                        white-space: nowrap;
+                        text-overflow: ellipsis;
+                    }
+                    .step-now-running b { color: #e0f2fe; font-weight: 600; }
+                    .step-now-label { text-transform: uppercase; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em; }
+                    .step-now-args {
+                        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                        color: #64748b;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .step-tool-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.4rem;
+                        font-size: 0.72rem;
+                        font-weight: 600;
+                        padding: 0.22rem 0.6rem;
+                        border-radius: 999px;
+                        border: 1px solid #334155;
+                        background: rgba(255, 255, 255, 0.03);
+                        color: #cbd5e1;
+                        cursor: pointer;
+                        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+                    }
+                    .step-tool-btn:hover { background: rgba(56, 189, 248, 0.1); border-color: #38bdf8; color: #7dd3fc; }
+                    .step-tool-btn.follow-active {
+                        background: rgba(34, 197, 94, 0.14);
+                        border-color: rgba(34, 197, 94, 0.45);
+                        color: #4ade80;
+                    }
+                    .step-tool-btn.follow-paused {
+                        background: rgba(234, 179, 8, 0.12);
+                        border-color: rgba(234, 179, 8, 0.4);
+                        color: #facc15;
+                    }
+
+                    /* Live step state: the one real running step stands out; wrappers around it stay calm */
+                    .step-accordion-item.step-running > .accordion-step-row {
+                        background: rgba(56, 189, 248, 0.08);
+                        box-shadow: inset 3px 0 0 #38bdf8;
+                    }
+                    .step-accordion-item.step-container-active > .accordion-step-row {
+                        box-shadow: inset 3px 0 0 rgba(56, 189, 248, 0.3);
+                    }
+                    .step-container-ring { animation: stepRingSpin 8s linear infinite; }
+                    @keyframes stepRingSpin { to { transform: rotate(360deg); } }
+                    .step-live-pill {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.3rem;
+                        margin-left: 0.4rem;
+                        padding: 1px 6px;
+                        font-size: 0.6rem;
+                        font-weight: 700;
+                        letter-spacing: 0.06em;
+                        border-radius: 999px;
+                        background: rgba(34, 197, 94, 0.14);
+                        border: 1px solid rgba(34, 197, 94, 0.4);
+                        color: #4ade80;
+                        flex-shrink: 0;
+                    }
+                    .step-live-pill .live-tail-dot { width: 5px; height: 5px; }
+
+                    /* Closure groups: collapsible wrappers, no log of their own */
+                    .step-accordion-item.step-group > .step-inline-log { display: none !important; }
+                    .step-accordion-item.step-group > .accordion-step-row { background: rgba(148, 163, 184, 0.045); }
+                    .step-accordion-item.step-group .step-chevron { transform: rotate(90deg); color: #64748b; }
+                    .step-accordion-item.step-group.group-collapsed .step-chevron { transform: none; }
+                    .step-accordion-item.step-group.group-collapsed .step-closure-badge::after {
+                        content: ' \00b7  +' attr(data-count);
+                        text-transform: none;
+                    }
+
+                    /* Wrap layout: a single row of stages is centred as a block */
+                    .pipeline-flow.wrap-mode .pipeline-flow-canvas.wrap-center {
+                        justify-content: center;
+                    }
+
+                    .horizon-container:not(.theme-dark) .step-toolbar {
+                        background: #f8fafc;
+                        border-color: #cbd5e1;
+                        color: #475569;
+                    }
+                    .horizon-container:not(.theme-dark) .step-now-running { color: #0284c7; }
+                    .horizon-container:not(.theme-dark) .step-now-running b { color: #0c4a6e; }
+                    .horizon-container:not(.theme-dark) .step-now-args { color: #64748b; }
+                    .horizon-container:not(.theme-dark) .step-tool-btn {
+                        background: #ffffff;
+                        border-color: #cbd5e1;
+                        color: #334155;
+                    }
+                    .horizon-container:not(.theme-dark) .step-tool-btn:hover { background: #e0f2fe; border-color: #0284c7; color: #0369a1; }
+                    .horizon-container:not(.theme-dark) .step-tool-btn.follow-active { background: #ecfdf5; border-color: #10b981; color: #047857; }
+                    .horizon-container:not(.theme-dark) .step-tool-btn.follow-paused { background: #fffbeb; border-color: #f59e0b; color: #b45309; }
+                    .horizon-container:not(.theme-dark) .step-accordion-item.step-running > .accordion-step-row {
+                        background: #e0f2fe;
+                        box-shadow: inset 3px 0 0 #0284c7;
+                    }
+                    .horizon-container:not(.theme-dark) .step-accordion-item.step-container-active > .accordion-step-row {
+                        box-shadow: inset 3px 0 0 rgba(2, 132, 199, 0.35);
+                    }
+                    .horizon-container:not(.theme-dark) .step-live-pill { background: #ecfdf5; border-color: #10b981; color: #047857; }
+                    .horizon-container:not(.theme-dark) .step-accordion-item.step-group > .accordion-step-row { background: #f1f5f9; }
+
                     /* Step Inline Log Drawer */
                     .step-inline-log {
                         display: none;
@@ -7182,6 +7358,15 @@
                         </div>
                     </div>
 
+                    <!-- Step Toolbar: live summary, follow toggle, block collapse -->
+                    <div id="step-toolbar" class="step-toolbar" style="display:none;" role="toolbar" aria-label="Step list controls">
+                        <span id="step-toolbar-summary" class="step-toolbar-summary"></span>
+                        <span id="step-now-running" class="step-now-running" style="display:none;" role="button" tabindex="0" title="Scroll to the running step"></span>
+                        <span class="step-toolbar-spacer"></span>
+                        <button type="button" id="btn-step-groups" class="step-tool-btn" style="display:none;" onclick="toggleAllClosureGroups()" title="Collapse or expand closure blocks (withCredentials, dir, timeout, ...)">Collapse blocks</button>
+                        <button type="button" id="btn-step-follow" class="step-tool-btn follow-active" style="display:none;" onclick="toggleStepFollow()"></button>
+                    </div>
+
                     <!-- Step Accordion Container -->
                     <div id="step-accordion-container" class="step-accordion-container" role="list" aria-label="Steps in selected stage">
                         <div class="step-accordion-empty">Select a stage above to view steps.</div>
@@ -8026,7 +8211,7 @@
                         flow.scrollTop = 0;
                     }
                     applyViewPreferences();
-                    autoFitPipelineGraph(true);
+                    autoFitPipelineGraph(false);
                     setTimeout(function() {
                         if (selectedStageId) {
                             scrollStageIntoPipelineView(selectedStageId, false);
@@ -8067,49 +8252,78 @@
                     if (!canvas || !flow) return;
 
                     resetFlowSvgDimensions();
+                    resetCanvasLayoutOverrides(canvas);
 
-                    canvas.style.transform = 'none';
-                    canvas.style.marginLeft = '0px';
-                    canvas.style.marginRight = '0px';
-                    canvas.style.marginBottom = '0px';
-
-                    var naturalW = canvas.scrollWidth;
-                    var naturalH = canvas.scrollHeight;
-                    var availableW = flow.clientWidth;
-
-                    var startNode = document.getElementById('terminal-node-start');
-                    var endNode = document.getElementById('terminal-node-end');
-                    if (startNode &amp;&amp; endNode &amp;&amp; currentLayoutMode === 'scroll') {
-                        var startR = startNode.getBoundingClientRect();
-                        var endR = endNode.getBoundingClientRect();
-                        var span = (endR.right - startR.left) + 40;
-                        if (span &gt; 50) {
-                            naturalW = span;
-                        }
-                    }
+                    // Centre against the real content box: the flow container has horizontal padding that
+                    // clientWidth includes, which used to push the graph off-centre by that padding.
+                    var cs = window.getComputedStyle(flow);
+                    var padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+                    var availableW = Math.max(0, flow.clientWidth - padX);
+                    var zoom = currentZoom;
 
                     if (currentLayoutMode === 'wrap') {
-                        canvas.style.transformOrigin = 'left top';
-                        canvas.style.transform = (currentZoom === 1.0) ? 'none' : 'scale(' + currentZoom + ')';
-                        if (currentZoom !== 1.0 &amp;&amp; naturalW &gt; 0) {
-                            canvas.style.marginRight = Math.round(naturalW * (currentZoom - 1)) + 'px';
-                            canvas.style.marginBottom = Math.round(naturalH * (currentZoom - 1)) + 'px';
+                        // A single row of stages is centred as a block; multi-row graphs keep the
+                        // left-to-right serpentine reading order.
+                        var cols = canvas.querySelectorAll('.stage-column');
+                        var firstTop = null;
+                        var singleRow = true;
+                        for (var i = 0; i &lt; cols.length; i++) {
+                            var t = cols[i].offsetTop;
+                            if (firstTop === null) {
+                                firstTop = t;
+                            } else if (Math.abs(t - firstTop) &gt; 6) {
+                                singleRow = false;
+                                break;
+                            }
+                        }
+                        if (singleRow) canvas.classList.add('wrap-center');
+                        canvas.style.transformOrigin = singleRow ? 'left center' : 'left top';
+
+                        // Scale the canvas box inversely so its *visual* width equals the available width:
+                        // no horizontal overflow, and content re-wraps/centres against the real viewport.
+                        if (zoom !== 1.0 &amp;&amp; availableW &gt; 0) {
+                            var wrapW = (availableW / zoom) + 'px';
+                            canvas.style.setProperty('width', wrapW, 'important');
+                            canvas.style.setProperty('max-width', wrapW, 'important');
+                        }
+                        canvas.style.transform = (zoom === 1.0) ? 'none' : 'scale(' + zoom + ')';
+                        if (singleRow) {
+                            canvas.style.marginTop = 'auto';
+                            canvas.style.marginBottom = 'auto';
+                        } else if (zoom !== 1.0) {
+                            canvas.style.marginBottom = Math.round(canvas.offsetHeight * (zoom - 1)) + 'px';
                         }
                     } else {
-                        canvas.style.transformOrigin = 'left center';
-                        canvas.style.transform = (currentZoom === 1.0) ? 'none' : 'scale(' + currentZoom + ')';
+                        // Let the canvas shrink to its content so a centred graph never creates a phantom scrollbar.
+                        canvas.style.minWidth = '0px';
+                        var canvasRect = canvas.getBoundingClientRect();
+                        var layoutW = canvas.offsetWidth;
+                        var contentW = layoutW;
+                        var contentLeft = 0;
 
-                        // Content visual width after zoom
-                        var visualW = naturalW * currentZoom;
-                        if (visualW &lt; availableW - 48) {
-                            var offset = Math.max(0, Math.floor((availableW - visualW) / 2));
-                            canvas.style.marginLeft = offset + 'px';
-                        } else {
-                            canvas.style.marginLeft = '0px';
+                        var startNode = document.getElementById('terminal-node-start');
+                        var endNode = document.getElementById('terminal-node-end');
+                        if (startNode &amp;&amp; endNode) {
+                            var startR = startNode.getBoundingClientRect();
+                            var endR = endNode.getBoundingClientRect();
+                            var span = endR.right - startR.left;
+                            if (span &gt; 50) {
+                                contentW = span;
+                                contentLeft = startR.left - canvasRect.left;
+                            }
                         }
 
-                        if (currentZoom !== 1.0 &amp;&amp; naturalW &gt; 0) {
-                            canvas.style.marginRight = Math.round(naturalW * (currentZoom - 1)) + 'px';
+                        canvas.style.transformOrigin = 'left center';
+                        canvas.style.transform = (zoom === 1.0) ? 'none' : 'scale(' + zoom + ')';
+
+                        var visualContentW = contentW * zoom;
+                        var marginLeft = 0;
+                        if (visualContentW + (16 * zoom) &lt;= availableW) {
+                            marginLeft = Math.max(0, Math.floor((availableW - visualContentW) / 2 - (contentLeft * zoom)));
+                        }
+                        canvas.style.marginLeft = marginLeft + 'px';
+                        if (zoom !== 1.0) {
+                            canvas.style.marginRight = Math.round(layoutW * (zoom - 1)) + 'px';
                         }
                     }
 
@@ -8138,20 +8352,73 @@
                     setZoom(1.0, true);
                 }
 
+                function resetCanvasLayoutOverrides(canvas) {
+                    canvas.style.transform = 'none';
+                    canvas.style.marginLeft = '0px';
+                    canvas.style.marginRight = '0px';
+                    canvas.style.marginBottom = '0px';
+                    canvas.style.marginTop = '';
+                    canvas.style.minWidth = '';
+                    canvas.style.removeProperty('width');
+                    canvas.style.removeProperty('max-width');
+                    canvas.classList.remove('wrap-center');
+                }
+
+                var settledRefitTimers = [];
+                // Fonts, scrollbars and the drawer settle a moment after first paint; re-fit once they have,
+                // so the very first view is centered against the final layout rather than a transient one.
+                function scheduleSettledRefit() {
+                    for (var i = 0; i &lt; settledRefitTimers.length; i++) clearTimeout(settledRefitTimers[i]);
+                    settledRefitTimers = [];
+                    var delays = [250, 900];
+                    for (var d = 0; d &lt; delays.length; d++) {
+                        settledRefitTimers.push(setTimeout(function() {
+                            if (!userManualZoomApplied) autoFitPipelineGraph(false);
+                        }, delays[d]));
+                    }
+                    if (document.fonts &amp;&amp; document.fonts.ready &amp;&amp; !window._horizonFontsRefitBound) {
+                        window._horizonFontsRefitBound = true;
+                        document.fonts.ready.then(function() {
+                            if (!userManualZoomApplied) autoFitPipelineGraph(false);
+                        });
+                    }
+                }
+
+                function attachFlowResizeWatch(flow) {
+                    if (!flow || flow._roBound || !window.ResizeObserver) return;
+                    flow._roBound = true;
+                    var lastW = flow.clientWidth;
+                    var timer = null;
+                    new ResizeObserver(function() {
+                        var w = flow.clientWidth;
+                        // Ignore the few pixels a scrollbar appearing/disappearing would cause.
+                        if (Math.abs(w - lastW) &lt;= 12) return;
+                        lastW = w;
+                        if (timer) clearTimeout(timer);
+                        timer = setTimeout(function() {
+                            if (!userManualZoomApplied) {
+                                autoFitPipelineGraph(false);
+                            } else {
+                                applyCanvasZoom();
+                            }
+                        }, 120);
+                    }).observe(flow);
+                }
+
                 function autoFitPipelineGraph(force) {
                     var flow = document.getElementById('pipeline-flow');
                     var canvas = document.getElementById('pipeline-flow-canvas');
                     if (!flow || !canvas) return;
 
                     resetFlowSvgDimensions();
-                    canvas.style.transform = 'none';
-                    canvas.style.marginLeft = '0px';
-                    canvas.style.marginRight = '0px';
-                    canvas.style.marginBottom = '0px';
+                    resetCanvasLayoutOverrides(canvas);
 
-                    var availableW = flow.clientWidth - 48;
-                    var availableH = flow.clientHeight - 48;
-                    if (availableW &lt;= 0) availableW = flow.parentElement ? (flow.parentElement.clientWidth - 48) : 900;
+                    var cs = window.getComputedStyle(flow);
+                    var padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+                    var padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+                    var availableW = flow.clientWidth - padX;
+                    var availableH = flow.clientHeight - padY;
+                    if (availableW &lt;= 0) availableW = flow.parentElement ? (flow.parentElement.clientWidth - padX) : 900;
                     if (availableH &lt;= 0) availableH = 450;
 
                     var startNode = document.getElementById('terminal-node-start');
@@ -8189,7 +8456,7 @@
                         // Fit the whole wrapped graph into the visible height when possible without
                         // becoming unreadable (floor 0.7), so first load looks as intentional as Canvas Flow.
                         var wrapNaturalH = canvas.scrollHeight;
-                        if (wrapNaturalH > 0 &amp;&amp; availableH > 0 &amp;&amp; wrapNaturalH * fitScale > availableH) {
+                        if (wrapNaturalH &gt; 0 &amp;&amp; availableH &gt; 0 &amp;&amp; wrapNaturalH * fitScale &gt; availableH) {
                             fitScale = Math.min(fitScale, Math.max(0.7, availableH / wrapNaturalH));
                         }
                     } else {
@@ -8226,6 +8493,7 @@
                     fitScale = Math.max(0.20, Math.min(1.80, Math.round(fitScale * 100) / 100));
 
                     setZoom(fitScale, force);
+                    attachFlowResizeWatch(flow);
                     requestAnimationFrame(function() {
                         if (flow) {
                             flow.scrollLeft = 0;
@@ -8499,6 +8767,7 @@
                         .then(function(res) { return res.json(); })
                         .then(function(data) {
                             if (data.building) {
+                                window._horizonWasBuilding = true;
                                 invalidateRunningStepLogCache(data);
                             }
                             graphData = data;
@@ -8524,6 +8793,13 @@
                                 if (pollTimer) {
                                     clearInterval(pollTimer);
                                     pollTimer = null;
+                                }
+                                if (window._horizonWasBuilding) {
+                                    // The build just finished: pull the tail end of any open step log.
+                                    window._horizonWasBuilding = false;
+                                    graphData.building = true;
+                                    pollActiveStepLogs();
+                                    graphData.building = false;
                                 }
                             }
                         })
@@ -8710,14 +8986,27 @@
                     
                     var agentsContainer = document.getElementById('meta-agents');
                     if (agentsContainer) {
-                        if (data.agentsUsed &amp;&amp; data.agentsUsed.length) {
-                            agentsContainer.innerHTML = data.agentsUsed.map(function(ag) {
+                        var rawAgents = (data.agentsUsed &amp;&amp; data.agentsUsed.length) ? data.agentsUsed : [];
+                        if (rawAgents.length &gt; 0) {
+                            var MAX_VISIBLE_AGENTS = 4;
+                            var visibleAgents = rawAgents.slice(0, MAX_VISIBLE_AGENTS);
+                            var overflowCount = rawAgents.length - visibleAgents.length;
+                            var htmlParts = visibleAgents.map(function(ag) {
                                 var esc = ag.replace(/'/g, "\\'");
                                 var displayAg = escapeHtml(ag);
-                                return '&lt;span class="agent-chip" title="Agent: ' + displayAg + ' — Click for agent details" onclick="event.stopPropagation(); openAgentModal(null, \'' + esc + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(null, \'' + esc + '\');}" role="button" tabindex="0"&gt;' + ICON_SERVER + displayAg + '&lt;/span&gt;';
-                            }).join(' ');
+                                return '&lt;span class="agent-chip" title="Agent: ' + displayAg + ' \u2014 Click for agent details" onclick="event.stopPropagation(); openAgentModal(null, \'' + esc + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(null, \'' + esc + '\');}" role="button" tabindex="0"&gt;' + ICON_SERVER + '&lt;span class="agent-chip-name"&gt;' + displayAg + '&lt;/span&gt;&lt;/span&gt;';
+                            });
+
+                            if (overflowCount &gt; 0) {
+                                var overflowList = rawAgents.slice(MAX_VISIBLE_AGENTS);
+                                var overflowNames = overflowList.map(function(a) { return escapeHtml(a); }).join(', ');
+                                var moreTitle = '+' + overflowCount + ' more agent' + (overflowCount === 1 ? '' : 's') + ' (' + overflowNames + ') \u2014 Click to view all in modal';
+                                htmlParts.push('&lt;span class="agent-chip-more" title="' + moreTitle + '" onclick="event.stopPropagation(); openAgentModal(null, \'ALL\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(null, \'ALL\');}" role="button" tabindex="0"&gt;+' + overflowCount + ' more&lt;/span&gt;');
+                            }
+
+                            agentsContainer.innerHTML = htmlParts.join(' ');
                         } else {
-                            agentsContainer.innerHTML = '&lt;span class="agent-chip" title="Agent: Built-In Node — Click for agent details" onclick="event.stopPropagation(); openAgentModal(null, \'Built-In Node\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(null, \'Built-In Node\');}" role="button" tabindex="0"&gt;' + ICON_SERVER + 'Built-In Node&lt;/span&gt;';
+                            agentsContainer.innerHTML = '&lt;span class="agent-chip" title="Agent: Built-In Node \u2014 Click for agent details" onclick="event.stopPropagation(); openAgentModal(null, \'Built-In Node\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(null, \'Built-In Node\');}" role="button" tabindex="0"&gt;' + ICON_SERVER + '&lt;span class="agent-chip-name"&gt;Built-In Node&lt;/span&gt;&lt;/span&gt;';
                         }
                     }
 
@@ -10219,9 +10508,13 @@
 
                     flowContainer.innerHTML = html;
                     initFlowPanAndDrag();
-                    if (!window._horizonInitialAutoFitDone &amp;&amp; !userManualZoomApplied) {
+                    var fitColCount = flowContainer.querySelectorAll('.stage-column').length;
+                    var needsRefit = !userManualZoomApplied &amp;&amp; (!window._horizonInitialAutoFitDone || window._horizonLastFitColCount !== fitColCount);
+                    window._horizonLastFitColCount = fitColCount;
+                    if (needsRefit) {
                         window._horizonInitialAutoFitDone = true;
                         autoFitPipelineGraph(false);
+                        scheduleSettledRefit();
                     } else {
                         applyCanvasZoom();
                     }
@@ -10248,9 +10541,12 @@
                                 selectStage(firstStage.id, true);
                             }
                         } else {
+                            var movedToActiveStage = followActiveStageIfNeeded(graphData);
                             var isCurrentlyVisible = selectedStageId &amp;&amp; document.getElementById('stage-card-' + selectedStageId);
-                            if (isCurrentlyVisible) {
-                                selectStage(selectedStageId, true);
+                            if (movedToActiveStage) {
+                                // followActiveStageIfNeeded already selected and rendered the active stage
+                            } else if (isCurrentlyVisible) {
+                                selectStage(selectedStageId, true, null, null, true);
                             } else if (visibleColumns.length &gt; 0) {
                                 var firstCol = visibleColumns[0];
                                 var firstStage = firstCol.isParallel ? firstCol.children[0] : firstCol.stage;
@@ -11397,10 +11693,17 @@
                     applyHashSelection(false);
                 });
 
-                function selectStage(stageId, skipHistoryUpdate, targetStepId, targetLineRange) {
+                function selectStage(stageId, skipHistoryUpdate, targetStepId, targetLineRange, isRefresh) {
                     if (window._isGraphDragging) return;
+                    var stageChanged = (selectedStageId !== stageId);
+                    if (!skipHistoryUpdate &amp;&amp; !isRefresh) {
+                        // The user picked a stage themselves: stop auto-following the running one.
+                        pauseStepFollow(true);
+                    }
                     selectedStageId = stageId;
-                    switchDrawerTab('steps');
+                    if (!isRefresh) {
+                        switchDrawerTab('steps');
+                    }
                     // Update visual highlight and ARIA pressed on flow stage cards
                     var nodes = document.querySelectorAll('.stage-node');
                     nodes.forEach(function(n) {
@@ -11413,7 +11716,9 @@
                         target.classList.add('selected');
                         target.setAttribute('aria-pressed', 'true');
                         target.setAttribute('aria-current', 'step');
-                        scrollStageIntoPipelineView(stageId, true);
+                        if (!isRefresh || stageChanged) {
+                            scrollStageIntoPipelineView(stageId, true);
+                        }
                     }
 
                     if (!graphData) return;
@@ -11633,11 +11938,500 @@
                     }
                 }
 
+                var stepFollowOn = true;
+                var stepUserToggled = {};
+                var stepAutoExpanded = {};
+                var collapsedClosures = {};
+                var lastFollowedStepId = null;
+                var ICON_ACCORDION_CONTAINER_ACTIVE = '&lt;svg class="step-container-ring" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;circle cx="12" cy="12" r="9" stroke-dasharray="3.5 3.5"/&gt;&lt;circle cx="12" cy="12" r="2.2" fill="#38bdf8" stroke="none"/&gt;&lt;/svg&gt;';
+
+                function isStepGroup(step) {
+                    return !!(step &amp;&amp; (step.closure || step.block) &amp;&amp; step.childStepsCount &gt; 0);
+                }
+
+                function isRunLive() {
+                    return !!(graphData &amp;&amp; (graphData.building || graphData.result === 'IN_PROGRESS'));
+                }
+
+                function isStepActiveStatus(st) {
+                    return st === 'IN_PROGRESS' || st === 'PAUSED_INPUT';
+                }
+
+                function findStepInStage(stage, stepId) {
+                    if (!stage || !stage.steps) return null;
+                    for (var i = 0; i &lt; stage.steps.length; i++) {
+                        if (stage.steps[i].id === stepId) return stage.steps[i];
+                    }
+                    return null;
+                }
+
+                // Work out which steps are *really* running. A closure (withCredentials, dir, timeout ...)
+                // stays IN_PROGRESS for as long as anything inside it runs, so only steps with no running
+                // descendant are "current"; their enclosing closures are merely "containers".
+                function computeStepRuntime(stage) {
+                    var steps = (stage &amp;&amp; stage.steps) ? stage.steps : [];
+                    var live = isRunLive();
+                    var byId = {};
+                    var i;
+                    for (i = 0; i &lt; steps.length; i++) byId[steps[i].id] = steps[i];
+
+                    var containerActive = {};
+                    if (live) {
+                        for (i = 0; i &lt; steps.length; i++) {
+                            if (isStepActiveStatus((steps[i].status || '').toUpperCase())) {
+                                var p = steps[i].parentStepId;
+                                var guard = 0;
+                                while (p &amp;&amp; byId[p] &amp;&amp; guard++ &lt; 64) {
+                                    containerActive[p] = true;
+                                    p = byId[p].parentStepId;
+                                }
+                            }
+                        }
+                    }
+
+                    var leaf = {};
+                    var leafList = [];
+                    var failed = 0;
+                    var unstable = 0;
+                    for (i = 0; i &lt; steps.length; i++) {
+                        var st = (steps[i].status || '').toUpperCase();
+                        if (live &amp;&amp; isStepActiveStatus(st) &amp;&amp; !containerActive[steps[i].id]) {
+                            leaf[steps[i].id] = true;
+                            leafList.push(steps[i]);
+                        }
+                        if (st === 'FAILED' || st === 'FAILURE') failed++;
+                        else if (st === 'UNSTABLE') unstable++;
+                    }
+                    return {
+                        leaf: leaf,
+                        containerActive: containerActive,
+                        leafList: leafList,
+                        current: leafList.length &gt; 0 ? leafList[leafList.length - 1] : null,
+                        total: steps.length,
+                        failed: failed,
+                        unstable: unstable
+                    };
+                }
+
+                function getStepStatusIconHtml(step, rt) {
+                    var st = (step.status || 'SUCCESS').toUpperCase();
+                    if (rt &amp;&amp; rt.containerActive[step.id]) return ICON_ACCORDION_CONTAINER_ACTIVE;
+                    if (st === 'FAILED' || st === 'FAILURE') return ICON_ACCORDION_FAILED;
+                    if (st === 'UNSTABLE') return ICON_ACCORDION_UNSTABLE;
+                    if (st === 'PAUSED_INPUT') return ICON_ACCORDION_PAUSED_INPUT;
+                    if (st === 'IN_PROGRESS') return ICON_ACCORDION_IN_PROGRESS;
+                    if (st === 'ABORTED') return ICON_ACCORDION_ABORTED;
+                    if (st.indexOf('SKIPPED') !== -1 || st === 'NOT_EXECUTED') return ICON_ACCORDION_SKIPPED;
+                    return ICON_ACCORDION_SUCCESS;
+                }
+
+                function buildStepDurationHtml(step) {
+                    if ((step.closure || step.block) &amp;&amp; (step.childStepsCount &gt; 0 || (step.durationMillis &gt; 0 &amp;&amp; step.selfDurationMillis !== undefined &amp;&amp; step.selfDurationMillis &lt; step.durationMillis))) {
+                        var totalFmt = formatStepDuration(step.durationMillis);
+                        var selfFmt = formatStepDuration(step.selfDurationMillis || 0);
+                        var closureTip = 'Closure block total: ' + totalFmt + ' (includes ' + (step.childStepsCount || 'nested') + ' step' + (step.childStepsCount === 1 ? '' : 's') + ') \u00b7 Self execution time: ' + selfFmt;
+                        return '&lt;span class="step-duration step-duration-closure" title="' + escapeHtml(closureTip) + '"&gt;' +
+                               '&lt;span class="step-self-dur"&gt;' + selfFmt + ' self&lt;/span&gt; ' +
+                               '&lt;span class="step-total-dur"&gt;(' + totalFmt + ' total)&lt;/span&gt;' +
+                               '&lt;/span&gt;';
+                    }
+                    return '&lt;span class="step-duration"&gt;' + formatStepDuration(step.durationMillis) + '&lt;/span&gt;';
+                }
+
+                function buildClosureBadgeHtml(step) {
+                    if (!(step.closure || step.block)) return '';
+                    var n = step.childStepsCount || 0;
+                    return '&lt;span class="step-closure-badge" id="step-closure-badge-' + step.id + '" data-count="' + n + '" title="Closure block step enclosing ' + (n || 'nested') + ' step' + (n === 1 ? '' : 's') + '"&gt;CLOSURE&lt;/span&gt;';
+                }
+
+                function buildStepItemHtml(step, stage, rt) {
+                    var st = (step.status || 'SUCCESS').toUpperCase();
+                    var statusIcon = getStepStatusIconHtml(step, rt);
+                    var glyphSvg = getStepGlyph(step);
+                    var classicLogUrl = runBaseUrl + 'execution/node/' + encodeURIComponent(step.id) + '/log';
+
+                    var titleStr = step.displayName || step.name || 'Step';
+                    var argsStr = (step.arguments &amp;&amp; step.arguments !== titleStr) ? step.arguments : '';
+
+                    var optBadge = (step.optional || (step.displayName &amp;&amp; step.displayName.toLowerCase().indexOf('optional') !== -1))
+                        ? '&lt;span class="stage-banner-badge stage-badge-optional" style="margin-left:0.3rem;"&gt;OPT&lt;/span&gt;' : '';
+                    var pausedBadge = (st === 'PAUSED_INPUT')
+                        ? '&lt;button type="button" class="btn-input-proceed" style="padding:2px 8px; font-size:0.68rem; margin-left:0.4rem;" onclick="event.stopPropagation(); openInputApprovalModal(0);"&gt;Review Input&lt;/button&gt;' : '';
+                    var closureBadge = buildClosureBadgeHtml(step);
+                    var isRunningLeaf = !!(rt &amp;&amp; rt.leaf[step.id]);
+                    var livePill = '&lt;span class="step-live-pill" id="step-live-pill-' + step.id + '" style="' + (isRunningLeaf ? '' : 'display:none;') + '"&gt;&lt;span class="live-tail-dot"&gt;&lt;/span&gt;LIVE&lt;/span&gt;';
+
+                    var group = isStepGroup(step);
+                    var depth = Math.min(step.depth || 0, 4);
+                    var rowStyle = (depth &gt; 0) ? ('padding-left:' + (1.0 + (depth * 1.25)) + 'rem;') : '';
+                    var treeBranch = (depth &gt; 0)
+                        ? '&lt;span class="step-tree-elbow" title="Nested inside enclosing block step"&gt;&lt;svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;path d="M4 1v9a2 2 0 0 0 2 2h8"/&gt;&lt;/svg&gt;&lt;/span&gt;'
+                        : '';
+
+                    var itemClasses = 'step-accordion-item' + (group ? ' step-group' : '') +
+                        (isRunningLeaf ? ' step-running' : '') +
+                        ((rt &amp;&amp; rt.containerActive[step.id]) ? ' step-container-active' : '') +
+                        (collapsedClosures[step.id] ? ' group-collapsed' : '');
+
+                    var html = '';
+                    html += '&lt;div class="' + itemClasses + '" id="step-item-' + step.id + '" data-status="' + st + '" data-parent="' + (step.parentStepId || '') + '" data-depth="' + depth + '"&gt;';
+                    // Accordion Row
+                    html += '&lt;div class="accordion-step-row" id="step-row-' + step.id + '" style="' + rowStyle + '" role="button" tabindex="0" aria-expanded="false" aria-controls="step-log-' + step.id + '" onclick="toggleStepAccordion(\'' + step.id + '\')" onkeydown="handleStepRowKey(event, \'' + step.id + '\')"&gt;';
+                    html += '&lt;div class="accordion-step-left"&gt;';
+                    if (treeBranch) {
+                        html += treeBranch;
+                    }
+                    html += '&lt;span class="step-status-icon" id="step-icon-' + step.id + '"&gt;' + statusIcon + '&lt;/span&gt;';
+                    if (glyphSvg) {
+                        html += '&lt;span class="step-glyph"&gt;' + glyphSvg + '&lt;/span&gt;';
+                    }
+                    html += '&lt;span class="step-title" title="' + escapeHtml(titleStr) + '"&gt;' + escapeHtml(titleStr) + '&lt;/span&gt;';
+                    if (argsStr) {
+                        html += '&lt;span class="step-args" title="' + escapeHtml(argsStr) + '"&gt;' + escapeHtml(argsStr) + '&lt;/span&gt;';
+                    }
+                    html += optBadge + pausedBadge + closureBadge + livePill;
+                    html += '&lt;span class="step-chevron"&gt;&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;polyline points="9 18 15 12 9 6"/&gt;&lt;/svg&gt;&lt;/span&gt;';
+                    html += '&lt;/div&gt;';
+
+                    html += '&lt;div class="accordion-step-right"&gt;';
+                    html += '&lt;span class="step-dur-wrap" id="step-dur-' + step.id + '"&gt;' + buildStepDurationHtml(step) + '&lt;/span&gt;';
+                    html += '&lt;a href="' + classicLogUrl + '" target="_blank" class="step-external-link" title="Open classic step log in new tab" onclick="event.stopPropagation();"&gt;';
+                    html += '&lt;svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/&gt;&lt;polyline points="15 3 21 3 21 9"/&gt;&lt;line x1="10" y1="14" x2="21" y2="3"/&gt;&lt;/svg&gt;';
+                    html += '&lt;/a&gt;';
+                    html += '&lt;/div&gt;';
+                    html += '&lt;/div&gt;';
+
+                    // Step Inline Log (hidden by CSS for closures that merely wrap other steps)
+                    html += '&lt;div class="step-inline-log" id="step-log-' + step.id + '" role="region" aria-label="Console log for ' + escapeHtml(titleStr) + '"&gt;';
+                    html += '&lt;div class="inline-log-toolbar"&gt;';
+                    html += '&lt;div class="inline-log-search-wrap"&gt;';
+                    html += '&lt;svg class="search-mag-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;circle cx="11" cy="11" r="8"/&gt;&lt;line x1="21" y1="21" x2="16.65" y2="16.65"/&gt;&lt;/svg&gt;';
+                    html += '&lt;input type="text" class="inline-log-search" id="log-search-' + step.id + '" placeholder="Search logs (Enter / Shift+Enter)..." oninput="filterStepLog(\'' + step.id + '\', this.value)" onkeydown="handleStepSearchKey(event, \'' + step.id + '\')" /&gt;';
+                    html += '&lt;div class="inline-log-match-stepper" id="log-match-stepper-' + step.id + '" style="display:none;"&gt;';
+                    html += '&lt;span class="match-stepper-count" id="match-count-' + step.id + '"&gt;0 of 0&lt;/span&gt;';
+                    html += '&lt;button type="button" class="match-stepper-btn" onclick="stepSearchMatch(\'' + step.id + '\', -1)" title="Previous match (Shift+Enter)"&gt;&amp;#9650;&lt;/button&gt;';
+                    html += '&lt;button type="button" class="match-stepper-btn" onclick="stepSearchMatch(\'' + step.id + '\', 1)" title="Next match (Enter)"&gt;&amp;#9660;&lt;/button&gt;';
+                    html += '&lt;/div&gt;';
+                    html += '&lt;/div&gt;';
+                    html += '&lt;div class="inline-log-actions"&gt;';
+                    html += '&lt;span class="inline-log-line-count" id="log-count-' + step.id + '"&gt;0 lines&lt;/span&gt;';
+
+                    var isStepActive = isRunLive() &amp;&amp; (isStepActiveStatus(st) || (stage &amp;&amp; stage.status === 'IN_PROGRESS' &amp;&amp; !(st === 'SUCCESS' || st === 'FAILED' || st === 'FAILURE' || st === 'ABORTED' || st === 'UNSTABLE' || st.indexOf('SKIPPED') !== -1 || st === 'NOT_EXECUTED')));
+                    if (isStepActive) {
+                        html += '&lt;button class="inline-log-btn live-tail-btn live-tail-active" id="btn-tail-step-' + step.id + '" onclick="toggleStepLiveTail(\'' + step.id + '\')" title="Toggle auto-following live log stream"&gt;&lt;span class="live-tail-dot"&gt;&lt;/span&gt;&lt;span id="label-tail-step-' + step.id + '"&gt;Live Tail&lt;/span&gt;&lt;/button&gt;';
+                    }
+
+                    html += '&lt;button class="inline-log-btn" id="btn-share-step-' + step.id + '" onclick="copyCurrentDeepLink(\'step\', \'' + step.id + '\')" title="Copy direct link to this step / line"&gt;';
+                    html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/&gt;&lt;path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/&gt;&lt;/svg&gt;';
+                    html += '&lt;span id="btn-share-label-' + step.id + '"&gt;Share Step&lt;/span&gt;';
+                    html += '&lt;/button&gt;';
+                    html += '&lt;button class="inline-log-btn" onclick="copyStepConsoleLog(\'' + step.id + '\')" title="Copy step output to clipboard"&gt;Copy Log&lt;/button&gt;';
+                    html += '&lt;a class="inline-log-btn" href="' + horizonBaseUrl + 'apiLog?nodeId=' + encodeURIComponent(step.id) + '&amp;download=true" download="step-' + encodeURIComponent(step.id) + '.txt" title="Download step output as text file"&gt;';
+                    html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/&gt;&lt;polyline points="7 10 12 15 17 10"/&gt;&lt;line x1="12" y1="15" x2="12" y2="3"/&gt;&lt;/svg&gt;';
+                    html += '&lt;span&gt;Download&lt;/span&gt;';
+                    html += '&lt;/a&gt;';
+                    html += '&lt;/div&gt;';
+                    html += '&lt;/div&gt;';
+                    html += '&lt;div class="inline-terminal-view" id="terminal-' + step.id + '"&gt;';
+                    html += '&lt;div class="log-placeholder"&gt;Loading log stream...&lt;/div&gt;';
+                    html += '&lt;/div&gt;';
+                    html += '&lt;/div&gt;';
+
+                    html += '&lt;/div&gt;';
+                    return html;
+                }
+
+                // Update an existing row in place (status, duration, running markers) without touching its log.
+                function patchStepItem(step, stage, rt, item) {
+                    var st = (step.status || 'SUCCESS').toUpperCase();
+                    var isRunningLeaf = !!rt.leaf[step.id];
+                    item.setAttribute('data-status', st);
+                    item.classList.toggle('step-running', isRunningLeaf);
+                    item.classList.toggle('step-container-active', !!rt.containerActive[step.id]);
+                    item.classList.toggle('step-group', isStepGroup(step));
+
+                    var iconEl = document.getElementById('step-icon-' + step.id);
+                    if (iconEl) {
+                        var sig = st + (rt.containerActive[step.id] ? ':c' : '');
+                        if (iconEl.getAttribute('data-icon-sig') !== sig) {
+                            iconEl.innerHTML = getStepStatusIconHtml(step, rt);
+                            iconEl.setAttribute('data-icon-sig', sig);
+                        }
+                    }
+                    var durEl = document.getElementById('step-dur-' + step.id);
+                    if (durEl) durEl.innerHTML = buildStepDurationHtml(step);
+
+                    var pill = document.getElementById('step-live-pill-' + step.id);
+                    if (pill) pill.style.display = isRunningLeaf ? '' : 'none';
+
+                    var badge = document.getElementById('step-closure-badge-' + step.id);
+                    if (badge) {
+                        var n = step.childStepsCount || 0;
+                        badge.setAttribute('data-count', String(n));
+                        badge.setAttribute('title', 'Closure block step enclosing ' + (n || 'nested') + ' step' + (n === 1 ? '' : 's'));
+                    }
+
+                    // A step that has finished no longer has a live tail.
+                    var finished = (st === 'SUCCESS' || st === 'FAILED' || st === 'FAILURE' || st === 'ABORTED' || st === 'UNSTABLE' || st.indexOf('SKIPPED') !== -1 || st === 'NOT_EXECUTED');
+                    if (finished || !isRunLive()) {
+                        var tailBtn = document.getElementById('btn-tail-step-' + step.id);
+                        if (tailBtn) tailBtn.parentNode.removeChild(tailBtn);
+                    }
+                }
+
+                function syncStepList(container, stage, rt) {
+                    var existing = {};
+                    var items = container.querySelectorAll('.step-accordion-item');
+                    var i;
+                    for (i = 0; i &lt; items.length; i++) {
+                        existing[items[i].id.replace('step-item-', '')] = items[i];
+                    }
+                    var seen = {};
+                    var prev = null;
+                    for (i = 0; i &lt; stage.steps.length; i++) {
+                        var step = stage.steps[i];
+                        seen[step.id] = true;
+                        var item = existing[step.id];
+                        if (item) {
+                            patchStepItem(step, stage, rt, item);
+                            prev = item;
+                        } else {
+                            var tmp = document.createElement('div');
+                            tmp.innerHTML = buildStepItemHtml(step, stage, rt);
+                            var fresh = tmp.firstChild;
+                            if (prev) {
+                                prev.parentNode.insertBefore(fresh, prev.nextSibling);
+                            } else {
+                                container.insertBefore(fresh, container.firstChild);
+                            }
+                            prev = fresh;
+                        }
+                    }
+                    for (var key in existing) {
+                        if (Object.prototype.hasOwnProperty.call(existing, key) &amp;&amp; !seen[key]) {
+                            existing[key].parentNode.removeChild(existing[key]);
+                        }
+                    }
+                }
+
+                function applyClosureCollapse() {
+                    var items = document.querySelectorAll('#step-accordion-container .step-accordion-item');
+                    var hidden = {};
+                    for (var i = 0; i &lt; items.length; i++) {
+                        var it = items[i];
+                        var id = it.id.replace('step-item-', '');
+                        var pid = it.getAttribute('data-parent');
+                        var hide = !!(pid &amp;&amp; (hidden[pid] || collapsedClosures[pid]));
+                        hidden[id] = hide;
+                        it.style.display = hide ? 'none' : '';
+                        it.classList.toggle('group-collapsed', !!collapsedClosures[id]);
+                    }
+                    updateGroupsButton();
+                }
+
+                function toggleClosureGroup(stepId) {
+                    collapsedClosures[stepId] = !collapsedClosures[stepId];
+                    if (!collapsedClosures[stepId]) delete collapsedClosures[stepId];
+                    applyClosureCollapse();
+                }
+
+                function toggleAllClosureGroups() {
+                    var groups = document.querySelectorAll('#step-accordion-container .step-group');
+                    var anyOpen = false;
+                    var i;
+                    for (i = 0; i &lt; groups.length; i++) {
+                        if (!collapsedClosures[groups[i].id.replace('step-item-', '')]) { anyOpen = true; break; }
+                    }
+                    for (i = 0; i &lt; groups.length; i++) {
+                        var gid = groups[i].id.replace('step-item-', '');
+                        if (anyOpen) collapsedClosures[gid] = true; else delete collapsedClosures[gid];
+                    }
+                    applyClosureCollapse();
+                }
+
+                function updateGroupsButton() {
+                    var btn = document.getElementById('btn-step-groups');
+                    if (!btn) return;
+                    var groups = document.querySelectorAll('#step-accordion-container .step-group');
+                    if (groups.length === 0) { btn.style.display = 'none'; return; }
+                    btn.style.display = '';
+                    var anyOpen = false;
+                    for (var i = 0; i &lt; groups.length; i++) {
+                        if (!collapsedClosures[groups[i].id.replace('step-item-', '')]) { anyOpen = true; break; }
+                    }
+                    btn.textContent = anyOpen ? 'Collapse blocks' : 'Expand blocks';
+                }
+
+                function updateFollowButton() {
+                    var btn = document.getElementById('btn-step-follow');
+                    if (!btn) return;
+                    if (stepFollowOn) {
+                        btn.className = 'step-tool-btn follow-active';
+                        btn.innerHTML = '&lt;span class="live-tail-dot"&gt;&lt;/span&gt;Following live';
+                        btn.title = 'Auto-following the running step. Click, or open any step yourself, to pause.';
+                    } else {
+                        btn.className = 'step-tool-btn follow-paused';
+                        btn.textContent = 'Follow paused \u2014 resume';
+                        btn.title = 'Click to jump back to the running step and keep following it.';
+                    }
+                }
+
+                function pauseStepFollow(byUser) {
+                    if (!stepFollowOn) return;
+                    stepFollowOn = false;
+                    updateFollowButton();
+                }
+
+                function toggleStepFollow() {
+                    if (stepFollowOn) {
+                        pauseStepFollow(true);
+                        return;
+                    }
+                    stepFollowOn = true;
+                    updateFollowButton();
+                    if (graphData) {
+                        followActiveStageIfNeeded(graphData);
+                        var stage = selectedStageId ? findStage(graphData.stages, selectedStageId) : null;
+                        if (stage) {
+                            lastFollowedStepId = null;
+                            followRunningStep(stage, computeStepRuntime(stage), true);
+                        }
+                    }
+                }
+
+                function isElementComfortablyInView(el) {
+                    if (!el) return true;
+                    var app = document.getElementById('horizon-run-app');
+                    var isFullscreen = app &amp;&amp; app.classList.contains('mode-fullscreen');
+                    var rect = el.getBoundingClientRect();
+                    var top = 70;
+                    var bottom = window.innerHeight - 40;
+                    if (isFullscreen &amp;&amp; app) {
+                        var appRect = app.getBoundingClientRect();
+                        top = appRect.top + 70;
+                        bottom = appRect.bottom - 40;
+                    }
+                    return rect.top &gt;= top &amp;&amp; rect.bottom &lt;= bottom;
+                }
+
+                // Keep the currently running step open and visible, like a live console would.
+                function followRunningStep(stage, rt, forceScroll) {
+                    if (!stage || !stepFollowOn || !isRunLive()) return;
+                    var cur = rt.current;
+                    if (!cur) return;
+                    var changed = (cur.id !== lastFollowedStepId);
+                    if (!changed &amp;&amp; !forceScroll) return;
+
+                    if (changed) {
+                        var prevId = lastFollowedStepId;
+                        if (prevId &amp;&amp; stepAutoExpanded[prevId] &amp;&amp; !stepUserToggled[prevId]) {
+                            var prevStep = findStepInStage(stage, prevId);
+                            var ps = prevStep ? (prevStep.status || '').toUpperCase() : '';
+                            var prevItem = document.getElementById('step-item-' + prevId);
+                            // Keep a finished step open only if it needs attention.
+                            if (prevItem &amp;&amp; prevItem.classList.contains('expanded') &amp;&amp; ps !== 'FAILED' &amp;&amp; ps !== 'FAILURE' &amp;&amp; ps !== 'UNSTABLE') {
+                                toggleStepAccordion(prevId, null, false, true);
+                            }
+                            delete stepAutoExpanded[prevId];
+                        }
+                        lastFollowedStepId = cur.id;
+
+                        var pid = cur.parentStepId;
+                        var guard = 0;
+                        var byId = {};
+                        for (var s = 0; s &lt; stage.steps.length; s++) byId[stage.steps[s].id] = stage.steps[s];
+                        while (pid &amp;&amp; guard++ &lt; 64) {
+                            delete collapsedClosures[pid];
+                            pid = byId[pid] ? byId[pid].parentStepId : null;
+                        }
+                        applyClosureCollapse();
+
+                        var curItem = document.getElementById('step-item-' + cur.id);
+                        if (curItem &amp;&amp; !curItem.classList.contains('expanded')) {
+                            stepAutoExpanded[cur.id] = true;
+                            toggleStepAccordion(cur.id, null, true, true);
+                        }
+                    }
+
+                    var row = document.getElementById('step-row-' + cur.id);
+                    if (row &amp;&amp; (forceScroll || !isElementComfortablyInView(row))) {
+                        setTimeout(function() {
+                            if (stepFollowOn) scrollWindowToElement(row, 'center');
+                        }, 60);
+                    }
+                }
+
+                // When the stage we are looking at finishes while the build keeps going, move along with it.
+                function followActiveStageIfNeeded(data) {
+                    if (!stepFollowOn || !data || !data.building) return false;
+                    var cur = selectedStageId ? findStage(data.stages, selectedStageId) : null;
+                    var curStatus = cur ? (cur.status || '').toUpperCase() : '';
+                    if (cur &amp;&amp; isStepActiveStatus(curStatus)) return false;
+                    var all = getAllStagesFlat(data.stages);
+                    var target = null;
+                    for (var i = 0; i &lt; all.length; i++) {
+                        var s = all[i];
+                        if ((s.status || '').toUpperCase() === 'IN_PROGRESS' &amp;&amp; (!s.children || s.children.length === 0)) {
+                            target = s;
+                        }
+                    }
+                    if (target &amp;&amp; (!cur || target.id !== cur.id)) {
+                        selectStage(target.id, true, null, null, true);
+                        return true;
+                    }
+                    return false;
+                }
+
+                function updateStepToolbar(stage, rt) {
+                    var bar = document.getElementById('step-toolbar');
+                    if (!bar) return;
+                    if (!stage || !stage.steps || stage.steps.length === 0) {
+                        bar.style.display = 'none';
+                        bar.classList.remove('has-steps');
+                        return;
+                    }
+                    bar.style.display = 'flex';
+                    bar.classList.add('has-steps');
+
+                    var parts = [rt.total + (rt.total === 1 ? ' step' : ' steps')];
+                    if (rt.leafList.length &gt; 0) parts.push(rt.leafList.length + ' running');
+                    if (rt.failed &gt; 0) parts.push(rt.failed + ' failed');
+                    if (rt.unstable &gt; 0) parts.push(rt.unstable + ' unstable');
+                    var sum = document.getElementById('step-toolbar-summary');
+                    if (sum) sum.textContent = parts.join(' \u00b7 ');
+
+                    var now = document.getElementById('step-now-running');
+                    if (now) {
+                        if (rt.current) {
+                            var nm = rt.current.displayName || rt.current.name || 'Step';
+                            var ar = (rt.current.arguments &amp;&amp; rt.current.arguments !== nm) ? rt.current.arguments : '';
+                            now.innerHTML = '&lt;span class="live-tail-dot"&gt;&lt;/span&gt;&lt;span class="step-now-label"&gt;Now running&lt;/span&gt; &lt;b&gt;' + escapeHtml(nm) + '&lt;/b&gt;' + (ar ? ' &lt;span class="step-now-args"&gt;' + escapeHtml(ar) + '&lt;/span&gt;' : '');
+                            now.style.display = '';
+                            now.onclick = function() {
+                                var r = document.getElementById('step-row-' + rt.current.id);
+                                if (r) scrollWindowToElement(r, 'center');
+                            };
+                        } else {
+                            now.style.display = 'none';
+                            now.onclick = null;
+                        }
+                    }
+
+                    var followBtn = document.getElementById('btn-step-follow');
+                    if (followBtn) {
+                        followBtn.style.display = isRunLive() ? '' : 'none';
+                        updateFollowButton();
+                    }
+                    updateGroupsButton();
+                }
+
                 function renderStepAccordionList(stage, targetStepId, targetLineRange) {
                     var container = document.getElementById('step-accordion-container');
                     if (!container) return;
 
                     if (!stage.steps || stage.steps.length === 0) {
+                        container.removeAttribute('data-stage-id');
+                        updateStepToolbar(null, null);
                         if (stage.status &amp;&amp; (stage.status.indexOf('SKIPPED') !== -1 || stage.status === 'NOT_EXECUTED')) {
                             container.innerHTML = '&lt;div class="step-accordion-empty"&gt;' +
                                 '&lt;div style="margin-bottom:0.6rem; display:flex; justify-content:center;"&gt;' + ICON_ACCORDION_SKIPPED + '&lt;/div&gt;' +
@@ -11651,118 +12445,33 @@
                         return;
                     }
 
+                    var rt = computeStepRuntime(stage);
+
+                    // Same stage, live refresh: patch rows in place so open logs, scroll position and
+                    // the page layout are never disturbed by the 3s poll.
+                    var sameStage = container.getAttribute('data-stage-id') === String(stage.id) &amp;&amp;
+                        container.querySelector('.step-accordion-item') &amp;&amp; !targetStepId &amp;&amp; !targetLineRange;
+                    if (sameStage) {
+                        syncStepList(container, stage, rt);
+                        applyClosureCollapse();
+                        updateStepToolbar(stage, rt);
+                        followRunningStep(stage, rt, false);
+                        return;
+                    }
+
+                    stepUserToggled = {};
+                    stepAutoExpanded = {};
+                    collapsedClosures = {};
+                    lastFollowedStepId = null;
+                    container.setAttribute('data-stage-id', String(stage.id));
+
                     var html = '';
                     for (var i = 0; i &lt; stage.steps.length; i++) {
-                        var step = stage.steps[i];
-                        var st = (step.status || 'SUCCESS').toUpperCase();
-                        var statusIcon = ICON_ACCORDION_SUCCESS;
-                        if (st === 'FAILED' || st === 'FAILURE') statusIcon = ICON_ACCORDION_FAILED;
-                        else if (st === 'UNSTABLE') statusIcon = ICON_ACCORDION_UNSTABLE;
-                        else if (st === 'PAUSED_INPUT') statusIcon = ICON_ACCORDION_PAUSED_INPUT;
-                        else if (st === 'IN_PROGRESS') statusIcon = ICON_ACCORDION_IN_PROGRESS;
-                        else if (st === 'ABORTED') statusIcon = ICON_ACCORDION_ABORTED;
-                        else if (st.indexOf('SKIPPED') !== -1 || st === 'NOT_EXECUTED') statusIcon = ICON_ACCORDION_SKIPPED;
-
-                        var glyphSvg = getStepGlyph(step);
-                        var classicLogUrl = runBaseUrl + 'execution/node/' + encodeURIComponent(step.id) + '/log';
-
-                        var titleStr = step.displayName || step.name || 'Step';
-                        var argsStr = (step.arguments &amp;&amp; step.arguments !== titleStr) ? step.arguments : '';
-
-                        var optBadge = (step.optional || (step.displayName &amp;&amp; step.displayName.toLowerCase().indexOf('optional') !== -1))
-                            ? '&lt;span class="stage-banner-badge stage-badge-optional" style="margin-left:0.3rem;"&gt;OPT&lt;/span&gt;' : '';
-                        var pausedBadge = (st === 'PAUSED_INPUT')
-                            ? '&lt;button type="button" class="btn-input-proceed" style="padding:2px 8px; font-size:0.68rem; margin-left:0.4rem;" onclick="event.stopPropagation(); openInputApprovalModal(0);"&gt;Review Input&lt;/button&gt;' : '';
-                        var closureBadge = (step.closure || step.block)
-                            ? ('&lt;span class="step-closure-badge" title="Closure block step enclosing ' + (step.childStepsCount || 'nested') + ' step' + (step.childStepsCount === 1 ? '' : 's') + '"&gt;CLOSURE&lt;/span&gt;') : '';
-
-                        var depth = Math.min(step.depth || 0, 4);
-                        var rowStyle = (depth &gt; 0) ? ('padding-left:' + (1.0 + (depth * 1.25)) + 'rem;') : '';
-                        var treeBranch = (depth &gt; 0)
-                            ? '&lt;span class="step-tree-elbow" title="Nested inside enclosing block step"&gt;&lt;svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;path d="M4 1v9a2 2 0 0 0 2 2h8"/&gt;&lt;/svg&gt;&lt;/span&gt;'
-                            : '';
-
-                        html += '&lt;div class="step-accordion-item" id="step-item-' + step.id + '"&gt;';
-                        // Accordion Row
-                        html += '&lt;div class="accordion-step-row" id="step-row-' + step.id + '" style="' + rowStyle + '" role="button" tabindex="0" aria-expanded="false" aria-controls="step-log-' + step.id + '" onclick="toggleStepAccordion(\'' + step.id + '\')" onkeydown="handleStepRowKey(event, \'' + step.id + '\')"&gt;';
-                        html += '&lt;div class="accordion-step-left"&gt;';
-                        if (treeBranch) {
-                            html += treeBranch;
-                        }
-                        html += '&lt;span class="step-status-icon"&gt;' + statusIcon + '&lt;/span&gt;';
-                        if (glyphSvg) {
-                            html += '&lt;span class="step-glyph"&gt;' + glyphSvg + '&lt;/span&gt;';
-                        }
-                        html += '&lt;span class="step-title" title="' + escapeHtml(titleStr) + '"&gt;' + escapeHtml(titleStr) + '&lt;/span&gt;';
-                        if (argsStr) {
-                            html += '&lt;span class="step-args" title="' + escapeHtml(argsStr) + '"&gt;' + escapeHtml(argsStr) + '&lt;/span&gt;';
-                        }
-                        html += optBadge + pausedBadge + closureBadge;
-                        html += '&lt;span class="step-chevron"&gt;&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;polyline points="9 18 15 12 9 6"/&gt;&lt;/svg&gt;&lt;/span&gt;';
-                        html += '&lt;/div&gt;';
-
-                        html += '&lt;div class="accordion-step-right"&gt;';
-                        if ((step.closure || step.block) &amp;&amp; (step.childStepsCount &gt; 0 || (step.durationMillis &gt; 0 &amp;&amp; step.selfDurationMillis !== undefined &amp;&amp; step.selfDurationMillis &lt; step.durationMillis))) {
-                            var totalFmt = formatStepDuration(step.durationMillis);
-                            var selfFmt = formatStepDuration(step.selfDurationMillis || 0);
-                            var closureTip = 'Closure block total: ' + totalFmt + ' (includes ' + (step.childStepsCount || 'nested') + ' step' + (step.childStepsCount === 1 ? '' : 's') + ') · Self execution time: ' + selfFmt;
-                            html += '&lt;span class="step-duration step-duration-closure" title="' + escapeHtml(closureTip) + '"&gt;' +
-                                    '&lt;span class="step-self-dur"&gt;' + selfFmt + ' self&lt;/span&gt; ' +
-                                    '&lt;span class="step-total-dur"&gt;(' + totalFmt + ' total)&lt;/span&gt;' +
-                                    '&lt;/span&gt;';
-                        } else {
-                            html += '&lt;span class="step-duration"&gt;' + formatStepDuration(step.durationMillis) + '&lt;/span&gt;';
-                        }
-                        html += '&lt;a href="' + classicLogUrl + '" target="_blank" class="step-external-link" title="Open classic step log in new tab" onclick="event.stopPropagation();"&gt;';
-                        html += '&lt;svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/&gt;&lt;polyline points="15 3 21 3 21 9"/&gt;&lt;line x1="10" y1="14" x2="21" y2="3"/&gt;&lt;/svg&gt;';
-                        html += '&lt;/a&gt;';
-                        html += '&lt;/div&gt;';
-                        html += '&lt;/div&gt;';
-
-                        // Step Inline Log
-                        html += '&lt;div class="step-inline-log" id="step-log-' + step.id + '" role="region" aria-label="Console log for ' + escapeHtml(titleStr) + '"&gt;';
-                        html += '&lt;div class="inline-log-toolbar"&gt;';
-                        html += '&lt;div class="inline-log-search-wrap"&gt;';
-                        html += '&lt;svg class="search-mag-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;circle cx="11" cy="11" r="8"/&gt;&lt;line x1="21" y1="21" x2="16.65" y2="16.65"/&gt;&lt;/svg&gt;';
-                        html += '&lt;input type="text" class="inline-log-search" id="log-search-' + step.id + '" placeholder="Search logs (Enter / Shift+Enter)..." oninput="filterStepLog(\'' + step.id + '\', this.value)" onkeydown="handleStepSearchKey(event, \'' + step.id + '\')" /&gt;';
-                        html += '&lt;div class="inline-log-match-stepper" id="log-match-stepper-' + step.id + '" style="display:none;"&gt;';
-                        html += '&lt;span class="match-stepper-count" id="match-count-' + step.id + '"&gt;0 of 0&lt;/span&gt;';
-                        html += '&lt;button type="button" class="match-stepper-btn" onclick="stepSearchMatch(\'' + step.id + '\', -1)" title="Previous match (Shift+Enter)"&gt;&amp;#9650;&lt;/button&gt;';
-                        html += '&lt;button type="button" class="match-stepper-btn" onclick="stepSearchMatch(\'' + step.id + '\', 1)" title="Next match (Enter)"&gt;&amp;#9660;&lt;/button&gt;';
-                        html += '&lt;/div&gt;';
-                        html += '&lt;/div&gt;';
-                        html += '&lt;div class="inline-log-actions"&gt;';
-                        html += '&lt;span class="inline-log-line-count" id="log-count-' + step.id + '"&gt;0 lines&lt;/span&gt;';
-
-                        var isRunActive = !!(graphData &amp;&amp; (graphData.building || graphData.result === 'IN_PROGRESS'));
-                        var isStepActive = (st === 'IN_PROGRESS');
-                        var isStageActive = (stage &amp;&amp; stage.status === 'IN_PROGRESS');
-                        var isFinishedStatus = (st === 'SUCCESS' || st === 'FAILED' || st === 'FAILURE' || st === 'ABORTED' || st === 'UNSTABLE' || st.indexOf('SKIPPED') !== -1 || st === 'NOT_EXECUTED');
-                        var showLiveTail = isRunActive &amp;&amp; (isStepActive || (isStageActive &amp;&amp; !isFinishedStatus));
-
-                        if (showLiveTail) {
-                            html += '&lt;button class="inline-log-btn live-tail-btn live-tail-active" id="btn-tail-step-' + step.id + '" onclick="toggleStepLiveTail(\'' + step.id + '\')" title="Toggle auto-following live log stream"&gt;&lt;span class="live-tail-dot"&gt;&lt;/span&gt;&lt;span id="label-tail-step-' + step.id + '"&gt;Live Tail&lt;/span&gt;&lt;/button&gt;';
-                        }
-
-                        html += '&lt;button class="inline-log-btn" id="btn-share-step-' + step.id + '" onclick="copyCurrentDeepLink(\'step\', \'' + step.id + '\')" title="Copy direct link to this step / line"&gt;';
-                        html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/&gt;&lt;path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/&gt;&lt;/svg&gt;';
-                        html += '&lt;span id="btn-share-label-' + step.id + '"&gt;Share Step&lt;/span&gt;';
-                        html += '&lt;/button&gt;';
-                        html += '&lt;button class="inline-log-btn" onclick="copyStepConsoleLog(\'' + step.id + '\')" title="Copy step output to clipboard"&gt;Copy Log&lt;/button&gt;';
-                        html += '&lt;a class="inline-log-btn" href="' + horizonBaseUrl + 'apiLog?nodeId=' + encodeURIComponent(step.id) + '&amp;download=true" download="step-' + encodeURIComponent(step.id) + '.txt" title="Download step output as text file"&gt;';
-                        html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/&gt;&lt;polyline points="7 10 12 15 17 10"/&gt;&lt;line x1="12" y1="15" x2="12" y2="3"/&gt;&lt;/svg&gt;';
-                        html += '&lt;span&gt;Download&lt;/span&gt;';
-                        html += '&lt;/a&gt;';
-                        html += '&lt;/div&gt;';
-                        html += '&lt;/div&gt;';
-                        html += '&lt;div class="inline-terminal-view" id="terminal-' + step.id + '"&gt;';
-                        html += '&lt;div class="log-placeholder"&gt;Loading log stream...&lt;/div&gt;';
-                        html += '&lt;/div&gt;';
-                        html += '&lt;/div&gt;';
-
-                        html += '&lt;/div&gt;';
+                        html += buildStepItemHtml(stage.steps[i], stage, rt);
                     }
                     container.innerHTML = html;
+                    applyClosureCollapse();
+                    updateStepToolbar(stage, rt);
 
                     var stepToExpand = null;
                     if (targetStepId) {
@@ -11774,27 +12483,57 @@
                         }
                     }
                     if (!stepToExpand) {
+                        if (stepFollowOn &amp;&amp; rt.current) {
+                            stepToExpand = rt.current.id;
+                            lastFollowedStepId = rt.current.id;
+                            stepAutoExpanded[rt.current.id] = true;
+                        }
+                    }
+                    if (!stepToExpand) {
+                        // Prefer the leaf step that actually needs attention, not the wrapper around it.
+                        var attention = null;
+                        var anyAttention = null;
                         for (var j = 0; j &lt; stage.steps.length; j++) {
                             var stCheck = (stage.steps[j].status || '').toUpperCase();
                             if (stCheck === 'FAILED' || stCheck === 'FAILURE' || stCheck === 'UNSTABLE' || stCheck === 'PAUSED_INPUT' || stCheck === 'IN_PROGRESS') {
-                                stepToExpand = stage.steps[j].id;
-                                break;
+                                if (!anyAttention) anyAttention = stage.steps[j];
+                                if (!attention &amp;&amp; !isStepGroup(stage.steps[j])) {
+                                    attention = stage.steps[j];
+                                }
                             }
                         }
-                        if (!stepToExpand &amp;&amp; stage.steps.length &gt; 0) {
-                            stepToExpand = stage.steps[0].id;
+                        var chosen = attention || anyAttention;
+                        if (chosen) {
+                            stepToExpand = chosen.id;
+                        } else {
+                            for (var f = 0; f &lt; stage.steps.length; f++) {
+                                if (!isStepGroup(stage.steps[f])) { stepToExpand = stage.steps[f].id; break; }
+                            }
+                            if (!stepToExpand) stepToExpand = stage.steps[0].id;
                         }
                     }
 
                     if (stepToExpand) {
-                        toggleStepAccordion(stepToExpand, targetLineRange, true);
+                        toggleStepAccordion(stepToExpand, targetLineRange, true, true);
                     }
                 }
 
-                function toggleStepAccordion(stepId, targetLineRange, forceExpand) {
+                function toggleStepAccordion(stepId, targetLineRange, forceExpand, isAuto) {
                     var item = document.getElementById('step-item-' + stepId);
                     var row = document.getElementById('step-row-' + stepId);
                     if (!item) return;
+
+                    // A closure that wraps other steps is a collapsible group, not a log viewer.
+                    if (item.classList.contains('step-group') &amp;&amp; !forceExpand) {
+                        toggleClosureGroup(stepId);
+                        return;
+                    }
+
+                    if (!isAuto) {
+                        stepUserToggled[stepId] = true;
+                        delete stepAutoExpanded[stepId];
+                        pauseStepFollow(true);
+                    }
 
                     var isCurrentlyExpanded = item.classList.contains('expanded');
                     var shouldExpand = forceExpand || !isCurrentlyExpanded;
@@ -11802,7 +12541,7 @@
                     if (shouldExpand) {
                         item.classList.add('expanded');
                         if (row) row.setAttribute('aria-expanded', 'true');
-                        selectedStepId = stepId;
+                        if (!isAuto) selectedStepId = stepId;
 
                         var terminal = document.getElementById('terminal-' + stepId);
                         if (terminal) {
@@ -12045,12 +12784,7 @@
                                     stepLogsCache[stepId] = cleanDelta;
                                 }
 
-                                var term = document.getElementById('terminal-' + stepId);
-                                var wasTail = (activeLiveTailSteps[stepId] !== false);
-                                renderStepLogLines(stepId, stepLogsCache[stepId], null);
-                                if (term &amp;&amp; wasTail) {
-                                    term.scrollTop = term.scrollHeight;
-                                }
+                                renderStepLogLines(stepId, stepLogsCache[stepId], null, { isUpdate: true });
                             })
                             .catch(function() {});
                     });
@@ -12216,7 +12950,7 @@
                     }, 40);
                 }
 
-                function renderStepLogLines(stepId, text, initialLineRange) {
+                function renderStepLogLines(stepId, text, initialLineRange, updateOpts) {
                     var terminal = document.getElementById('terminal-' + stepId);
                     var countEl = document.getElementById('log-count-' + stepId);
                     if (!terminal) return;
@@ -12277,7 +13011,26 @@
                         terminal._virtualScrollAttached = true;
                     }
 
-                    if (initialLineRange) {
+                    var itemForStatus = document.getElementById('step-item-' + stepId);
+                    var stepIsRunning = !!(itemForStatus &amp;&amp; itemForStatus.getAttribute('data-status') === 'IN_PROGRESS');
+                    var isLiveUpdate = !!(updateOpts &amp;&amp; updateOpts.isUpdate);
+
+                    if (isLiveUpdate) {
+                        // Live poll refresh: never yank the reader around. Keep the exact reading
+                        // position unless the user is following the tail (parked at the bottom).
+                        var liveTailBtn = document.getElementById('btn-tail-step-' + stepId);
+                        var followingTail = !!liveTailBtn &amp;&amp; (activeLiveTailSteps[stepId] !== false);
+                        var keepTop = terminal.scrollTop;
+                        vState.forceNextRender = true;
+                        renderVirtualSlice(vState, keepTop);
+                        if (followingTail) {
+                            terminal.scrollTop = terminal.scrollHeight;
+                            vState.forceNextRender = true;
+                            renderVirtualSlice(vState);
+                        } else if (terminal.scrollTop !== keepTop) {
+                            terminal.scrollTop = keepTop;
+                        }
+                    } else if (initialLineRange) {
                         selectStepLineRange(stepId, initialLineRange.start, initialLineRange.end, false, false);
                         scrollVirtualTerminalToLine(stepId, initialLineRange.start, 'line');
                     } else if (pendingLineRange) {
@@ -12291,10 +13044,12 @@
                         var shouldTail = tailBtn &amp;&amp; (activeLiveTailSteps[stepId] !== false);
 
                         var firstErrIdx = -1;
-                        for (var eIdx = 0; eIdx &lt; vState.rawLines.length; eIdx++) {
-                            if (getLogLineSeverityClass(vState.rawLines[eIdx]).indexOf('log-line-error') !== -1) {
-                                firstErrIdx = eIdx;
-                                break;
+                        if (!stepIsRunning) {
+                            for (var eIdx = 0; eIdx &lt; vState.rawLines.length; eIdx++) {
+                                if (getLogLineSeverityClass(vState.rawLines[eIdx]).indexOf('log-line-error') !== -1) {
+                                    firstErrIdx = eIdx;
+                                    break;
+                                }
                             }
                         }
 
@@ -12304,6 +13059,7 @@
                         } else if (shouldTail) {
                             terminal.scrollTop = terminal.scrollHeight;
                             renderVirtualSlice(vState);
+                            terminal.scrollTop = terminal.scrollHeight;
                         } else {
                             terminal.scrollTop = 0;
                             renderVirtualSlice(vState, 0);
@@ -13271,6 +14027,20 @@
                     }
                 }
 
+                // Pick the step a reader actually wants: the leaf that failed / is running, rather than the
+                // closure (withCredentials, dir, ...) wrapped around it, which only inherits that status.
+                function pickLeafStepByStatus(steps, statuses) {
+                    if (!steps || steps.length === 0) return null;
+                    var firstAny = null;
+                    for (var s = 0; s &lt; steps.length; s++) {
+                        var stat = (steps[s].status || '').toUpperCase();
+                        if (statuses.indexOf(stat) === -1) continue;
+                        if (!firstAny) firstAny = steps[s];
+                        if (!isStepGroup(steps[s])) return steps[s];
+                    }
+                    return firstAny;
+                }
+
                 function findAutoJumpTarget(data) {
                     if (!data || !data.stages || data.stages.length === 0) return null;
                     var allStages = getAllStagesFlat(data.stages);
@@ -13280,17 +14050,8 @@
                         var st = allStages[i];
                         var status = (st.status || '').toUpperCase();
                         if (status === 'FAILED' || status === 'FAILURE') {
-                            var failStep = null;
-                            if (st.steps &amp;&amp; st.steps.length &gt; 0) {
-                                for (var s = 0; s &lt; st.steps.length; s++) {
-                                    var stepStat = (st.steps[s].status || '').toUpperCase();
-                                    if (stepStat === 'FAILED' || stepStat === 'FAILURE') {
-                                        failStep = st.steps[s];
-                                        break;
-                                    }
-                                }
-                                if (!failStep) failStep = st.steps[st.steps.length - 1];
-                            }
+                            var failStep = pickLeafStepByStatus(st.steps, ['FAILED', 'FAILURE']);
+                            if (!failStep &amp;&amp; st.steps &amp;&amp; st.steps.length &gt; 0) failStep = st.steps[st.steps.length - 1];
                             return { stage: st, step: failStep, type: 'failure' };
                         }
                     }
@@ -13300,16 +14061,7 @@
                         var st = allStages[i];
                         var status = (st.status || '').toUpperCase();
                         if (status === 'UNSTABLE') {
-                            var unstStep = null;
-                            if (st.steps &amp;&amp; st.steps.length &gt; 0) {
-                                for (var s = 0; s &lt; st.steps.length; s++) {
-                                    if ((st.steps[s].status || '').toUpperCase() === 'UNSTABLE') {
-                                        unstStep = st.steps[s];
-                                        break;
-                                    }
-                                }
-                            }
-                            return { stage: st, step: unstStep, type: 'unstable' };
+                            return { stage: st, step: pickLeafStepByStatus(st.steps, ['UNSTABLE']), type: 'unstable' };
                         }
                     }
 
@@ -13317,16 +14069,7 @@
                     for (var i = 0; i &lt; allStages.length; i++) {
                         var st = allStages[i];
                         if ((st.status || '').toUpperCase() === 'PAUSED_INPUT') {
-                            var pausedStep = null;
-                            if (st.steps &amp;&amp; st.steps.length &gt; 0) {
-                                for (var s = 0; s &lt; st.steps.length; s++) {
-                                    if ((st.steps[s].status || '').toUpperCase() === 'PAUSED_INPUT') {
-                                        pausedStep = st.steps[s];
-                                        break;
-                                    }
-                                }
-                            }
-                            return { stage: st, step: pausedStep, type: 'paused_input' };
+                            return { stage: st, step: pickLeafStepByStatus(st.steps, ['PAUSED_INPUT']), type: 'paused_input' };
                         }
                     }
 
@@ -13335,15 +14078,8 @@
                         for (var i = 0; i &lt; allStages.length; i++) {
                             var st = allStages[i];
                             if ((st.status || '').toUpperCase() === 'IN_PROGRESS') {
-                                var progStep = null;
-                                if (st.steps &amp;&amp; st.steps.length &gt; 0) {
-                                    for (var s = 0; s &lt; st.steps.length; s++) {
-                                        if ((st.steps[s].status || '').toUpperCase() === 'IN_PROGRESS') {
-                                            progStep = st.steps[s];
-                                            break;
-                                        }
-                                    }
-                                }
+                                var runtime = computeStepRuntime(st);
+                                var progStep = runtime.current || pickLeafStepByStatus(st.steps, ['IN_PROGRESS']);
                                 return { stage: st, step: progStep, type: 'in_progress' };
                             }
                         }
@@ -13450,14 +14186,14 @@
                         toggleStepAccordion(stepId);
                     } else if (event.key === 'ArrowDown') {
                         event.preventDefault();
-                        var allRows = Array.from(document.querySelectorAll('.accordion-step-row'));
+                        var allRows = Array.from(document.querySelectorAll('.accordion-step-row')).filter(function(r) { return r.offsetParent !== null; });
                         var idx = allRows.findIndex(function(r) { return r.id === 'step-row-' + stepId; });
                         if (idx !== -1 &amp;&amp; idx &lt; allRows.length - 1) {
                             allRows[idx + 1].focus();
                         }
                     } else if (event.key === 'ArrowUp') {
                         event.preventDefault();
-                        var allRows = Array.from(document.querySelectorAll('.accordion-step-row'));
+                        var allRows = Array.from(document.querySelectorAll('.accordion-step-row')).filter(function(r) { return r.offsetParent !== null; });
                         var idx = allRows.findIndex(function(r) { return r.id === 'step-row-' + stepId; });
                         if (idx &gt; 0) {
                             allRows[idx - 1].focus();
