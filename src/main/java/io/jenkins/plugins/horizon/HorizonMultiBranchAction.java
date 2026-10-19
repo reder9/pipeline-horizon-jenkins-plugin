@@ -191,6 +191,15 @@ public class HorizonMultiBranchAction implements Action {
                 bModel.setTimeAgo("Never built");
             }
 
+            boolean inQueue = branchJob.isInQueue();
+            bModel.setInQueue(inQueue);
+            if (inQueue) {
+                hudson.model.Queue.Item qi = branchJob.getQueueItem();
+                if (qi != null && qi.getWhy() != null) {
+                    bModel.setQueueWhy(qi.getWhy());
+                }
+            }
+
             // SCM Web Links (GitHub, GitLab, Bitbucket, Azure DevOps, Gitea)
             try {
                 ScmLinkResolver.ScmLinks scmLinks = ScmLinkResolver.resolveForBranch(project, branchJob, lastRun, bModel.getName());

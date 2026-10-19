@@ -16,6 +16,7 @@ public class JobSummaryModel {
     private Integer lastSuccessfulBuildNumber;
     private Integer lastFailedBuildNumber;
     private List<RunSummaryModel> runs = new ArrayList<>();
+    private List<QueueItemModel> queueItems = new ArrayList<>();
     private List<JobParameterModel> parameters = new ArrayList<>();
     private List<String> branches = new ArrayList<>();
 
@@ -116,6 +117,14 @@ public class JobSummaryModel {
 
     public void setRuns(List<RunSummaryModel> runs) {
         this.runs = runs;
+    }
+
+    public List<QueueItemModel> getQueueItems() {
+        return queueItems != null ? new ArrayList<>(queueItems) : new ArrayList<>();
+    }
+
+    public void setQueueItems(List<QueueItemModel> queueItems) {
+        this.queueItems = queueItems != null ? new ArrayList<>(queueItems) : new ArrayList<>();
     }
 
     public List<JobParameterModel> getParameters() {

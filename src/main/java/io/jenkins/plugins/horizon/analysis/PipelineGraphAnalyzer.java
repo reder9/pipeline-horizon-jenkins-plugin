@@ -7,6 +7,7 @@ import io.jenkins.plugins.horizon.model.ArtifactModel;
 import io.jenkins.plugins.horizon.model.JobParameterModel;
 import io.jenkins.plugins.horizon.model.JobSummaryModel;
 import io.jenkins.plugins.horizon.model.PendingInputModel;
+import io.jenkins.plugins.horizon.model.QueueItemModel;
 import io.jenkins.plugins.horizon.model.RunDetailsModel;
 import io.jenkins.plugins.horizon.model.RunSummaryModel;
 import io.jenkins.plugins.horizon.model.StageModel;
@@ -717,6 +718,59 @@ public class PipelineGraphAnalyzer {
             runs.add(runSum);
         }
         model.setRuns(runs);
+
+        // Collect queued items for this job
+        List<QueueItemModel> queueItems = new ArrayList<>();
+        try {
+            jenkins.model.Jenkins j = jenkins.model.Jenkins.getInstanceOrNull();
+            if (j != null) {
+                hudson.model.Queue queue = j.getQueue();
+                if (queue != null) {
+                    for (hudson.model.Queue.Item item : queue.getItems()) {
+                        if (item != null && job.equals(item.task)) {
+                            QueueItemModel qm = new QueueItemModel();
+                            qm.setId(item.getId());
+                            qm.setWhy(item.getWhy());
+                            qm.setInQueueSince(item.getInQueueSince());
+                            long durationInQueue = Math.max(0, System.currentTimeMillis() - item.getInQueueSince());
+                            qm.setTimeInQueue(formatDuration(durationInQueue));
+                            qm.setBlocked(item.isBlocked());
+                            qm.setBuildable(item.isBuildable());
+                            qm.setStuck(item.isStuck());
+
+                            try {
+                                qm.setCanCancel(item.hasCancelPermission());
+                            } catch (Throwable t) {
+                                qm.setCanCancel(job.hasPermission(hudson.model.Item.CANCEL));
+                            }
+
+                            if (item.getCauses() != null) {
+                                for (hudson.model.Cause c : item.getCauses()) {
+                                    if (c != null && c.getShortDescription() != null) {
+                                        qm.getCauses().add(c.getShortDescription());
+                                    }
+                                }
+                            }
+
+                            hudson.model.ParametersAction pa = item.getAction(hudson.model.ParametersAction.class);
+                            if (pa != null && pa.getParameters() != null) {
+                                Map<String, String> pMap = new LinkedHashMap<>();
+                                for (hudson.model.ParameterValue pv : pa.getParameters()) {
+                                    if (pv != null && pv.getName() != null && pv.getValue() != null) {
+                                        pMap.put(pv.getName(), String.valueOf(pv.getValue()));
+                                    }
+                                }
+                                qm.setParameters(pMap);
+                            }
+
+                            queueItems.add(qm);
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        model.setQueueItems(queueItems);
 
         return model;
     }

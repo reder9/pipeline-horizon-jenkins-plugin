@@ -76,10 +76,74 @@ public class HorizonJobAction implements Action {
             java.util.List<hudson.model.Action> actions = new java.util.ArrayList<>();
             actions.add(new hudson.model.CauseAction(new hudson.model.Cause.UserIdCause()));
             wfJob.scheduleBuild2(0, actions.toArray(new hudson.model.Action[0]));
+            hudson.model.Queue.Item queuedItem = wfJob.getQueueItem();
             JSONObject result = new JSONObject();
             result.put("status", "ok");
             result.put("message", "Pipeline run queued successfully.");
-            result.put("queueId", -1);
+            result.put("queueId", queuedItem != null ? queuedItem.getId() : -1);
+            result.write(rsp.getWriter());
+        } catch (Throwable t) {
+            rsp.setStatus(500);
+            JSONObject result = new JSONObject();
+            result.put("status", "error");
+            result.put("message", t.getMessage() != null ? t.getMessage() : t.toString());
+            result.write(rsp.getWriter());
+        }
+    }
+
+    /**
+     * REST API: Cancels a queued build by its Jenkins Queue Item ID.
+     */
+    @RequirePOST
+    public void doApiCancelQueueItem(StaplerRequest2 req, StaplerResponse2 rsp,
+                                     @org.kohsuke.stapler.QueryParameter long queueId) throws IOException {
+        rsp.setContentType("application/json;charset=UTF-8");
+        if (!(job instanceof WorkflowJob)) {
+            rsp.setStatus(400);
+            rsp.getWriter().write("{\"status\":\"error\",\"message\":\"Only pipeline jobs are supported.\"}");
+            return;
+        }
+        WorkflowJob wfJob = (WorkflowJob) job;
+        wfJob.checkPermission(hudson.model.Item.CANCEL);
+
+        try {
+            jenkins.model.Jenkins j = jenkins.model.Jenkins.getInstanceOrNull();
+            if (j == null) {
+                rsp.setStatus(500);
+                rsp.getWriter().write("{\"status\":\"error\",\"message\":\"Jenkins instance unavailable.\"}");
+                return;
+            }
+            hudson.model.Queue queue = j.getQueue();
+            if (queue == null) {
+                rsp.setStatus(500);
+                rsp.getWriter().write("{\"status\":\"error\",\"message\":\"Queue unavailable.\"}");
+                return;
+            }
+
+            hudson.model.Queue.Item targetItem = queue.getItem(queueId);
+            if (targetItem == null) {
+                JSONObject result = new JSONObject();
+                result.put("status", "ok");
+                result.put("message", "Queue item #" + queueId + " is no longer in the queue (may have already started or been cancelled).");
+                result.write(rsp.getWriter());
+                return;
+            }
+
+            if (!wfJob.equals(targetItem.task)) {
+                rsp.setStatus(403);
+                rsp.getWriter().write("{\"status\":\"error\",\"message\":\"Queue item does not belong to this pipeline.\"}");
+                return;
+            }
+
+            boolean cancelled = queue.cancel(targetItem);
+            JSONObject result = new JSONObject();
+            if (cancelled) {
+                result.put("status", "ok");
+                result.put("message", "Queued build #" + queueId + " was cancelled successfully.");
+            } else {
+                result.put("status", "error");
+                result.put("message", "Failed to cancel queue item #" + queueId + ".");
+            }
             result.write(rsp.getWriter());
         } catch (Throwable t) {
             rsp.setStatus(500);

@@ -17,6 +17,8 @@ public class BranchSummaryModel {
     private String timeAgo;
     private String commitMessage;
     private String commitAuthor;
+    private boolean inQueue;
+    private String queueWhy;
 
     public BranchSummaryModel() {
     }
@@ -184,5 +186,21 @@ public class BranchSummaryModel {
 
     public void setRepositoryUrl(String repositoryUrl) {
         this.repositoryUrl = repositoryUrl;
+    }
+
+    public boolean isInQueue() {
+        return inQueue;
+    }
+
+    public void setInQueue(boolean inQueue) {
+        this.inQueue = inQueue;
+    }
+
+    public String getQueueWhy() {
+        return queueWhy;
+    }
+
+    public void setQueueWhy(String queueWhy) {
+        this.queueWhy = queueWhy;
     }
 }

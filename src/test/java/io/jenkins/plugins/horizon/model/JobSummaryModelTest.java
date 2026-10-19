@@ -67,5 +67,13 @@ class JobSummaryModelTest {
         assertEquals(142, model.getRuns().get(0).getNumber());
         assertEquals("SUCCESS", model.getRuns().get(0).getResult());
         assertEquals(1700000000000L, model.getRuns().get(0).getTimestamp());
+
+        QueueItemModel queueItem = new QueueItemModel();
+        queueItem.setId(99L);
+        queueItem.setWhy("Waiting for next available executor");
+        model.setQueueItems(Collections.singletonList(queueItem));
+        assertEquals(1, model.getQueueItems().size());
+        assertEquals(99L, model.getQueueItems().get(0).getId());
+        assertEquals("Waiting for next available executor", model.getQueueItems().get(0).getWhy());
     }
 }

@@ -345,6 +345,7 @@
                     .pill-failed, .pill-failure { background: #fee2e2; color: #991b1b; font-weight: 700; border: 1px solid #fca5a5; }
                     .pill-unstable { background: #fef3c7; color: #92400e; font-weight: 700; border: 1px solid #fcd34d; }
                     .pill-in_progress { background: #dbeafe; color: #1e40af; font-weight: 700; border: 1px solid #93c5fd; animation: pulse 2s infinite; }
+                    .pill-queued { background: #fef3c7; color: #b45309; font-weight: 700; border: 1px solid #fcd34d; animation: pulse 2s infinite; }
                     .pill-not_built { background: #f1f5f9; color: #64748b; font-weight: 700; border: 1px solid #cbd5e1; }
                     .pill-aborted { background: #f1f5f9; color: #334155; font-weight: 700; border: 1px solid #cbd5e1; }
 
@@ -458,6 +459,7 @@
                     .horizon-container.theme-dark .pill-failed { background: rgba(239, 68, 68, 0.2); color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
                     .horizon-container.theme-dark .pill-unstable { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); }
                     .horizon-container.theme-dark .pill-in_progress { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border-color: rgba(96, 165, 250, 0.4); }
+                    .horizon-container.theme-dark .pill-queued { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); }
                     .horizon-container.theme-dark .pill-not_built { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border-color: rgba(148, 163, 184, 0.3); }
 
                     /* Toast Notification */
@@ -603,6 +605,9 @@
                                         </td>
                                         <td>
                                             <span class="status-pill pill-${b.lastBuildResult.toLowerCase()}">${b.lastBuildResult}</span>
+                                            <j:if test="${b.inQueue}">
+                                                <span class="status-pill pill-queued" style="margin-left:4px;" title="${b.queueWhy != null ? b.queueWhy : 'Build waiting in queue'}">QUEUED</span>
+                                            </j:if>
                                         </td>
                                         <td>
                                             <j:if test="${b.commitMessage != null}">
@@ -701,6 +706,9 @@
                                         </td>
                                         <td>
                                             <span class="status-pill pill-${pr.lastBuildResult.toLowerCase()}">${pr.lastBuildResult}</span>
+                                            <j:if test="${pr.inQueue}">
+                                                <span class="status-pill pill-queued" style="margin-left:4px;" title="${pr.queueWhy != null ? pr.queueWhy : 'Build waiting in queue'}">QUEUED</span>
+                                            </j:if>
                                         </td>
                                         <td>${pr.pullRequestAuthor != null ? pr.pullRequestAuthor : '—'}</td>
                                         <td>${pr.formattedDuration}</td>

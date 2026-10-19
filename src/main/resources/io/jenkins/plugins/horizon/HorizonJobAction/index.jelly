@@ -359,7 +359,17 @@
                     .pill-unstable { background: #fef3c7; color: #92400e; font-weight: 700; border: 1px solid #fcd34d; }
                     .pill-in_progress { background: #dbeafe; color: #1e40af; font-weight: 700; border: 1px solid #93c5fd; animation: pulse 2s infinite; }
                     .pill-paused_input { background: #fef3c7; color: #b45309; font-weight: 700; border: 1px solid #fcd34d; animation: pulse 2s infinite; }
+                    .pill-queued { background: #fef3c7; color: #b45309; font-weight: 700; border: 1px solid #fcd34d; animation: pulse 2s infinite; }
                     .pill-aborted { background: #f1f5f9; color: #334155; font-weight: 700; border: 1px solid #cbd5e1; }
+                    .run-row-queued { background: rgba(245, 158, 11, 0.05); }
+                    .run-row-queued:hover { background: rgba(245, 158, 11, 0.1) !important; }
+                    .queued-why-text { font-size: 0.76rem; color: #b45309; font-weight: 500; margin-top: 3px; display: flex; align-items: center; gap: 4px; }
+                    .queued-item-badge { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; color: #b45309; font-family: monospace; font-size: 0.85rem; }
+                    .queued-pulse-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; animation: pulse 1.8s infinite; }
+                    .queue-param-chip { display: inline-block; font-size: 0.7rem; background: rgba(245, 158, 11, 0.12); color: #92400e; border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 4px; padding: 1px 5px; font-family: monospace; }
+                    .job-queued-banner { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.65rem 1rem; margin-bottom: 1rem; border-radius: 8px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: 0.85rem; }
+                    .queued-banner-content { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; min-width: 0; }
+                    .queued-banner-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; animation: pulse 1.8s infinite; }
 
                     .action-link-btn {
                         background: #f8fafc;
@@ -953,6 +963,54 @@
                         color: #94a3b8;
                         border: 1px solid rgba(148, 163, 184, 0.3);
                     }
+                    .horizon-container.theme-dark .pill-queued,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .pill-queued,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .pill-queued,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .pill-queued {
+                        background: rgba(245, 158, 11, 0.2);
+                        color: #fbbf24;
+                        border: 1px solid rgba(251, 191, 36, 0.45);
+                    }
+                    .horizon-container.theme-dark .run-row-queued,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .run-row-queued,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .run-row-queued,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .run-row-queued {
+                        background: rgba(245, 158, 11, 0.08);
+                    }
+                    .horizon-container.theme-dark .run-row-queued:hover,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .run-row-queued:hover,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .run-row-queued:hover,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .run-row-queued:hover {
+                        background: rgba(245, 158, 11, 0.13) !important;
+                    }
+                    .horizon-container.theme-dark .queued-why-text,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .queued-why-text,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .queued-why-text,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .queued-why-text {
+                        color: #fbbf24;
+                    }
+                    .horizon-container.theme-dark .queued-item-badge,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .queued-item-badge,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .queued-item-badge,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .queued-item-badge {
+                        color: #fbbf24;
+                    }
+                    .horizon-container.theme-dark .job-queued-banner,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .job-queued-banner,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .job-queued-banner,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .job-queued-banner {
+                        background: rgba(245, 158, 11, 0.15);
+                        border-color: rgba(251, 191, 36, 0.35);
+                        color: #fde68a;
+                    }
+                    .horizon-container.theme-dark .queue-param-chip,
+                    [data-theme="dark"] .horizon-container:not(.theme-light) .queue-param-chip,
+                    html[data-theme="dark"] #horizon-job-app:not(.theme-light) .queue-param-chip,
+                    body.jenkins-dark #horizon-job-app:not(.theme-light) .queue-param-chip {
+                        background: rgba(245, 158, 11, 0.18);
+                        color: #fde68a;
+                        border-color: rgba(251, 191, 36, 0.35);
+                    }
                 </style>
 
                 <!-- Hero Header -->
@@ -984,6 +1042,7 @@
                     </div>
                     <div class="status-filters" role="tablist" aria-label="Filter runs by status">
                         <button type="button" class="filter-pill active" role="tab" aria-selected="true" onclick="setStatusFilter('ALL', this)" onkeydown="handleFilterKeyNav(event, 'ALL', this)">All Runs</button>
+                        <button type="button" id="pill-filter-queued" class="filter-pill" style="display:none;" role="tab" aria-selected="false" onclick="setStatusFilter('QUEUED', this)" onkeydown="handleFilterKeyNav(event, 'QUEUED', this)">Queued (<span id="pill-queued-count">0</span>)</button>
                         <button type="button" class="filter-pill" role="tab" aria-selected="false" onclick="setStatusFilter('SUCCESS', this)" onkeydown="handleFilterKeyNav(event, 'SUCCESS', this)">Success</button>
                         <button type="button" class="filter-pill" role="tab" aria-selected="false" onclick="setStatusFilter('UNSTABLE', this)" onkeydown="handleFilterKeyNav(event, 'UNSTABLE', this)">Unstable</button>
                         <button type="button" class="filter-pill" role="tab" aria-selected="false" onclick="setStatusFilter('FAILED', this)" onkeydown="handleFilterKeyNav(event, 'FAILED', this)">Failed</button>
@@ -991,6 +1050,15 @@
                         <button type="button" class="filter-pill" role="tab" aria-selected="false" onclick="setStatusFilter('IN_PROGRESS', this)" onkeydown="handleFilterKeyNav(event, 'IN_PROGRESS', this)">Running</button>
                     </div>
                 </nav>
+
+                <!-- Queued Builds Banner -->
+                <div id="job-queued-banner" class="job-queued-banner" style="display:none;" role="status">
+                    <div class="queued-banner-content">
+                        <span class="queued-banner-dot"></span>
+                        <span id="job-queued-banner-text">1 build currently waiting in queue</span>
+                    </div>
+                    <div id="job-queued-banner-actions"></div>
+                </div>
 
                 <!-- Runs Activity Feed -->
                 <section class="runs-card" role="region" aria-label="Pipeline Build History">
@@ -1124,19 +1192,72 @@
                     return div.innerHTML;
                 }
 
+                function updateQueuedUI(queueItems) {
+                    var hasQueued = queueItems &amp;&amp; queueItems.length &gt; 0;
+                    var pillQueued = document.getElementById('pill-filter-queued');
+                    var pillQueuedCount = document.getElementById('pill-queued-count');
+                    if (pillQueued &amp;&amp; pillQueuedCount) {
+                        if (hasQueued) {
+                            pillQueued.style.display = '';
+                            pillQueuedCount.innerText = queueItems.length;
+                        } else {
+                            pillQueued.style.display = 'none';
+                            if (currentFilter === 'QUEUED') {
+                                currentFilter = 'ALL';
+                                var pills = document.querySelectorAll('.filter-pill');
+                                pills.forEach(function(p) { p.classList.remove('active'); p.setAttribute('aria-selected', 'false'); });
+                                var allPill = document.querySelector('.filter-pill');
+                                if (allPill) {
+                                    allPill.classList.add('active');
+                                    allPill.setAttribute('aria-selected', 'true');
+                                }
+                            }
+                        }
+                    }
+
+                    var banner = document.getElementById('job-queued-banner');
+                    var bannerText = document.getElementById('job-queued-banner-text');
+                    var bannerActions = document.getElementById('job-queued-banner-actions');
+                    if (banner &amp;&amp; bannerText &amp;&amp; bannerActions) {
+                        if (hasQueued) {
+                            var count = queueItems.length;
+                            var firstQ = queueItems[0];
+                            var txt = (count === 1 ? '1 build currently waiting in queue' : (count + ' builds currently waiting in queue'));
+                            if (firstQ.why) {
+                                txt += ': ' + firstQ.why;
+                            }
+                            bannerText.innerText = txt;
+                            var actionsHtml = '';
+                            for (var qIdx = 0; qIdx &lt; queueItems.length; qIdx++) {
+                                var q = queueItems[qIdx];
+                                if (q.canCancel !== false) {
+                                    actionsHtml += '&lt;button type="button" class="action-link-btn action-stop-btn btn-cancel-queued" style="margin-left:6px; font-size:0.75rem; padding:0.25rem 0.6rem;" onclick="cancelQueueItem(' + q.id + ')" title="Cancel queued build #' + q.id + '"&gt;&lt;svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;"&gt;&lt;rect x="5" y="5" width="14" height="14" rx="2"/&gt;&lt;/svg&gt; Cancel #' + q.id + '&lt;/button&gt;';
+                                }
+                            }
+                            bannerActions.innerHTML = actionsHtml;
+                            banner.style.display = 'flex';
+                        } else {
+                            banner.style.display = 'none';
+                        }
+                    }
+                }
+
                 function loadJobRuns() {
                     fetch(horizonBaseUrl + 'apiRuns')
                         .then(function(res) { return res.json(); })
                         .then(function(data) {
                             jobData = data;
                             var runs = data.runs || [];
-                            renderRunsTable(runs);
+                            var queueItems = data.queueItems || [];
+                            updateQueuedUI(queueItems);
+                            renderRunsTable(runs, queueItems);
                             var anyBuilding = runs.some(function(r) { return r.building === true; });
-                            if (anyBuilding) {
+                            var anyQueued = queueItems.length &gt; 0;
+                            if (anyBuilding || anyQueued) {
                                 var isHidden = (typeof document.hidden !== 'undefined' &amp;&amp; document.hidden);
                                 if (!isHidden) {
                                     if (!jobPollTimer) {
-                                        jobPollTimer = setInterval(loadJobRuns, 4000);
+                                        jobPollTimer = setInterval(loadJobRuns, 3000);
                                     }
                                 } else if (jobPollTimer) {
                                     clearInterval(jobPollTimer);
@@ -1159,45 +1280,98 @@
                             jobPollTimer = null;
                         }
                     } else {
-                        if (jobData &amp;&amp; jobData.runs &amp;&amp; jobData.runs.some(function(r) { return r.building === true; })) {
+                        if (jobData &amp;&amp; ((jobData.runs &amp;&amp; jobData.runs.some(function(r) { return r.building === true; })) || (jobData.queueItems &amp;&amp; jobData.queueItems.length &gt; 0))) {
                             loadJobRuns();
                         }
                     }
                 });
 
-                function renderRunsTable(runs) {
+                function renderRunsTable(runs, queueItems) {
                     var tbody = document.getElementById('runs-tbody');
-                    if (!runs || runs.length === 0) {
-                        tbody.innerHTML = '&lt;tr&gt;&lt;td colspan="6" class="run-empty-msg" style="text-align:center; padding:2rem; color:#94a3b8;"&gt;No builds found.&lt;/td&gt;&lt;/tr&gt;';
-                        return;
+                    if (!tbody) return;
+                    runs = runs || (jobData ? jobData.runs : []) || [];
+                    queueItems = queueItems || (jobData ? jobData.queueItems : []) || [];
+
+                    var search = document.getElementById('run-search') ? document.getElementById('run-search').value.toLowerCase() : '';
+
+                    var filteredQueued = [];
+                    if (currentFilter === 'ALL' || currentFilter === 'QUEUED' || currentFilter === 'IN_PROGRESS') {
+                        filteredQueued = queueItems.filter(function(q) {
+                            if (!search) return true;
+                            var text = ("queue #" + q.id + " " + (q.causes ? q.causes.join(" ") : "") + " " + (q.why || "")).toLowerCase();
+                            if (q.parameters) {
+                                for (var k in q.parameters) {
+                                    text += " " + k.toLowerCase() + "=" + String(q.parameters[k]).toLowerCase();
+                                }
+                            }
+                            return text.indexOf(search) !== -1;
+                        });
                     }
 
-                    var search = document.getElementById('run-search').value.toLowerCase();
-                    var filtered = runs.filter(function(r) {
-                        var status = r.result || "IN_PROGRESS";
-                        var statusUpper = status.toUpperCase();
-                        if (currentFilter !== 'ALL') {
-                            if (currentFilter === 'FAILED') {
-                                if (statusUpper !== 'FAILED' &amp;&amp; statusUpper !== 'FAILURE') return false;
-                            } else if (statusUpper !== currentFilter) {
-                                return false;
+                    var filteredRuns = [];
+                    if (currentFilter !== 'QUEUED') {
+                        filteredRuns = runs.filter(function(r) {
+                            var status = r.result || "IN_PROGRESS";
+                            var statusUpper = status.toUpperCase();
+                            if (currentFilter !== 'ALL') {
+                                if (currentFilter === 'FAILED') {
+                                    if (statusUpper !== 'FAILED' &amp;&amp; statusUpper !== 'FAILURE') return false;
+                                } else if (statusUpper !== currentFilter) {
+                                    return false;
+                                }
                             }
-                        }
-                        if (search) {
-                            var text = ("#" + r.number + " " + (r.causes ? r.causes.join(" ") : "") + " " + (r.commitMessage || "") + " " + (r.branch || "")).toLowerCase();
-                            return text.indexOf(search) !== -1;
-                        }
-                        return true;
-                    });
+                            if (search) {
+                                var text = ("#" + r.number + " " + (r.causes ? r.causes.join(" ") : "") + " " + (r.commitMessage || "") + " " + (r.branch || "")).toLowerCase();
+                                return text.indexOf(search) !== -1;
+                            }
+                            return true;
+                        });
+                    }
 
-                    if (filtered.length === 0) {
-                        tbody.innerHTML = '&lt;tr&gt;&lt;td colspan="6" class="run-empty-msg" style="text-align:center; padding:2rem; color:#94a3b8;"&gt;No builds matching filters.&lt;/td&gt;&lt;/tr&gt;';
+                    if (filteredQueued.length === 0 &amp;&amp; filteredRuns.length === 0) {
+                        tbody.innerHTML = '&lt;tr&gt;&lt;td colspan="6" class="run-empty-msg" style="text-align:center; padding:2rem; color:#94a3b8;"&gt;' +
+                            (search ? 'No builds matching filters.' : (currentFilter === 'QUEUED' ? 'No builds currently in queue.' : 'No builds found.')) +
+                            '&lt;/td&gt;&lt;/tr&gt;';
                         return;
                     }
 
                     var html = "";
-                    for (var i = 0; i &lt; filtered.length; i++) {
-                        var r = filtered[i];
+
+                    // Render queued rows first!
+                    for (var qI = 0; qI &lt; filteredQueued.length; qI++) {
+                        var q = filteredQueued[qI];
+                        var qCause = (q.causes &amp;&amp; q.causes.length) ? q.causes[0] : "Direct trigger";
+                        var whyText = q.why ? escapeHtml(q.why) : "Waiting for next available executor";
+                        var qParamsHtml = '';
+                        if (q.parameters &amp;&amp; Object.keys(q.parameters).length &gt; 0) {
+                            var pKeys = Object.keys(q.parameters);
+                            var pChips = pKeys.map(function(k) {
+                                return '&lt;span class="queue-param-chip" title="' + escapeHtml(k + '=' + q.parameters[k]) + '"&gt;' + escapeHtml(k) + '=' + escapeHtml(q.parameters[k]) + '&lt;/span&gt;';
+                            }).join(' ');
+                            qParamsHtml = '&lt;div style="margin-top:3px; display:flex; flex-wrap:wrap; gap:3px;"&gt;' + pChips + '&lt;/div&gt;';
+                        }
+
+                        html += '&lt;tr class="run-row-queued"&gt;';
+                        html += '&lt;td&gt;&lt;span class="queued-item-badge" title="Waiting in Jenkins build queue"&gt;&lt;span class="queued-pulse-dot"&gt;&lt;/span&gt;Queue #' + q.id + '&lt;/span&gt;&lt;/td&gt;';
+                        html += '&lt;td&gt;&lt;span class="run-status-pill pill-queued" role="status"&gt;&lt;svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:3px;"&gt;&lt;circle cx="12" cy="12" r="10"/&gt;&lt;polyline points="12 6 12 12 16 14"/&gt;&lt;/svg&gt;QUEUED&lt;/span&gt;&lt;/td&gt;';
+                        html += '&lt;td&gt;';
+                        html += '&lt;strong&gt;' + escapeHtml(qCause) + '&lt;/strong&gt;';
+                        html += '&lt;div class="queued-why-text" title="' + whyText + '"&gt;&lt;svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="flex-shrink:0;"&gt;&lt;circle cx="12" cy="12" r="10"/&gt;&lt;line x1="12" y1="8" x2="12" y2="12"/&gt;&lt;line x1="12" y1="16" x2="12.01" y2="16"/&gt;&lt;/svg&gt;' + whyText + '&lt;/div&gt;';
+                        html += qParamsHtml;
+                        html += '&lt;/td&gt;';
+                        html += '&lt;td class="run-duration-col"&gt;' + (q.timeInQueue ? ('Queued ' + escapeHtml(q.timeInQueue)) : 'Just queued') + '&lt;/td&gt;';
+                        html += '&lt;td class="run-subtext"&gt;Waiting in queue&lt;/td&gt;';
+                        html += '&lt;td&gt;';
+                        if (q.canCancel !== false) {
+                            html += '&lt;button type="button" class="action-link-btn action-stop-btn btn-cancel-queued" onclick="cancelQueueItem(' + q.id + ')" title="Cancel queued build #' + q.id + '" aria-label="Cancel queued build #' + q.id + '"&gt;&lt;svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;"&gt;&lt;rect x="5" y="5" width="14" height="14" rx="2"/&gt;&lt;/svg&gt; Cancel&lt;/button&gt;';
+                        }
+                        html += '&lt;/td&gt;';
+                        html += '&lt;/tr&gt;';
+                    }
+
+                    // Render runs
+                    for (var i = 0; i &lt; filteredRuns.length; i++) {
+                        var r = filteredRuns[i];
                         var status = r.result || "IN_PROGRESS";
                         var statusLabel = r.pausedForInput ? "AWAITING INPUT" : status;
                         var statusLower = r.pausedForInput ? "paused_input" : status.toLowerCase();
@@ -1249,6 +1423,26 @@
                     tbody.innerHTML = html;
                 }
 
+                function cancelQueueItem(queueId) {
+                    showToast("Cancelling queued build #" + queueId + "...", "info");
+                    fetch(horizonBaseUrl + 'apiCancelQueueItem?queueId=' + encodeURIComponent(queueId), {
+                        method: 'POST',
+                        headers: getCrumbHeaders()
+                    })
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        if (data.status === 'ok') {
+                            showToast(data.message || ("Queued build #" + queueId + " cancelled."), "success");
+                            setTimeout(loadJobRuns, 500);
+                        } else {
+                            showToast("Cancel failed: " + (data.message || "Unknown error"), "error");
+                        }
+                    })
+                    .catch(function(err) {
+                        showToast("Error cancelling queued build: " + err, "error");
+                    });
+                }
+
                 function quickAbortRun(runNum) {
                     showToast("Stopping build #" + runNum + "...", "info");
                     fetch(horizonBaseUrl + 'apiAbortRun?number=' + encodeURIComponent(runNum), {
@@ -1271,7 +1465,7 @@
 
                 function filterRuns() {
                     if (jobData) {
-                        renderRunsTable(jobData.runs || []);
+                        renderRunsTable(jobData.runs || [], jobData.queueItems || []);
                     }
                 }
 
@@ -1427,8 +1621,8 @@
                     })
                     .then(function(res) {
                         if (res.ok) {
-                            showToast("Build scheduled successfully! Refreshing activity...", "success");
-                            setTimeout(loadJobRuns, 2500);
+                            showToast("Build scheduled! Checking queue...", "success");
+                            setTimeout(loadJobRuns, 500);
                         } else {
                             showToast("Trigger failed (HTTP " + res.status + ")", "error");
                         }
@@ -1448,7 +1642,7 @@
                     .then(function(data) {
                         if (data.status === 'ok') {
                             showToast(data.message || ("Build #" + runNum + " rebuild scheduled!"), "success");
-                            setTimeout(loadJobRuns, 2500);
+                            setTimeout(loadJobRuns, 500);
                         } else {
                             showToast("Rebuild failed: " + (data.message || "Unknown error"), "error");
                         }
@@ -1486,8 +1680,8 @@
                         }
                         if (res.ok) {
                             closeBuildModal();
-                            showToast("Build scheduled with custom parameters! Refreshing activity...", "success");
-                            setTimeout(loadJobRuns, 2500);
+                            showToast("Build scheduled with custom parameters! Checking queue...", "success");
+                            setTimeout(loadJobRuns, 500);
                         } else {
                             showToast("Build trigger failed (HTTP " + res.status + ")", "error");
                         }
