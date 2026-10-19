@@ -5011,6 +5011,7 @@
                         max-height: 440px;
                         overflow-y: auto;
                         overflow-x: auto;
+                        overflow-anchor: none !important;
                         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
                         font-size: 0.815rem;
                         line-height: 1.55;
@@ -5134,9 +5135,11 @@
                         width: 100%;
                         flex-shrink: 0;
                         pointer-events: none;
+                        overflow-anchor: none !important;
                     }
                     .virtual-slice {
                         width: 100%;
+                        overflow-anchor: none !important;
                     }
 
                     /* ANSI Terminal Color Support */
@@ -12067,6 +12070,13 @@
                     var startIndex = Math.max(0, firstVisible - OVERSCAN);
                     var endIndex = Math.min(totalItems - 1, firstVisible + visibleCount + OVERSCAN);
 
+                    if (vState.lastStartIndex === startIndex &amp;&amp; vState.lastEndIndex === endIndex &amp;&amp; !vState.forceNextRender) {
+                        return;
+                    }
+                    vState.lastStartIndex = startIndex;
+                    vState.lastEndIndex = endIndex;
+                    vState.forceNextRender = false;
+
                     var topHeight = startIndex * lineHeight;
                     var bottomHeight = Math.max(0, (totalItems - 1 - endIndex) * lineHeight);
 
@@ -12117,6 +12127,7 @@
                     var targetScrollTop = Math.max(0, (itemIdx * lineHeight) - Math.floor(clientHeight / 3));
 
                     terminal.scrollTop = targetScrollTop;
+                    v.forceNextRender = true;
                     renderVirtualSlice(v, targetScrollTop);
 
                     setTimeout(function() {
@@ -12156,11 +12167,15 @@
                             lineHeight: 24,
                             ticking: false,
                             activeMatchLineNum: -1,
-                            activeMatchIndex: -1
+                            activeMatchIndex: -1,
+                            lastStartIndex: -1,
+                            lastEndIndex: -1,
+                            forceNextRender: true
                         };
                         stepTerminalVirtualizers[stepId] = vState;
                     } else {
                         vState.rawLines = rawLines;
+                        vState.forceNextRender = true;
                     }
 
                     var sliceContainer = document.getElementById('v-slice-' + stepId);
@@ -12238,6 +12253,7 @@
                         v.filteredIndices = null;
                         v.activeMatchLineNum = -1;
                         v.activeMatchIndex = -1;
+                        v.forceNextRender = true;
                         if (stepper) stepper.style.display = 'none';
                         if (countEl) countEl.innerText = v.rawLines.length + (v.rawLines.length === 1 ? ' line' : ' lines');
                         terminal.scrollTop = 0;
@@ -12265,6 +12281,7 @@
                     }
 
                     terminal.scrollTop = 0;
+                    v.forceNextRender = true;
                     renderVirtualSlice(v, 0);
 
                     if (matches.length &gt; 0) {
