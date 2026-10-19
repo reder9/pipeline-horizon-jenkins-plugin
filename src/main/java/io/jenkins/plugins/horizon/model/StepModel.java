@@ -11,6 +11,11 @@ public class StepModel {
     private String error;
     private boolean optional;
     private String arguments;
+    private boolean isBlock;
+    private long selfDurationMillis;
+    private int depth;
+    private String parentStepId;
+    private int childStepsCount;
 
     public StepModel() {
     }
@@ -22,6 +27,7 @@ public class StepModel {
         this.status = status;
         this.startTimeMillis = startTimeMillis;
         this.durationMillis = durationMillis;
+        this.selfDurationMillis = durationMillis;
         this.hasLogs = hasLogs;
         this.error = error;
     }
@@ -104,5 +110,53 @@ public class StepModel {
 
     public void setArguments(String arguments) {
         this.arguments = arguments;
+    }
+
+    public boolean isBlock() {
+        return isBlock;
+    }
+
+    public void setBlock(boolean block) {
+        this.isBlock = block;
+    }
+
+    public boolean isClosure() {
+        return isBlock;
+    }
+
+    public void setClosure(boolean closure) {
+        this.isBlock = closure;
+    }
+
+    public long getSelfDurationMillis() {
+        return selfDurationMillis;
+    }
+
+    public void setSelfDurationMillis(long selfDurationMillis) {
+        this.selfDurationMillis = selfDurationMillis;
+    }
+
+    public int getDepth() {
+        return depth;
+    }
+
+    public void setDepth(int depth) {
+        this.depth = depth;
+    }
+
+    public String getParentStepId() {
+        return parentStepId;
+    }
+
+    public void setParentStepId(String parentStepId) {
+        this.parentStepId = parentStepId;
+    }
+
+    public int getChildStepsCount() {
+        return childStepsCount;
+    }
+
+    public void setChildStepsCount(int childStepsCount) {
+        this.childStepsCount = childStepsCount;
     }
 }

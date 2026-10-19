@@ -508,6 +508,9 @@ public class PipelineGraphAnalyzer {
             allAgentsUsed.add("Built-In Node");
         }
 
+        // Post-process stage steps to identify closures, hierarchy depth, and self-duration
+        postProcessAllStageSteps(consolidatedStages, nodeMap);
+
         details.setStages(consolidatedStages);
         details.setStageCount(consolidatedStages.size());
         details.setTotalSteps(totalStepsCount);
@@ -963,7 +966,16 @@ public class PipelineGraphAnalyzer {
         StepModel step = new StepModel();
         step.setId(node.getId());
         step.setName(EncodingUtils.fixMojibake(node.getDisplayFunctionName()));
-        step.setDisplayName(EncodingUtils.fixMojibake(node.getDisplayName()));
+        String dispName = EncodingUtils.fixMojibake(node.getDisplayName());
+        if (dispName != null) {
+            if (dispName.endsWith(" : Start")) {
+                dispName = dispName.substring(0, dispName.length() - " : Start".length()).trim();
+            }
+            if (dispName.endsWith(" : Body")) {
+                dispName = dispName.substring(0, dispName.length() - " : Body".length()).trim();
+            }
+        }
+        step.setDisplayName(dispName);
 
         try {
             String argsStr = ArgumentsAction.getStepArgumentsAsString(node);
@@ -1025,6 +1037,7 @@ public class PipelineGraphAnalyzer {
             duration = Math.max(0, System.currentTimeMillis() - startTime);
         }
         step.setDurationMillis(duration);
+        step.setSelfDurationMillis(duration);
 
         ErrorAction ea = node.getAction(ErrorAction.class);
         if (ea != null) {
@@ -1304,6 +1317,90 @@ public class PipelineGraphAnalyzer {
         }
 
         return result;
+    }
+
+    static void postProcessAllStageSteps(List<StageModel> stages, Map<String, FlowNode> nodeMap) {
+        if (stages == null) {
+            return;
+        }
+        for (StageModel s : stages) {
+            postProcessStageSteps(s, nodeMap);
+            if (s.getChildren() != null) {
+                postProcessAllStageSteps(s.getChildren(), nodeMap);
+            }
+        }
+    }
+
+    static void postProcessStageSteps(StageModel stage, Map<String, FlowNode> nodeMap) {
+        if (stage == null || stage.getSteps() == null || stage.getSteps().isEmpty()) {
+            return;
+        }
+
+        List<StepModel> steps = stage.getSteps();
+        Map<String, StepModel> stepById = new HashMap<>();
+        for (StepModel st : steps) {
+            stepById.put(st.getId(), st);
+            st.setSelfDurationMillis(st.getDurationMillis());
+            st.setDepth(0);
+            st.setParentStepId(null);
+            st.setBlock(false);
+            st.setClosure(false);
+            st.setChildStepsCount(0);
+        }
+
+        // 1. Determine immediate parent step for each step using enclosing IDs
+        for (StepModel st : steps) {
+            FlowNode fn = nodeMap != null ? nodeMap.get(st.getId()) : null;
+            if (fn != null) {
+                try {
+                    for (String encId : fn.getAllEnclosingIds()) {
+                        if (stepById.containsKey(encId) && !encId.equals(st.getId())) {
+                            st.setParentStepId(encId);
+                            break;
+                        }
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+
+        // 2. Build parent -> children map
+        Map<String, List<StepModel>> childrenMap = new LinkedHashMap<>();
+        for (StepModel st : steps) {
+            if (st.getParentStepId() != null) {
+                childrenMap.computeIfAbsent(st.getParentStepId(), k -> new ArrayList<>()).add(st);
+            }
+        }
+
+        // 3. Compute depth for each step
+        for (StepModel st : steps) {
+            int depth = 0;
+            String currParent = st.getParentStepId();
+            Set<String> visited = new HashSet<>();
+            while (currParent != null && visited.add(currParent)) {
+                depth++;
+                StepModel p = stepById.get(currParent);
+                currParent = (p != null) ? p.getParentStepId() : null;
+            }
+            st.setDepth(depth);
+        }
+
+        // 4. Mark closures and calculate self-duration
+        for (StepModel st : steps) {
+            List<StepModel> immediateChildren = childrenMap.get(st.getId());
+            if (immediateChildren != null && !immediateChildren.isEmpty()) {
+                st.setBlock(true);
+                st.setClosure(true);
+                st.setChildStepsCount(immediateChildren.size());
+
+                long childrenDurationSum = 0;
+                for (StepModel child : immediateChildren) {
+                    childrenDurationSum += child.getDurationMillis();
+                }
+                long selfDuration = Math.max(0, st.getDurationMillis() - childrenDurationSum);
+                st.setSelfDurationMillis(selfDuration);
+            }
+        }
     }
 
 

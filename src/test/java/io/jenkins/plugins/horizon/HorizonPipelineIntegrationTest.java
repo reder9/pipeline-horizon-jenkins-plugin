@@ -5,6 +5,7 @@ import io.jenkins.plugins.horizon.analysis.PipelineGraphAnalyzer;
 import io.jenkins.plugins.horizon.model.JobSummaryModel;
 import io.jenkins.plugins.horizon.model.RunDetailsModel;
 import io.jenkins.plugins.horizon.model.StageModel;
+import io.jenkins.plugins.horizon.model.StepModel;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -294,6 +295,58 @@ class HorizonPipelineIntegrationTest {
         StageModel validation = stages.stream()
                 .filter(s -> s.getName().equals("Validation")).findFirst().orElseThrow();
         assertTrue(validation.getChildren().size() == 2, "Two parallel branches expected");
+    }
+
+    @Test
+    void testClosureStepsHierarchyAndSelfDuration(JenkinsRule jenkins) throws Exception {
+        WorkflowJob job = jenkins.createProject(WorkflowJob.class, "closure-hierarchy-job");
+        job.setDefinition(new CpsFlowDefinition(
+                "node {\n" +
+                "    stage('Build') {\n" +
+                "        dir('target-sub') {\n" +
+                "            withEnv(['TEST_VAR=horizon']) {\n" +
+                "                echo 'Inside nested closure'\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "}", true));
+
+        WorkflowRun build = jenkins.buildAndAssertStatus(Result.SUCCESS, job);
+        RunDetailsModel details = PipelineGraphAnalyzer.buildRunDetails(build);
+        List<StageModel> stages = details.getStages();
+        assertNotNull(stages);
+        assertEquals(1, stages.size());
+
+        StageModel buildStage = stages.get(0);
+        List<StepModel> steps = buildStage.getSteps();
+        assertNotNull(steps);
+        assertEquals(3, steps.size(), "Should have dir, withEnv, and echo steps");
+
+        StepModel dirStep = steps.get(0);
+        StepModel withEnvStep = steps.get(1);
+        StepModel echoStep = steps.get(2);
+
+        assertEquals("dir", dirStep.getName());
+        assertTrue(dirStep.isBlock());
+        assertTrue(dirStep.isClosure());
+        assertEquals(0, dirStep.getDepth());
+        assertFalse(dirStep.getDisplayName().endsWith(": Start"));
+
+        assertEquals("withEnv", withEnvStep.getName());
+        assertTrue(withEnvStep.isBlock());
+        assertTrue(withEnvStep.isClosure());
+        assertEquals(1, withEnvStep.getDepth());
+        assertEquals(dirStep.getId(), withEnvStep.getParentStepId());
+        assertFalse(withEnvStep.getDisplayName().endsWith(": Start"));
+
+        assertEquals("echo", echoStep.getName());
+        assertFalse(echoStep.isBlock());
+        assertFalse(echoStep.isClosure());
+        assertEquals(2, echoStep.getDepth());
+        assertEquals(withEnvStep.getId(), echoStep.getParentStepId());
+
+        assertTrue(withEnvStep.getSelfDurationMillis() >= 0);
+        assertTrue(dirStep.getSelfDurationMillis() >= 0);
     }
 }
 

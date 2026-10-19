@@ -25,11 +25,23 @@ class StageAndStepModelTest {
         step.setOptional(false);
         step.setError("");
 
+        step.setBlock(true);
+        step.setSelfDurationMillis(120L);
+        step.setDepth(2);
+        step.setParentStepId("40");
+        step.setChildStepsCount(3);
+
         assertEquals("42", step.getId());
         assertEquals("sh", step.getName());
         assertEquals("Shell Script", step.getDisplayName());
         assertEquals("SUCCESS", step.getStatus());
         assertEquals(2300L, step.getDurationMillis());
+        assertEquals(120L, step.getSelfDurationMillis());
+        assertTrue(step.isBlock());
+        assertTrue(step.isClosure());
+        assertEquals(2, step.getDepth());
+        assertEquals("40", step.getParentStepId());
+        assertEquals(3, step.getChildStepsCount());
         assertEquals(1700000002000L, step.getStartTimeMillis());
         assertTrue(step.isHasLogs());
         assertFalse(step.isOptional());

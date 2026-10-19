@@ -4509,6 +4509,43 @@
                         font-size: 0.815rem;
                         color: #94a3b8;
                     }
+                    .step-closure-badge {
+                        display: inline-flex;
+                        align-items: center;
+                        font-size: 0.62rem;
+                        font-weight: 700;
+                        letter-spacing: 0.04em;
+                        text-transform: uppercase;
+                        padding: 1px 5px;
+                        border-radius: 4px;
+                        background: rgba(56, 189, 248, 0.12);
+                        color: #38bdf8;
+                        border: 1px solid rgba(56, 189, 248, 0.28);
+                        margin-left: 0.35rem;
+                        line-height: 1.2;
+                        flex-shrink: 0;
+                    }
+                    .step-tree-elbow {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: #64748b;
+                        margin-right: 0.25rem;
+                        flex-shrink: 0;
+                    }
+                    .step-duration-closure {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.35rem;
+                    }
+                    .step-self-dur {
+                        color: #38bdf8;
+                        font-weight: 600;
+                    }
+                    .step-total-dur {
+                        color: #64748b;
+                        font-size: 0.75rem;
+                    }
                     .step-external-link {
                         color: #64748b;
                         display: inline-flex;
@@ -5337,6 +5374,20 @@
                     .horizon-container:not(.theme-dark) .step-duration {
                         color: #334155;
                         font-weight: 600;
+                    }
+                    .horizon-container:not(.theme-dark) .step-closure-badge {
+                        background: #e0f2fe;
+                        color: #0284c7;
+                        border-color: #bae6fd;
+                    }
+                    .horizon-container:not(.theme-dark) .step-tree-elbow {
+                        color: #94a3b8;
+                    }
+                    .horizon-container:not(.theme-dark) .step-self-dur {
+                        color: #0284c7;
+                    }
+                    .horizon-container:not(.theme-dark) .step-total-dur {
+                        color: #64748b;
                     }
                     .horizon-container:not(.theme-dark) .horizon-modal-dialog {
                         background: #ffffff;
@@ -11622,11 +11673,22 @@
                             ? '&lt;span class="stage-banner-badge stage-badge-optional" style="margin-left:0.3rem;"&gt;OPT&lt;/span&gt;' : '';
                         var pausedBadge = (st === 'PAUSED_INPUT')
                             ? '&lt;button type="button" class="btn-input-proceed" style="padding:2px 8px; font-size:0.68rem; margin-left:0.4rem;" onclick="event.stopPropagation(); openInputApprovalModal(0);"&gt;Review Input&lt;/button&gt;' : '';
+                        var closureBadge = (step.closure || step.block)
+                            ? ('&lt;span class="step-closure-badge" title="Closure block step enclosing ' + (step.childStepsCount || 'nested') + ' step' + (step.childStepsCount === 1 ? '' : 's') + '"&gt;CLOSURE&lt;/span&gt;') : '';
+
+                        var depth = Math.min(step.depth || 0, 4);
+                        var rowStyle = (depth &gt; 0) ? ('padding-left:' + (1.0 + (depth * 1.25)) + 'rem;') : '';
+                        var treeBranch = (depth &gt; 0)
+                            ? '&lt;span class="step-tree-elbow" title="Nested inside enclosing block step"&gt;&lt;svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;path d="M4 1v9a2 2 0 0 0 2 2h8"/&gt;&lt;/svg&gt;&lt;/span&gt;'
+                            : '';
 
                         html += '&lt;div class="step-accordion-item" id="step-item-' + step.id + '"&gt;';
                         // Accordion Row
-                        html += '&lt;div class="accordion-step-row" id="step-row-' + step.id + '" role="button" tabindex="0" aria-expanded="false" aria-controls="step-log-' + step.id + '" onclick="toggleStepAccordion(\'' + step.id + '\')" onkeydown="handleStepRowKey(event, \'' + step.id + '\')"&gt;';
+                        html += '&lt;div class="accordion-step-row" id="step-row-' + step.id + '" style="' + rowStyle + '" role="button" tabindex="0" aria-expanded="false" aria-controls="step-log-' + step.id + '" onclick="toggleStepAccordion(\'' + step.id + '\')" onkeydown="handleStepRowKey(event, \'' + step.id + '\')"&gt;';
                         html += '&lt;div class="accordion-step-left"&gt;';
+                        if (treeBranch) {
+                            html += treeBranch;
+                        }
                         html += '&lt;span class="step-status-icon"&gt;' + statusIcon + '&lt;/span&gt;';
                         if (glyphSvg) {
                             html += '&lt;span class="step-glyph"&gt;' + glyphSvg + '&lt;/span&gt;';
@@ -11635,12 +11697,22 @@
                         if (argsStr) {
                             html += '&lt;span class="step-args" title="' + escapeHtml(argsStr) + '"&gt;' + escapeHtml(argsStr) + '&lt;/span&gt;';
                         }
-                        html += optBadge + pausedBadge;
+                        html += optBadge + pausedBadge + closureBadge;
                         html += '&lt;span class="step-chevron"&gt;&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;polyline points="9 18 15 12 9 6"/&gt;&lt;/svg&gt;&lt;/span&gt;';
                         html += '&lt;/div&gt;';
 
                         html += '&lt;div class="accordion-step-right"&gt;';
-                        html += '&lt;span class="step-duration"&gt;' + formatStepDuration(step.durationMillis) + '&lt;/span&gt;';
+                        if ((step.closure || step.block) &amp;&amp; (step.childStepsCount &gt; 0 || (step.durationMillis &gt; 0 &amp;&amp; step.selfDurationMillis !== undefined &amp;&amp; step.selfDurationMillis &lt; step.durationMillis))) {
+                            var totalFmt = formatStepDuration(step.durationMillis);
+                            var selfFmt = formatStepDuration(step.selfDurationMillis || 0);
+                            var closureTip = 'Closure block total: ' + totalFmt + ' (includes ' + (step.childStepsCount || 'nested') + ' step' + (step.childStepsCount === 1 ? '' : 's') + ') · Self execution time: ' + selfFmt;
+                            html += '&lt;span class="step-duration step-duration-closure" title="' + escapeHtml(closureTip) + '"&gt;' +
+                                    '&lt;span class="step-self-dur"&gt;' + selfFmt + ' self&lt;/span&gt; ' +
+                                    '&lt;span class="step-total-dur"&gt;(' + totalFmt + ' total)&lt;/span&gt;' +
+                                    '&lt;/span&gt;';
+                        } else {
+                            html += '&lt;span class="step-duration"&gt;' + formatStepDuration(step.durationMillis) + '&lt;/span&gt;';
+                        }
                         html += '&lt;a href="' + classicLogUrl + '" target="_blank" class="step-external-link" title="Open classic step log in new tab" onclick="event.stopPropagation();"&gt;';
                         html += '&lt;svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/&gt;&lt;polyline points="15 3 21 3 21 9"/&gt;&lt;line x1="10" y1="14" x2="21" y2="3"/&gt;&lt;/svg&gt;';
                         html += '&lt;/a&gt;';
