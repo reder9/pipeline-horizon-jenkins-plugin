@@ -8132,6 +8132,12 @@
                             var minWrapScale = (availableW / (maxColW + 64));
                             fitScale = Math.min(fitScale, Math.max(0.6, minWrapScale));
                         }
+                        // Fit the whole wrapped graph into the visible height when possible without
+                        // becoming unreadable (floor 0.7), so first load looks as intentional as Canvas Flow.
+                        var wrapNaturalH = canvas.scrollHeight;
+                        if (wrapNaturalH > 0 &amp;&amp; availableH > 0 &amp;&amp; wrapNaturalH * fitScale > availableH) {
+                            fitScale = Math.min(fitScale, Math.max(0.7, availableH / wrapNaturalH));
+                        }
                     } else {
                         // In Canvas Flow (horizontal scroll) view:
                         // Scale so the entire pipeline fits comfortably from Start to End
