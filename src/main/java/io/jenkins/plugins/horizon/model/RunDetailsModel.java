@@ -18,6 +18,14 @@ public class RunDetailsModel extends RunSummaryModel {
     private boolean replayEnabled;
     private boolean rebuildEnabled;
     private String originalScript;
+    /** Whether the current payload includes individual test-case rows. */
+    private boolean testCasesLoaded;
+    /** Whether the current payload includes archived-artifact metadata. */
+    private boolean artifactsLoaded;
+    /** Whether the current payload includes the original replay script. */
+    private boolean replayScriptLoaded;
+    /** Whether the current payload includes historical stage-duration trends. */
+    private boolean stageTrendsLoaded;
 
     public RunDetailsModel() {
     }
@@ -132,6 +140,38 @@ public class RunDetailsModel extends RunSummaryModel {
 
     public void setOriginalScript(String originalScript) {
         this.originalScript = originalScript;
+    }
+
+    public boolean isTestCasesLoaded() {
+        return testCasesLoaded;
+    }
+
+    public void setTestCasesLoaded(boolean testCasesLoaded) {
+        this.testCasesLoaded = testCasesLoaded;
+    }
+
+    public boolean isArtifactsLoaded() {
+        return artifactsLoaded;
+    }
+
+    public void setArtifactsLoaded(boolean artifactsLoaded) {
+        this.artifactsLoaded = artifactsLoaded;
+    }
+
+    public boolean isReplayScriptLoaded() {
+        return replayScriptLoaded;
+    }
+
+    public void setReplayScriptLoaded(boolean replayScriptLoaded) {
+        this.replayScriptLoaded = replayScriptLoaded;
+    }
+
+    public boolean isStageTrendsLoaded() {
+        return stageTrendsLoaded;
+    }
+
+    public void setStageTrendsLoaded(boolean stageTrendsLoaded) {
+        this.stageTrendsLoaded = stageTrendsLoaded;
     }
 
     private List<ArtifactModel> artifacts = new ArrayList<>();

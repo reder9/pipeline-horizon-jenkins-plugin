@@ -348,5 +348,53 @@ class HorizonPipelineIntegrationTest {
         assertTrue(withEnvStep.getSelfDurationMillis() >= 0);
         assertTrue(dirStep.getSelfDurationMillis() >= 0);
     }
+
+    @Test
+    void testCanvasScopeAndProgressiveDetailSections(JenkinsRule jenkins) throws Exception {
+        WorkflowJob job = jenkins.createProject(WorkflowJob.class, "progressive-canvas-job");
+        job.setDefinition(new CpsFlowDefinition(
+                "node {\n" +
+                "    stage('Build') {\n" +
+                "        writeFile file: 'out/hello.txt', text: 'hello progressive world'\n" +
+                "        archiveArtifacts artifacts: 'out/**'\n" +
+                "    }\n" +
+                "    stage('Verify') {\n" +
+                "        echo 'Done'\n" +
+                "    }\n" +
+                "}", true));
+
+        jenkins.buildAndAssertStatus(Result.SUCCESS, job);
+        WorkflowRun build2 = jenkins.buildAndAssertStatus(Result.SUCCESS, job);
+
+        RunDetailsModel canvasDetails = PipelineGraphAnalyzer.buildRunDetails(
+                build2, PipelineGraphAnalyzer.AnalysisScope.CANVAS);
+        assertNotNull(canvasDetails);
+        assertEquals(2, canvasDetails.getStages().size());
+        assertFalse(canvasDetails.isTestCasesLoaded());
+        assertFalse(canvasDetails.isArtifactsLoaded());
+        assertFalse(canvasDetails.isReplayScriptLoaded());
+        assertFalse(canvasDetails.isStageTrendsLoaded());
+
+        JenkinsRule.WebClient wc = jenkins.createWebClient();
+        String canvasJson = wc.goTo("job/progressive-canvas-job/2/horizon/apiGraph?view=canvas", "application/json")
+                .getWebResponse().getContentAsString();
+        assertTrue(canvasJson.contains("\"artifactsLoaded\":false"));
+        assertTrue(canvasJson.contains("\"stageTrendsLoaded\":false"));
+
+        String artifactsJson = wc.goTo("job/progressive-canvas-job/2/horizon/apiDetails?section=artifacts", "application/json")
+                .getWebResponse().getContentAsString();
+        assertTrue(artifactsJson.contains("\"section\":\"artifacts\""));
+        assertTrue(artifactsJson.contains("hello.txt"));
+
+        String trendsJson = wc.goTo("job/progressive-canvas-job/2/horizon/apiDetails?section=trends", "application/json")
+                .getWebResponse().getContentAsString();
+        assertTrue(trendsJson.contains("\"section\":\"trends\""));
+        assertTrue(trendsJson.contains("\"stageTrends\""));
+
+        String replayJson = wc.goTo("job/progressive-canvas-job/2/horizon/apiDetails?section=replay", "application/json")
+                .getWebResponse().getContentAsString();
+        assertTrue(replayJson.contains("\"section\":\"replay\""));
+        assertTrue(replayJson.contains("hello progressive world"));
+    }
 }
 

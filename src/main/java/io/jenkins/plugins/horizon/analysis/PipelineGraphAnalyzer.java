@@ -4,13 +4,16 @@ import hudson.model.Result;
 import hudson.scm.ChangeLogSet;
 import hudson.tasks.test.AbstractTestResultAction;
 import io.jenkins.plugins.horizon.model.ArtifactModel;
+import io.jenkins.plugins.horizon.model.BuildParameterModel;
 import io.jenkins.plugins.horizon.model.JobParameterModel;
 import io.jenkins.plugins.horizon.model.JobSummaryModel;
 import io.jenkins.plugins.horizon.model.PendingInputModel;
 import io.jenkins.plugins.horizon.model.QueueItemModel;
+import io.jenkins.plugins.horizon.model.RunDetailSectionModel;
 import io.jenkins.plugins.horizon.model.RunDetailsModel;
 import io.jenkins.plugins.horizon.model.RunSummaryModel;
 import io.jenkins.plugins.horizon.model.StageModel;
+import io.jenkins.plugins.horizon.model.StageTrendModel;
 import io.jenkins.plugins.horizon.model.StepModel;
 import io.jenkins.plugins.horizon.model.TestCaseModel;
 import io.jenkins.plugins.horizon.util.EncodingUtils;
@@ -42,20 +45,125 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PipelineGraphAnalyzer {
 
     private static final Logger LOGGER = Logger.getLogger(PipelineGraphAnalyzer.class.getName());
+    private static final Pattern ARCHIVE_ARTIFACTS_ARGUMENT = Pattern.compile(
+            "(?i)(?:^|[,\\s{])artifacts\\s*[:=]\\s*(?:'([^']*)'|\\\"([^\\\"]*)\\\"|([^,}]+))");
+
+    /**
+     * Historical stage averages are shared by live polling requests. The previous implementation
+     * re-traversed up to ten completed FlowGraphs every time a running build refreshed, even
+     * though that history cannot change until a new build completes.
+     */
+    private static final Map<String, StageHistorySnapshot> STAGE_HISTORY_CACHE =
+            Collections.synchronizedMap(new LinkedHashMap<String, StageHistorySnapshot>(128, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, StageHistorySnapshot> eldest) {
+                    return size() > 128;
+                }
+            });
+
+    /**
+     * Per-build cache of stage durations for completed runs, keyed by {@code run.getExternalizableId()}.
+     * Ensures each historical build's {@code FlowExecution} is scanned at most once across the JVM lifetime.
+     */
+    private static final Map<String, Map<String, List<Long>>> COMPLETED_RUN_STAGE_DURATIONS_CACHE =
+            Collections.synchronizedMap(new LinkedHashMap<String, Map<String, List<Long>>>(256, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, Map<String, List<Long>>> eldest) {
+                    return size() > 512;
+                }
+            });
+
+    /**
+     * Bounded LRU cache of immutable {@link RunSummaryModel} instances for completed builds,
+     * keyed by {@code run.getExternalizableId()}. Avoids re-parsing changelogs, parameters,
+     * and SCM actions across 30 builds on every Job summary poll.
+     */
+    private static final Map<String, RunSummaryModel> COMPLETED_RUN_SUMMARY_CACHE =
+            Collections.synchronizedMap(new LinkedHashMap<String, RunSummaryModel>(256, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, RunSummaryModel> eldest) {
+                    return size() > 512;
+                }
+            });
+
+    public static void clearCaches() {
+        STAGE_HISTORY_CACHE.clear();
+        COMPLETED_RUN_STAGE_DURATIONS_CACHE.clear();
+        COMPLETED_RUN_SUMMARY_CACHE.clear();
+    }
+
+    private static final class StageHistorySnapshot {
+        private final int lastCompletedBuildNumber;
+        private final Map<String, List<Long>> durationsByStage;
+
+        private StageHistorySnapshot(int lastCompletedBuildNumber, Map<String, List<Long>> durationsByStage) {
+            this.lastCompletedBuildNumber = lastCompletedBuildNumber;
+            this.durationsByStage = durationsByStage;
+        }
+    }
+
+    /**
+     * Keeps the first canvas response focused on the data required to draw and
+     * interact with the execution graph. The remaining sections have focused,
+     * on-demand endpoints in {@code HorizonRunAction}.
+     */
+    public enum AnalysisScope {
+        FULL(true, true, true, true),
+        CANVAS(false, false, false, false);
+
+        private final boolean includeTestCases;
+        private final boolean includeArtifacts;
+        private final boolean includeStageTrends;
+        private final boolean includeOriginalScript;
+
+        AnalysisScope(boolean includeTestCases, boolean includeArtifacts,
+                      boolean includeStageTrends, boolean includeOriginalScript) {
+            this.includeTestCases = includeTestCases;
+            this.includeArtifacts = includeArtifacts;
+            this.includeStageTrends = includeStageTrends;
+            this.includeOriginalScript = includeOriginalScript;
+        }
+    }
+
+    private static final class ArtifactSummary {
+        private final List<ArtifactModel> artifacts;
+        private final long totalSize;
+
+        private ArtifactSummary(List<ArtifactModel> artifacts, long totalSize) {
+            this.artifacts = artifacts;
+            this.totalSize = totalSize;
+        }
+    }
 
     /**
      * Builds full details and graph representation for a specific build run.
      */
     public static RunDetailsModel buildRunDetails(WorkflowRun run) {
+        return buildRunDetails(run, AnalysisScope.FULL);
+    }
+
+    /**
+     * Builds only the information required for the initial pipeline canvas.
+     * Large test, artifact, replay, and historical-trend payloads are fetched
+     * separately once a user asks to see them.
+     */
+    public static RunDetailsModel buildCanvasDetails(WorkflowRun run) {
+        return buildRunDetails(run, AnalysisScope.CANVAS);
+    }
+
+    public static RunDetailsModel buildRunDetails(WorkflowRun run, AnalysisScope scope) {
         if (run == null) {
             return new RunDetailsModel();
         }
@@ -63,6 +171,10 @@ public class PipelineGraphAnalyzer {
             LOGGER.log(Level.FINE, "Analyzing pipeline graph for build {0}", run.getFullDisplayName());
         }
         RunDetailsModel details = new RunDetailsModel();
+        details.setTestCasesLoaded(scope.includeTestCases);
+        details.setArtifactsLoaded(scope.includeArtifacts);
+        details.setReplayScriptLoaded(scope.includeOriginalScript);
+        details.setStageTrendsLoaded(scope.includeStageTrends);
         populateSummaryMetadata(run, details);
         details.setAbortEnabled(run.isBuilding());
 
@@ -83,7 +195,9 @@ public class PipelineGraphAnalyzer {
                 details.setTotalTests(testAction.getTotalCount());
                 details.setFailedTests(testAction.getFailCount());
                 details.setSkippedTests(testAction.getSkipCount());
-                extractTestCases(testAction, details);
+                if (scope.includeTestCases) {
+                    details.setTestCases(extractTestCases(testAction));
+                }
             }
         } catch (Throwable ignored) {
         }
@@ -213,47 +327,81 @@ public class PipelineGraphAnalyzer {
             }
         }));
 
+        if (!run.isBuilding()) {
+            try {
+                String runExtId = run.getExternalizableId();
+                if (!COMPLETED_RUN_STAGE_DURATIONS_CACHE.containsKey(runExtId)) {
+                    Map<String, List<Long>> runStageDurations = new HashMap<>();
+                    for (StageModel s : rawStages) {
+                        if (s.getName() != null && s.getDurationMillis() > 0L) {
+                            runStageDurations.computeIfAbsent(s.getName(), k -> new ArrayList<>()).add(s.getDurationMillis());
+                        }
+                    }
+                    COMPLETED_RUN_STAGE_DURATIONS_CACHE.put(runExtId, runStageDurations);
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+
+        // Enclosure resolution is relatively expensive in workflow-api. Resolve it once per
+        // node and keep a stage lookup map so the step/stage pass is linear in the number of
+        // FlowNodes instead of repeating getAllEnclosingIds() for every stage.
+        Map<String, StageModel> stageById = new HashMap<>();
+        for (StageModel stage : rawStages) {
+            stageById.put(stage.getId(), stage);
+        }
+        Map<String, List<String>> enclosingIdsByNode = new HashMap<>();
+        for (FlowNode node : allNodes) {
+            try {
+                List<String> enclosing = node.getAllEnclosingIds();
+                enclosingIdsByNode.put(node.getId(), enclosing.isEmpty()
+                        ? Collections.emptyList()
+                        : new ArrayList<>(enclosing));
+            } catch (Throwable ignored) {
+                enclosingIdsByNode.put(node.getId(), Collections.emptyList());
+            }
+        }
+
         Map<String, List<String>> stageArtifactPatterns = new HashMap<>();
 
         // Collect steps within each stage
-        for (StageModel stage : rawStages) {
-            if (stage.getStatus() != null && stage.getStatus().startsWith("SKIPPED")) {
-                continue;
-            }
-
-            FlowNode startNode = nodeMap.get(stage.getId());
-            BlockEndNode endNode = startToEndMap.get(stage.getId());
-            long stageEndIndex = endNode != null ? Long.parseLong(endNode.getId()) : Long.MAX_VALUE;
-            long stageStartIndex = Long.parseLong(startNode.getId());
-
-            for (int i = 0; i < allNodes.size(); i++) {
-                FlowNode n = allNodes.get(i);
+        for (int i = 0; i < allNodes.size(); i++) {
+            FlowNode n = allNodes.get(i);
+            List<StageModel> enclosingStages = new ArrayList<>();
+            List<String> enclosingIds = enclosingIdsByNode.get(n.getId());
+            if (enclosingIds != null && !enclosingIds.isEmpty()) {
+                for (String enclosingId : enclosingIds) {
+                    StageModel stage = stageById.get(enclosingId);
+                    if (stage != null && (stage.getStatus() == null || !stage.getStatus().startsWith("SKIPPED"))) {
+                        enclosingStages.add(stage);
+                    }
+                }
+            } else {
+                // Preserve the old numeric-range fallback for synthetic/incomplete FlowGraphs.
                 long currentId;
                 try {
                     currentId = Long.parseLong(n.getId());
                 } catch (NumberFormatException e) {
                     continue;
                 }
-
-                boolean isEnclosed = false;
-                try {
-                    List<String> enclosing = n.getAllEnclosingIds();
-                    if (!enclosing.isEmpty()) {
-                        isEnclosed = enclosing.contains(stage.getId());
+                for (StageModel stage : rawStages) {
+                    if (stage.getStatus() != null && stage.getStatus().startsWith("SKIPPED")) {
+                        continue;
                     }
-                } catch (Throwable ignored) {}
-
-                if (!isEnclosed) {
                     try {
-                        if (n.getAllEnclosingIds().isEmpty()) {
-                            isEnclosed = (currentId > stageStartIndex && currentId < stageEndIndex);
+                        FlowNode startNode = nodeMap.get(stage.getId());
+                        BlockEndNode endNode = startToEndMap.get(stage.getId());
+                        long stageStartIndex = Long.parseLong(startNode.getId());
+                        long stageEndIndex = endNode != null ? Long.parseLong(endNode.getId()) : Long.MAX_VALUE;
+                        if (currentId > stageStartIndex && currentId < stageEndIndex) {
+                            enclosingStages.add(stage);
                         }
-                    } catch (Throwable ignored) {
-                        isEnclosed = (currentId > stageStartIndex && currentId < stageEndIndex);
+                    } catch (RuntimeException ignored) {
                     }
                 }
+            }
 
-                if (isEnclosed) {
+            for (StageModel stage : enclosingStages) {
                     WorkspaceAction wa = n.getAction(WorkspaceAction.class);
                     if (wa != null) {
                         String stageAgent = formatAgentName(wa.getNode());
@@ -261,7 +409,7 @@ public class PipelineGraphAnalyzer {
                         allAgentsUsed.add(stageAgent);
                     }
 
-                    if (isArchiveArtifactsStep(n)) {
+                    if (scope.includeArtifacts && isArchiveArtifactsStep(n)) {
                         String pattern = extractArchivePattern(n);
                         stageArtifactPatterns.computeIfAbsent(stage.getId(), k -> new ArrayList<>()).add(pattern);
                     }
@@ -285,7 +433,6 @@ public class PipelineGraphAnalyzer {
                             stage.setOptional(true);
                         }
                     }
-                }
             }
         }
 
@@ -306,33 +453,30 @@ public class PipelineGraphAnalyzer {
         boolean runWaitingForAgent = false;
         String runWaitingReason = null;
 
+        // Index body nodes once. The previous implementation searched the remainder of the
+        // graph for every node step start, which made large fan-out pipelines quadratic.
+        Map<String, StepStartNode> bodyNodeByEnclosingId = new HashMap<>();
+        for (FlowNode candidate : allNodes) {
+            if (!(candidate instanceof StepStartNode) || !((StepStartNode) candidate).isBody()) {
+                continue;
+            }
+            StepStartNode bodyNode = (StepStartNode) candidate;
+            try {
+                for (FlowNode parent : candidate.getParents()) {
+                    bodyNodeByEnclosingId.putIfAbsent(parent.getId(), bodyNode);
+                }
+                for (BlockStartNode enclosing : candidate.iterateEnclosingBlocks()) {
+                    bodyNodeByEnclosingId.putIfAbsent(enclosing.getId(), bodyNode);
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+
         for (int i = 0; i < allNodes.size(); i++) {
             FlowNode n = allNodes.get(i);
             if (isNodeStepStart(n)) {
                 long reqStart = TimingAction.getStartTime(n);
-                StepStartNode bodyNode = null;
-
-                for (int j = i + 1; j < allNodes.size(); j++) {
-                    FlowNode candidate = allNodes.get(j);
-                    if (candidate instanceof StepStartNode && ((StepStartNode) candidate).isBody()) {
-                        try {
-                            if (candidate.getParents().contains(n)) {
-                                bodyNode = (StepStartNode) candidate;
-                                break;
-                            }
-                            for (BlockStartNode bsn : candidate.iterateEnclosingBlocks()) {
-                                if (bsn.getId().equals(n.getId())) {
-                                    bodyNode = (StepStartNode) candidate;
-                                    break;
-                                }
-                            }
-                            if (bodyNode != null) {
-                                break;
-                            }
-                        } catch (Throwable ignored) {
-                        }
-                    }
-                }
+                StepStartNode bodyNode = bodyNodeByEnclosingId.get(n.getId());
 
                 long allocTime = 0L;
                 boolean isNodeQueued = false;
@@ -372,14 +516,9 @@ public class PipelineGraphAnalyzer {
                 // Associate with innermost enclosing stage if applicable
                 StageModel enclosingStage = null;
                 try {
-                    List<String> enclosingIds = n.getAllEnclosingIds();
-                    for (String encId : enclosingIds) {
-                        for (StageModel st : rawStages) {
-                            if (st.getId().equals(encId)) {
-                                enclosingStage = st;
-                                break;
-                            }
-                        }
+                    List<String> nodeEnclosingIds = enclosingIdsByNode.get(n.getId());
+                    for (String encId : nodeEnclosingIds) {
+                        enclosingStage = stageById.get(encId);
                         if (enclosingStage != null) {
                             break;
                         }
@@ -424,34 +563,15 @@ public class PipelineGraphAnalyzer {
         details.setQueueWaitMillis(combinedQueueWait);
         details.setFormattedQueueWait(formatDuration(combinedQueueWait));
 
-        // Archived Artifacts detection & per-stage mapping
-        try {
-            List<? extends hudson.model.Run<?, ?>.Artifact> rawArtifacts = run.getArtifacts();
-            if (!rawArtifacts.isEmpty()) {
-                List<ArtifactModel> artifactList = new ArrayList<>();
-                long totalSize = 0;
-                for (hudson.model.Run<?, ?>.Artifact a : rawArtifacts) {
-                    long size = a.getFileSize();
-                    totalSize += Math.max(0, size);
-                    String formatted = formatBytes(size);
-                    artifactList.add(new ArtifactModel(
-                            a.getFileName(),
-                            a.relativePath,
-                            a.getDisplayPath(),
-                            a.getHref(),
-                            size,
-                            formatted
-                    ));
-                }
-                details.setArtifacts(artifactList);
-                details.setArtifactCount(artifactList.size());
-                details.setTotalArtifactSize(totalSize);
-                details.setFormattedTotalArtifactSize(formatBytes(totalSize));
-
-                // Map artifacts directly to the stage that generated them
-                associateArtifactsWithStages(rawStages, artifactList, stageArtifactPatterns);
-            }
-        } catch (Throwable ignored) {
+        // Archived artifact enumeration can be expensive for builds with large archives.
+        // Retain it for the legacy/full API response, but defer it from the first canvas load.
+        if (scope.includeArtifacts) {
+            ArtifactSummary artifactSummary = collectArtifacts(run);
+            details.setArtifacts(artifactSummary.artifacts);
+            details.setArtifactCount(artifactSummary.artifacts.size());
+            details.setTotalArtifactSize(artifactSummary.totalSize);
+            details.setFormattedTotalArtifactSize(formatBytes(artifactSummary.totalSize));
+            associateArtifactsWithStages(rawStages, artifactSummary.artifacts, stageArtifactPatterns);
         }
 
         // Detect active InputStepExecutions and associate with stages & steps
@@ -518,8 +638,11 @@ public class PipelineGraphAnalyzer {
         details.setFailedSteps(failedStepsCount);
         details.setAgentsUsed(new ArrayList<>(allAgentsUsed));
 
-        // Compute Historical Stage Variance & Spikes
-        computeStageVariance(run, consolidatedStages);
+        // Historical comparisons require traversing prior FlowGraphs. They are useful,
+        // but not a prerequisite for an interactive first paint.
+        if (scope.includeStageTrends) {
+            applyStageTrends(consolidatedStages, buildStageTrends(run, consolidatedStages));
+        }
 
         // Restart Declarative Pipeline detection
         try {
@@ -550,7 +673,9 @@ public class PipelineGraphAnalyzer {
                     run.getAction(org.jenkinsci.plugins.workflow.cps.replay.ReplayAction.class);
             if (replayAction != null && replayAction.isEnabled()) {
                 details.setReplayEnabled(true);
-                details.setOriginalScript(EncodingUtils.fixMojibake(replayAction.getOriginalScript()));
+                if (scope.includeOriginalScript) {
+                    details.setOriginalScript(EncodingUtils.fixMojibake(replayAction.getOriginalScript()));
+                }
             }
         } catch (Throwable ignored) {
         }
@@ -561,80 +686,231 @@ public class PipelineGraphAnalyzer {
         return details;
     }
 
-    private static void computeStageVariance(WorkflowRun currentRun, List<StageModel> currentStages) {
-        if (currentStages == null || currentStages.isEmpty()) {
-            return;
+    /**
+     * Builds the optional data for a single deferred build-view section.
+     */
+    public static RunDetailSectionModel buildDetailSection(WorkflowRun run, String section,
+                                                           List<StageModel> stages) {
+        RunDetailSectionModel sectionDetails = new RunDetailSectionModel();
+        sectionDetails.setSection(section);
+        if (run == null || section == null) {
+            return sectionDetails;
+        }
+
+        if ("tests".equals(section)) {
+            try {
+                AbstractTestResultAction<?> testAction = run.getAction(AbstractTestResultAction.class);
+                if (testAction != null) {
+                    sectionDetails.setTestCases(extractTestCases(testAction));
+                }
+            } catch (Throwable ignored) {
+                // Individual test details are an enhancement; preserve the canvas if a test plugin misbehaves.
+            }
+        } else if ("artifacts".equals(section)) {
+            ArtifactSummary artifactSummary = collectArtifacts(run);
+            associateArtifactsWithStageIds(stages, artifactSummary.artifacts);
+            sectionDetails.setArtifacts(artifactSummary.artifacts);
+            sectionDetails.setArtifactCount(artifactSummary.artifacts.size());
+            sectionDetails.setTotalArtifactSize(artifactSummary.totalSize);
+            sectionDetails.setFormattedTotalArtifactSize(formatBytes(artifactSummary.totalSize));
+        } else if ("replay".equals(section)) {
+            try {
+                org.jenkinsci.plugins.workflow.cps.replay.ReplayAction replayAction =
+                        run.getAction(org.jenkinsci.plugins.workflow.cps.replay.ReplayAction.class);
+                if (replayAction != null && replayAction.isEnabled()) {
+                    sectionDetails.setOriginalScript(EncodingUtils.fixMojibake(replayAction.getOriginalScript()));
+                }
+            } catch (Throwable ignored) {
+                // A missing Replay plugin must not prevent the view from loading.
+            }
+        } else if ("trends".equals(section)) {
+            List<StageTrendModel> trends = buildStageTrends(run, stages);
+            applyStageTrends(stages, trends);
+            sectionDetails.setStageTrends(trends);
+        }
+        return sectionDetails;
+    }
+
+    /**
+     * Returns historical timing comparisons without mutating the cached canvas graph.
+     */
+    public static List<StageTrendModel> buildStageTrends(WorkflowRun currentRun,
+                                                         List<StageModel> currentStages) {
+        if (currentRun == null || currentStages == null || currentStages.isEmpty()) {
+            return Collections.emptyList();
         }
         try {
             WorkflowJob job = currentRun.getParent();
-            Map<String, List<Long>> historyMap = new HashMap<>();
-            int checked = 0;
-            for (WorkflowRun prev : job.getBuilds()) {
-                if (prev == null || prev.equals(currentRun) || prev.isBuilding()) {
-                    continue;
-                }
-                FlowExecution exec = prev.getExecution();
-                if (exec != null) {
-                    try {
-                        for (FlowNode n : new DepthFirstScanner().allNodes(exec)) {
-                            LabelAction la = n.getAction(LabelAction.class);
-                            if (la != null) {
-                                String disp = la.getDisplayName();
-                                if (disp != null) {
-                                    String name = disp.trim();
-                                    if (name.startsWith("Branch: ")) {
-                                        name = name.substring("Branch: ".length()).trim();
-                                    }
-                                    BlockEndNode end = (n instanceof BlockStartNode) ? ((BlockStartNode) n).getEndNode() : null;
-                                    long start = TimingAction.getStartTime(n);
-                                    long duration = 0L;
-                                    if (end != null) {
-                                        duration = Math.max(0L, TimingAction.getStartTime(end) - start);
-                                    }
-                                    if (duration > 0) {
-                                        historyMap.computeIfAbsent(name, k -> new ArrayList<>()).add(duration);
-                                    }
-                                }
-                            }
-                        }
-                    } catch (Throwable ignored) {}
-                }
-                if (++checked >= 10) {
-                    break;
-                }
+            WorkflowRun lastCompleted = job.getLastCompletedBuild();
+            int lastCompletedBuildNumber = lastCompleted != null ? lastCompleted.getNumber() : -1;
+            String historyKey = job.getFullName() + "#" + currentRun.getNumber();
+            StageHistorySnapshot cached = STAGE_HISTORY_CACHE.get(historyKey);
+            Map<String, List<Long>> historyMap;
+            if (cached != null && cached.lastCompletedBuildNumber == lastCompletedBuildNumber) {
+                historyMap = cached.durationsByStage;
+            } else {
+                historyMap = collectStageHistory(currentRun, job);
+                STAGE_HISTORY_CACHE.put(historyKey, new StageHistorySnapshot(lastCompletedBuildNumber, historyMap));
             }
 
-            for (StageModel s : currentStages) {
-                applyVariance(s, historyMap);
-                if (s.getChildren() != null) {
-                    for (StageModel child : s.getChildren()) {
-                        applyVariance(child, historyMap);
-                    }
-                }
-            }
-        } catch (Throwable ignored) {}
+            List<StageTrendModel> trends = new ArrayList<>();
+            collectStageTrends(currentStages, historyMap, trends);
+            return trends;
+        } catch (Throwable ignored) {
+            return Collections.emptyList();
+        }
     }
 
-    private static void applyVariance(StageModel stage, Map<String, List<Long>> historyMap) {
-        List<Long> past = historyMap.get(stage.getName());
-        if (past != null && !past.isEmpty() && stage.getDurationMillis() > 0) {
-            long sum = 0L;
-            for (Long d : past) {
-                sum += d;
+    private static Map<String, List<Long>> collectStageHistory(WorkflowRun currentRun, WorkflowJob job) {
+        Map<String, List<Long>> historyMap = new HashMap<>();
+        int checked = 0;
+        int inspected = 0;
+        for (WorkflowRun previousRun : job.getBuilds()) {
+            if (previousRun == null || previousRun.equals(currentRun)) {
+                continue;
             }
-            long avg = sum / past.size();
-            stage.setAvgDurationMillis(avg);
-            if (avg > 0) {
-                double diff = (double) (stage.getDurationMillis() - avg);
-                double pct = (diff / (double) avg) * 100.0;
-                stage.setVariancePercent(pct);
-                stage.setFormattedVariance(String.format(java.util.Locale.ROOT, "%+.0f%%", pct));
-                if (pct >= 30.0 && diff >= 3000.0) {
-                    stage.setSpike(true);
-                } else if (pct <= -20.0 && diff <= -3000.0) {
-                    stage.setFaster(true);
+            if (++inspected > 15) {
+                break;
+            }
+            if (previousRun.isBuilding()) {
+                continue;
+            }
+            String prevExtId = null;
+            try {
+                prevExtId = previousRun.getExternalizableId();
+            } catch (Throwable ignored) {
+            }
+            Map<String, List<Long>> perRunDurations = prevExtId != null
+                    ? COMPLETED_RUN_STAGE_DURATIONS_CACHE.get(prevExtId)
+                    : null;
+            if (perRunDurations == null) {
+                perRunDurations = extractStageDurationsForRun(previousRun);
+                if (prevExtId != null) {
+                    COMPLETED_RUN_STAGE_DURATIONS_CACHE.put(prevExtId, perRunDurations);
                 }
             }
+            for (Map.Entry<String, List<Long>> entry : perRunDurations.entrySet()) {
+                List<Long> durs = entry.getValue();
+                if (durs != null && !durs.isEmpty()) {
+                    historyMap.computeIfAbsent(entry.getKey(), key -> new ArrayList<>()).addAll(durs);
+                }
+            }
+            if (++checked >= 10) {
+                break;
+            }
+        }
+        return historyMap;
+    }
+
+    private static Map<String, List<Long>> extractStageDurationsForRun(WorkflowRun previousRun) {
+        Map<String, List<Long>> runDurations = new HashMap<>();
+        FlowExecution exec = previousRun.getExecution();
+        if (exec != null) {
+            try {
+                for (FlowNode node : new DepthFirstScanner().allNodes(exec)) {
+                    if (!(node instanceof BlockStartNode)) {
+                        continue;
+                    }
+                    LabelAction labelAction = node.getAction(LabelAction.class);
+                    if (labelAction == null) {
+                        continue;
+                    }
+                    String displayName = labelAction.getDisplayName();
+                    if (displayName == null) {
+                        continue;
+                    }
+                    String stageName = displayName.trim();
+                    if (stageName.startsWith("Branch: ")) {
+                        stageName = stageName.substring("Branch: ".length()).trim();
+                    }
+                    BlockEndNode end = ((BlockStartNode) node).getEndNode();
+                    long start = TimingAction.getStartTime(node);
+                    long duration = end != null
+                            ? Math.max(0L, TimingAction.getStartTime(end) - start) : 0L;
+                    if (duration > 0L) {
+                        runDurations.computeIfAbsent(stageName, key -> new ArrayList<>()).add(duration);
+                    }
+                }
+            } catch (Throwable ignored) {
+                // A corrupted or partially discarded historical FlowGraph is safely skipped.
+            }
+        }
+        return runDurations;
+    }
+
+    private static void collectStageTrends(List<StageModel> stages, Map<String, List<Long>> historyMap,
+                                           List<StageTrendModel> trends) {
+        if (stages == null) {
+            return;
+        }
+        for (StageModel stage : stages) {
+            StageTrendModel trend = calculateStageTrend(stage, historyMap);
+            if (trend != null) {
+                trends.add(trend);
+            }
+            collectStageTrends(stage.getChildren(), historyMap, trends);
+        }
+    }
+
+    private static StageTrendModel calculateStageTrend(StageModel stage, Map<String, List<Long>> historyMap) {
+        if (stage == null || stage.getName() == null || stage.getDurationMillis() <= 0L) {
+            return null;
+        }
+        List<Long> priorDurations = historyMap.get(stage.getName());
+        if (priorDurations == null || priorDurations.isEmpty()) {
+            return null;
+        }
+        long total = 0L;
+        for (Long duration : priorDurations) {
+            if (duration != null) {
+                total += duration;
+            }
+        }
+        long average = total / priorDurations.size();
+        if (average <= 0L) {
+            return null;
+        }
+
+        double difference = (double) (stage.getDurationMillis() - average);
+        double percentage = (difference / (double) average) * 100.0;
+        StageTrendModel trend = new StageTrendModel();
+        trend.setStageId(stage.getId());
+        trend.setAvgDurationMillis(average);
+        trend.setVariancePercent(percentage);
+        trend.setFormattedVariance(String.format(java.util.Locale.ROOT, "%+.0f%%", percentage));
+        trend.setSpike(percentage >= 30.0 && difference >= 3000.0);
+        trend.setFaster(percentage <= -20.0 && difference <= -3000.0);
+        return trend;
+    }
+
+    private static void applyStageTrends(List<StageModel> stages, List<StageTrendModel> trends) {
+        if (stages == null || stages.isEmpty() || trends == null || trends.isEmpty()) {
+            return;
+        }
+        Map<String, StageTrendModel> trendsByStageId = new HashMap<>();
+        for (StageTrendModel trend : trends) {
+            if (trend != null && trend.getStageId() != null) {
+                trendsByStageId.put(trend.getStageId(), trend);
+            }
+        }
+        applyStageTrends(stages, trendsByStageId);
+    }
+
+    private static void applyStageTrends(List<StageModel> stages,
+                                         Map<String, StageTrendModel> trendsByStageId) {
+        if (stages == null) {
+            return;
+        }
+        for (StageModel stage : stages) {
+            StageTrendModel trend = trendsByStageId.get(stage.getId());
+            if (trend != null) {
+                stage.setAvgDurationMillis(trend.getAvgDurationMillis());
+                stage.setVariancePercent(trend.getVariancePercent());
+                stage.setFormattedVariance(trend.getFormattedVariance());
+                stage.setSpike(trend.isSpike());
+                stage.setFaster(trend.isFaster());
+            }
+            applyStageTrends(stage.getChildren(), trendsByStageId);
         }
     }
 
@@ -706,16 +982,14 @@ public class PipelineGraphAnalyzer {
             }
         }
 
-        // Collect recent runs (up to 30)
+        // Collect recent runs (up to 30), using cached RunSummaryModel for completed builds
         List<RunSummaryModel> runs = new ArrayList<>();
         int count = 0;
         for (WorkflowRun r : job.getBuilds()) {
             if (count++ >= 30) {
                 break;
             }
-            RunSummaryModel runSum = new RunSummaryModel();
-            populateSummaryMetadata(r, runSum);
-            runs.add(runSum);
+            runs.add(getOrBuildRunSummary(r));
         }
         model.setRuns(runs);
 
@@ -746,8 +1020,21 @@ public class PipelineGraphAnalyzer {
 
                             if (item.getCauses() != null) {
                                 for (hudson.model.Cause c : item.getCauses()) {
-                                    if (c != null && c.getShortDescription() != null) {
-                                        qm.getCauses().add(c.getShortDescription());
+                                    if (c != null) {
+                                        if (c.getShortDescription() != null) {
+                                            qm.getCauses().add(c.getShortDescription());
+                                        }
+                                        if (qm.getTriggeredByUserId() == null && c instanceof hudson.model.Cause.UserIdCause) {
+                                            hudson.model.Cause.UserIdCause uic = (hudson.model.Cause.UserIdCause) c;
+                                            String uId = uic.getUserId();
+                                            if (uId != null) {
+                                                qm.setTriggeredByUserId(uId);
+                                                if (!uId.trim().isEmpty()) {
+                                                    qm.setTriggeredByUserUrl("/user/" + uId + "/");
+                                                }
+                                            }
+                                            qm.setTriggeredByUserName(uic.getUserName());
+                                        }
                                     }
                                 }
                             }
@@ -773,6 +1060,34 @@ public class PipelineGraphAnalyzer {
         model.setQueueItems(queueItems);
 
         return model;
+    }
+
+    private static RunSummaryModel getOrBuildRunSummary(WorkflowRun run) {
+        if (run == null) {
+            return new RunSummaryModel();
+        }
+        if (run.isBuilding()) {
+            RunSummaryModel liveSummary = new RunSummaryModel();
+            populateSummaryMetadata(run, liveSummary);
+            return liveSummary;
+        }
+        String cacheKey = null;
+        try {
+            cacheKey = run.getExternalizableId();
+        } catch (Throwable ignored) {
+        }
+        if (cacheKey != null) {
+            RunSummaryModel cached = COMPLETED_RUN_SUMMARY_CACHE.get(cacheKey);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        RunSummaryModel summary = new RunSummaryModel();
+        populateSummaryMetadata(run, summary);
+        if (!run.isBuilding() && cacheKey != null) {
+            COMPLETED_RUN_SUMMARY_CACHE.put(cacheKey, summary);
+        }
+        return summary;
     }
 
     private static void populateSummaryMetadata(WorkflowRun run, RunSummaryModel summary) {
@@ -805,19 +1120,97 @@ public class PipelineGraphAnalyzer {
             summary.setResult("UNKNOWN");
         }
 
-        // Causes
+        // Causes & Trigger Identity
         for (hudson.model.Cause c : run.getCauses()) {
-            summary.getCauses().add(c.getShortDescription());
+            if (c != null) {
+                if (c.getShortDescription() != null) {
+                    summary.getCauses().add(c.getShortDescription());
+                }
+                if (summary.getTriggeredByUserId() == null && c instanceof hudson.model.Cause.UserIdCause) {
+                    hudson.model.Cause.UserIdCause uic = (hudson.model.Cause.UserIdCause) c;
+                    String uId = uic.getUserId();
+                    if (uId != null) {
+                        summary.setTriggeredByUserId(uId);
+                        if (!uId.trim().isEmpty()) {
+                            summary.setTriggeredByUserUrl("/user/" + uId + "/");
+                        }
+                    }
+                    summary.setTriggeredByUserName(uic.getUserName());
+                } else if (summary.getUpstreamProject() == null && c instanceof hudson.model.Cause.UpstreamCause) {
+                    hudson.model.Cause.UpstreamCause uc = (hudson.model.Cause.UpstreamCause) c;
+                    summary.setUpstreamProject(uc.getUpstreamProject());
+                    summary.setUpstreamBuild(uc.getUpstreamBuild());
+                    String upUrl = uc.getUpstreamUrl();
+                    if (upUrl != null && !upUrl.isEmpty()) {
+                        if (!upUrl.startsWith("/")) {
+                            upUrl = "/" + upUrl;
+                        }
+                        if (!upUrl.endsWith("/")) {
+                            upUrl = upUrl + "/";
+                        }
+                        summary.setUpstreamUrl(upUrl);
+                    }
+                }
+            }
         }
 
         // Parameters
         hudson.model.ParametersAction pa = run.getAction(hudson.model.ParametersAction.class);
-        if (pa != null) {
+        if (pa != null && pa.getParameters() != null) {
+            Map<String, hudson.model.ParameterDefinition> defMap = new HashMap<>();
+            try {
+                if (run.getParent().isParameterized()) {
+                    hudson.model.ParametersDefinitionProperty prop = run.getParent().getProperty(hudson.model.ParametersDefinitionProperty.class);
+                    if (prop != null && prop.getParameterDefinitions() != null) {
+                        for (hudson.model.ParameterDefinition pd : prop.getParameterDefinitions()) {
+                            if (pd != null) {
+                                defMap.put(pd.getName(), pd);
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+
+            List<BuildParameterModel> bParams = new ArrayList<>();
             for (hudson.model.ParameterValue pv : pa.getParameters()) {
-                if (pv != null && pv.getValue() != null) {
-                    summary.getParameters().put(pv.getName(), String.valueOf(pv.getValue()));
+                if (pv != null && pv.getName() != null) {
+                    BuildParameterModel bpm = new BuildParameterModel();
+                    bpm.setName(pv.getName());
+                    boolean sensitive = pv.isSensitive();
+                    bpm.setSensitive(sensitive);
+
+                    if (sensitive) {
+                        bpm.setValue("********");
+                        summary.getParameters().put(pv.getName(), "********");
+                    } else if (pv.getValue() != null) {
+                        String strVal = String.valueOf(pv.getValue());
+                        bpm.setValue(strVal);
+                        summary.getParameters().put(pv.getName(), strVal);
+                    } else {
+                        bpm.setValue("");
+                        summary.getParameters().put(pv.getName(), "");
+                    }
+
+                    String typeName = pv.getClass().getSimpleName();
+                    if (typeName.endsWith("ParameterValue")) {
+                        typeName = typeName.substring(0, typeName.length() - "ParameterValue".length());
+                    }
+                    bpm.setType(typeName);
+
+                    String desc = pv.getDescription();
+                    if ((desc == null || desc.trim().isEmpty()) && defMap.containsKey(pv.getName())) {
+                        hudson.model.ParameterDefinition pd = defMap.get(pv.getName());
+                        if (pd != null) {
+                            desc = pd.getDescription();
+                        }
+                    }
+                    bpm.setDescription(desc != null ? desc : "");
+
+                    bParams.add(bpm);
                 }
             }
+            summary.setBuildParameters(bParams);
         }
 
         // Branch extraction (Multibranch or Git)
@@ -827,6 +1220,7 @@ public class PipelineGraphAnalyzer {
 
         // Git SCM details & ChangeLog
         int changeCount = 0;
+        Set<String> culpritNames = new LinkedHashSet<>();
         for (ChangeLogSet<? extends ChangeLogSet.Entry> changeSet : run.getChangeSets()) {
             for (ChangeLogSet.Entry entry : changeSet) {
                 changeCount++;
@@ -836,8 +1230,14 @@ public class PipelineGraphAnalyzer {
                 if (summary.getCommitMessage() == null && entry.getMsg() != null) {
                     summary.setCommitMessage(EncodingUtils.fixMojibake(entry.getMsg()));
                 }
-                if (summary.getCommitAuthor() == null && entry.getAuthor() != null) {
-                    summary.setCommitAuthor(EncodingUtils.fixMojibake(entry.getAuthor().getDisplayName()));
+                if (entry.getAuthor() != null) {
+                    String authorName = EncodingUtils.fixMojibake(entry.getAuthor().getDisplayName());
+                    if (summary.getCommitAuthor() == null) {
+                        summary.setCommitAuthor(authorName);
+                    }
+                    if (authorName != null && !authorName.trim().isEmpty()) {
+                        culpritNames.add(authorName);
+                    }
                 }
             }
         }
@@ -904,13 +1304,21 @@ public class PipelineGraphAnalyzer {
             summary.setBranchUrl(scmLinks.getBranchUrl());
         }
 
-        // Culprits
+        // Culprits: derive from this run's changeset authors or persisted culpritIds without
+        // calling run.getCulprits() (which recursively walks backwards across build history on disk).
         try {
-            for (hudson.model.User u : run.getCulprits()) {
-                if (u != null) {
-                    summary.getCulprits().add(EncodingUtils.fixMojibake(u.getDisplayName()));
+            if (culpritNames.isEmpty()) {
+                Set<String> culpritIds = run.getCulpritIds();
+                if (culpritIds != null && !culpritIds.isEmpty()) {
+                    for (String cId : culpritIds) {
+                        if (cId != null && !cId.trim().isEmpty()) {
+                            hudson.model.User u = hudson.model.User.getById(cId, false);
+                            culpritNames.add(EncodingUtils.fixMojibake(u != null ? u.getDisplayName() : cId));
+                        }
+                    }
                 }
             }
+            summary.getCulprits().addAll(culpritNames);
         } catch (Throwable ignored) {
         }
     }
@@ -1578,12 +1986,13 @@ public class PipelineGraphAnalyzer {
         }
     }
 
-    private static void extractTestCases(AbstractTestResultAction<?> testAction, RunDetailsModel details) {
+    private static List<TestCaseModel> extractTestCases(AbstractTestResultAction<?> testAction) {
         List<TestCaseModel> cases = new ArrayList<>();
         try {
             Object rawResult = testAction.getResult();
             if (rawResult instanceof hudson.tasks.junit.TestResult) {
                 hudson.tasks.junit.TestResult junitResult = (hudson.tasks.junit.TestResult) rawResult;
+                int ownerNumber = (testAction.run != null) ? testAction.run.getNumber() : 0;
                 for (hudson.tasks.junit.SuiteResult suite : junitResult.getSuites()) {
                     String suiteName = suite.getName();
                     for (hudson.tasks.junit.CaseResult cr : suite.getCases()) {
@@ -1593,17 +2002,23 @@ public class PipelineGraphAnalyzer {
                         tc.setSuiteName(suiteName);
                         tc.setDurationSeconds(cr.getDuration());
                         tc.setFormattedDuration(formatTestDuration(cr.getDuration()));
-                        tc.setAge(cr.getAge());
 
                         if (cr.isSkipped()) {
+                            tc.setAge(0);
                             tc.setStatus("SKIPPED");
                             tc.setSkippedMessage(cr.getSkippedMessage());
                         } else if (!cr.isPassed()) {
-                            tc.setStatus(cr.getAge() == 1 ? "REGRESSION" : "FAILED");
+                            int failedSince = cr.getFailedSince();
+                            int age = (failedSince > 0 && ownerNumber >= failedSince)
+                                    ? (ownerNumber - failedSince + 1)
+                                    : 1;
+                            tc.setAge(age);
+                            tc.setStatus("FAILED");
                             tc.setErrorDetails(cr.getErrorDetails());
                             tc.setErrorStackTrace(cr.getErrorStackTrace());
                         } else {
-                            tc.setStatus(cr.getStatus() == hudson.tasks.junit.CaseResult.Status.FIXED ? "FIXED" : "PASSED");
+                            tc.setAge(0);
+                            tc.setStatus("PASSED");
                         }
                         cases.add(tc);
                     }
@@ -1636,8 +2051,8 @@ public class PipelineGraphAnalyzer {
             if (cases.size() > 300) {
                 cases = new ArrayList<>(cases.subList(0, 300));
             }
-            details.setTestCases(cases);
         }
+        return cases;
     }
 
     private static int getTestStatusRank(String status) {
@@ -1662,6 +2077,32 @@ public class PipelineGraphAnalyzer {
         return String.format(java.util.Locale.US, "%dm %.1fs", mins, rem);
     }
 
+    private static ArtifactSummary collectArtifacts(WorkflowRun run) {
+        if (run == null) {
+            return new ArtifactSummary(Collections.emptyList(), 0L);
+        }
+        List<ArtifactModel> artifacts = new ArrayList<>();
+        long totalSize = 0L;
+        try {
+            List<? extends hudson.model.Run<?, ?>.Artifact> rawArtifacts = run.getArtifacts();
+            for (hudson.model.Run<?, ?>.Artifact artifact : rawArtifacts) {
+                long size = artifact.getFileSize();
+                totalSize += Math.max(0L, size);
+                artifacts.add(new ArtifactModel(
+                        artifact.getFileName(),
+                        artifact.relativePath,
+                        artifact.getDisplayPath(),
+                        artifact.getHref(),
+                        size,
+                        formatBytes(size)
+                ));
+            }
+        } catch (Throwable ignored) {
+            // Artifact managers may be remote or temporarily unavailable. An empty section is safer than failing the view.
+        }
+        return new ArtifactSummary(artifacts, totalSize);
+    }
+
     private static boolean isArchiveArtifactsStep(FlowNode node) {
         String funcName = node.getDisplayFunctionName();
         if (funcName != null && ("archiveArtifacts".equalsIgnoreCase(funcName) || funcName.toLowerCase(java.util.Locale.ROOT).contains("archiveartifact"))) {
@@ -1681,6 +2122,130 @@ public class PipelineGraphAnalyzer {
                 return art.toString();
             }
         } catch (Throwable ignored) {
+        }
+        return "**";
+    }
+
+    /**
+     * Associates deferred artifact details with the already-built canvas tree
+     * without re-walking the complete FlowGraph.
+     */
+    private static void associateArtifactsWithStageIds(List<StageModel> stages, List<ArtifactModel> artifacts) {
+        if (stages == null || stages.isEmpty() || artifacts == null || artifacts.isEmpty()) {
+            return;
+        }
+
+        Map<String, StageModel> archiverStages = new LinkedHashMap<>();
+        Map<String, List<String>> stagePatterns = new LinkedHashMap<>();
+        collectArtifactStages(stages, archiverStages, stagePatterns);
+        if (archiverStages.isEmpty()) {
+            return;
+        }
+
+        for (StageModel st : archiverStages.values()) {
+            st.getArtifacts().clear();
+            st.setHasArtifacts(false);
+            st.setArtifactCount(0);
+        }
+
+        if (archiverStages.size() == 1) {
+            StageModel stage = archiverStages.values().iterator().next();
+            for (ArtifactModel artifact : artifacts) {
+                artifact.setStageId(stage.getId());
+                artifact.setStageName(stage.getName());
+                stage.addArtifact(artifact);
+            }
+            stage.setHasArtifacts(true);
+            stage.setArtifactCount(stage.getArtifacts().size());
+            return;
+        }
+
+        for (ArtifactModel artifact : artifacts) {
+            StageModel matchedStage = null;
+            for (Map.Entry<String, StageModel> entry : archiverStages.entrySet()) {
+                List<String> patterns = stagePatterns.get(entry.getKey());
+                if (patterns == null) {
+                    continue;
+                }
+                for (String pattern : patterns) {
+                    if (matchesAntPattern(pattern, artifact.getRelativePath())) {
+                        matchedStage = entry.getValue();
+                        break;
+                    }
+                }
+                if (matchedStage != null) {
+                    break;
+                }
+            }
+            if (matchedStage == null) {
+                matchedStage = archiverStages.values().iterator().next();
+            }
+            artifact.setStageId(matchedStage.getId());
+            artifact.setStageName(matchedStage.getName());
+            matchedStage.addArtifact(artifact);
+            matchedStage.setHasArtifacts(true);
+            matchedStage.setArtifactCount(matchedStage.getArtifacts().size());
+        }
+    }
+
+    private static void collectArtifactStages(List<StageModel> stages, Map<String, StageModel> archiverStages,
+                                              Map<String, List<String>> stagePatterns) {
+        if (stages == null) {
+            return;
+        }
+        for (StageModel stage : stages) {
+            List<String> patterns = new ArrayList<>();
+            if (stage.getSteps() != null) {
+                for (StepModel step : stage.getSteps()) {
+                    if (isArchiveArtifactsStep(step)) {
+                        patterns.add(extractArchivePattern(step.getArguments()));
+                    }
+                }
+            }
+            if (!patterns.isEmpty()) {
+                archiverStages.put(stage.getId(), stage);
+                stagePatterns.put(stage.getId(), patterns);
+            }
+            collectArtifactStages(stage.getChildren(), archiverStages, stagePatterns);
+        }
+    }
+
+    private static boolean isArchiveArtifactsStep(StepModel step) {
+        if (step == null || step.getName() == null) {
+            return false;
+        }
+        String name = step.getName();
+        return "archiveArtifacts".equalsIgnoreCase(name)
+                || name.toLowerCase(java.util.Locale.ROOT).contains("archiveartifact");
+    }
+
+    private static String extractArchivePattern(String stepArguments) {
+        if (stepArguments == null || stepArguments.trim().isEmpty()) {
+            return "**";
+        }
+        Matcher matcher = ARCHIVE_ARTIFACTS_ARGUMENT.matcher(stepArguments);
+        if (matcher.find()) {
+            String pattern = matcher.group(1);
+            if (pattern == null) {
+                pattern = matcher.group(2);
+            }
+            if (pattern == null) {
+                pattern = matcher.group(3);
+            }
+            if (pattern != null && !pattern.trim().isEmpty()) {
+                return pattern.trim();
+            }
+        }
+
+        String candidate = stepArguments.trim();
+        if (candidate.indexOf(':') < 0 && candidate.indexOf('=') < 0 && candidate.indexOf(',') < 0) {
+            if ((candidate.startsWith("\"") && candidate.endsWith("\""))
+                    || (candidate.startsWith("'") && candidate.endsWith("'"))) {
+                candidate = candidate.substring(1, candidate.length() - 1);
+            }
+            if (!candidate.isEmpty()) {
+                return candidate;
+            }
         }
         return "**";
     }

@@ -37,6 +37,13 @@
                             shimmedQSA.__horizon_shimmed = true;
                             Document.prototype.querySelectorAll = shimmedQSA;
                         }
+                        if (typeof window !== 'undefined' &amp;&amp; typeof window.fetch === 'function') {
+                            var preloadRunBase = "${rootURL}/${it.run.url}";
+                            if (preloadRunBase.charAt(preloadRunBase.length - 1) !== '/') preloadRunBase += '/';
+                            window._horizonInitialCanvasPromise = window.fetch(preloadRunBase + 'horizon/apiGraph?view=canvas')
+                                .then(function(r) { return r.ok ? r.json() : null; })
+                                .catch(function() { return null; });
+                        }
                     } catch(e) {}
                 })();
             </script>
@@ -1942,6 +1949,430 @@
                         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
                     }
 
+                    /* Trigger Identity and User Profile Button */
+                    .trigger-label-prefix {
+                        opacity: 0.8;
+                        margin-right: 2px;
+                    }
+                    .trigger-user-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 4px;
+                        background: rgba(59, 130, 246, 0.16) !important;
+                        color: #93c5fd !important;
+                        border: 1px solid rgba(59, 130, 246, 0.35) !important;
+                        padding: 0.18rem 0.5rem;
+                        border-radius: 6px;
+                        font-size: 0.8rem;
+                        font-weight: 600;
+                        text-decoration: none !important;
+                        cursor: pointer;
+                        transition: all 0.15s ease;
+                        vertical-align: middle;
+                        max-width: 100%;
+                    }
+                    .trigger-user-btn:hover {
+                        background: rgba(59, 130, 246, 0.28) !important;
+                        border-color: rgba(96, 165, 250, 0.6) !important;
+                        color: #ffffff !important;
+                        transform: translateY(-1px);
+                        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+                    }
+                    .trigger-user-btn .user-btn-icon {
+                        color: #60a5fa !important;
+                        flex-shrink: 0;
+                    }
+                    .trigger-user-btn:hover .user-btn-icon {
+                        color: #ffffff !important;
+                    }
+                    .trigger-user-btn .user-btn-name {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    .trigger-user-btn .user-btn-ext {
+                        opacity: 0.7;
+                        flex-shrink: 0;
+                    }
+                    .trigger-user-btn:hover .user-btn-ext {
+                        opacity: 1;
+                    }
+
+                    .trigger-upstream-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 4px;
+                        background: rgba(168, 85, 247, 0.16) !important;
+                        color: #d8b4fe !important;
+                        border: 1px solid rgba(168, 85, 247, 0.35) !important;
+                        padding: 0.18rem 0.5rem;
+                        border-radius: 6px;
+                        font-size: 0.8rem;
+                        font-weight: 600;
+                        text-decoration: none !important;
+                        cursor: pointer;
+                        transition: all 0.15s ease;
+                        vertical-align: middle;
+                    }
+                    .trigger-upstream-btn:hover {
+                        background: rgba(168, 85, 247, 0.28) !important;
+                        border-color: rgba(192, 132, 252, 0.6) !important;
+                        color: #ffffff !important;
+                        transform: translateY(-1px);
+                    }
+
+                    /* Build Parameters Header Chip */
+                    .param-chip {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.35rem;
+                        background: rgba(255, 255, 255, 0.14) !important;
+                        color: #ffffff !important;
+                        border: 1px solid rgba(255, 255, 255, 0.28) !important;
+                        padding: 0.2rem 0.55rem;
+                        border-radius: 6px;
+                        font-size: 0.8rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.15s ease;
+                        user-select: none;
+                    }
+                    .param-chip:hover {
+                        background: rgba(255, 255, 255, 0.26) !important;
+                        border-color: rgba(255, 255, 255, 0.5) !important;
+                        transform: translateY(-1px);
+                        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+                    }
+                    .param-chip svg {
+                        color: #38bdf8 !important;
+                        flex-shrink: 0;
+                    }
+                    .param-chip:hover svg {
+                        color: #7dd3fc !important;
+                    }
+                    .param-none {
+                        opacity: 0.65;
+                        font-size: 0.85rem;
+                    }
+
+                    /* Build Parameters Modal */
+                    .parameters-modal-dialog {
+                        max-width: 820px;
+                        width: 92%;
+                        height: 80vh;
+                        max-height: 80vh;
+                        background: #ffffff;
+                        border: 1px solid #cbd5e1;
+                        color: #0f172a;
+                    }
+                    .parameters-modal-dialog .horizon-modal-header {
+                        background: #f8fafc;
+                        border-bottom: 1px solid #e2e8f0;
+                    }
+                    .parameters-modal-dialog .horizon-modal-title {
+                        color: #0f172a;
+                    }
+                    .parameters-modal-dialog .horizon-modal-footer {
+                        background: #f8fafc !important;
+                        border-top: 1px solid #e2e8f0 !important;
+                    }
+                    .parameters-modal-dialog .horizon-modal-close {
+                        color: #64748b;
+                    }
+                    .parameters-modal-dialog .horizon-modal-close:hover {
+                        color: #0f172a;
+                        background: rgba(0, 0, 0, 0.05);
+                    }
+                    .param-modal-icon {
+                        background: rgba(56, 189, 248, 0.12);
+                        color: #0284c7;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .params-toolbar {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.75rem;
+                        margin-bottom: 1rem;
+                        flex-wrap: wrap;
+                    }
+                    .params-search-box {
+                        position: relative;
+                        flex: 1;
+                        min-width: 220px;
+                    }
+                    .params-search-icon {
+                        position: absolute;
+                        left: 10px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        color: #94a3b8;
+                        pointer-events: none;
+                    }
+                    .params-search-input {
+                        width: 100%;
+                        padding: 0.45rem 0.65rem 0.45rem 2.1rem;
+                        border-radius: 6px;
+                        border: 1px solid #cbd5e1;
+                        background: #ffffff;
+                        color: #0f172a;
+                        font-size: 0.82rem;
+                        box-sizing: border-box;
+                    }
+                    .params-search-input:focus {
+                        outline: none;
+                        border-color: #3b82f6;
+                        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+                    }
+                    .params-toolbar-actions {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    }
+                    .params-stats {
+                        font-size: 0.78rem;
+                        font-weight: 600;
+                        color: #64748b;
+                        margin-right: 0.25rem;
+                    }
+                    .param-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 4px;
+                        padding: 0.35rem 0.65rem;
+                        border-radius: 6px;
+                        border: 1px solid #cbd5e1;
+                        background: #f8fafc;
+                        color: #334155;
+                        font-size: 0.75rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.15s ease;
+                    }
+                    .param-btn:hover {
+                        background: #e2e8f0;
+                        color: #0f172a;
+                        border-color: #94a3b8;
+                    }
+                    .params-cards-container {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.75rem;
+                    }
+                    .param-card {
+                        background: #f8fafc;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 8px;
+                        padding: 0.85rem 1rem;
+                        transition: border-color 0.15s ease;
+                    }
+                    .param-card:hover {
+                        border-color: #cbd5e1;
+                    }
+                    .param-card-header {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 0.5rem;
+                        margin-bottom: 0.35rem;
+                    }
+                    .param-card-title-group {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        flex-wrap: wrap;
+                    }
+                    .param-card-name {
+                        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                        font-weight: 700;
+                        font-size: 0.9rem;
+                        color: #0f172a;
+                    }
+                    .param-type-badge {
+                        font-size: 0.68rem;
+                        font-weight: 600;
+                        padding: 1px 6px;
+                        border-radius: 4px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.04em;
+                    }
+                    .badge-type-string { background: #e0e7ff; color: #4338ca; }
+                    .badge-type-bool { background: #dcfce7; color: #15803d; }
+                    .badge-type-choice { background: #fef3c7; color: #b45309; }
+                    .badge-type-password { background: #fee2e2; color: #b91c1c; }
+                    .badge-type-file { background: #f3e8ff; color: #7e22ce; }
+                    .badge-type-text { background: #e2e8f0; color: #334155; }
+                    .param-sensitive-badge {
+                        font-size: 0.68rem;
+                        font-weight: 600;
+                        padding: 1px 6px;
+                        border-radius: 4px;
+                        background: #fef2f2;
+                        color: #dc2626;
+                        border: 1px solid #fecaca;
+                    }
+                    .param-card-desc {
+                        font-size: 0.78rem;
+                        color: #64748b;
+                        margin-bottom: 0.5rem;
+                    }
+                    .param-val-wrap {
+                        margin-top: 0.35rem;
+                    }
+                    .param-single-val {
+                        display: inline-block;
+                        padding: 0.3rem 0.6rem;
+                        background: #ffffff;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 6px;
+                        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                        font-size: 0.82rem;
+                        color: #0f172a;
+                        word-break: break-all;
+                        max-width: 100%;
+                    }
+                    .param-single-val.val-masked {
+                        letter-spacing: 0.15em;
+                        color: #94a3b8;
+                    }
+                    .param-bool-val {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 4px;
+                        padding: 2px 8px;
+                        border-radius: 6px;
+                        font-size: 0.78rem;
+                        font-weight: 700;
+                        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                    }
+                    .param-bool-val.bool-true {
+                        background: #dcfce7;
+                        color: #166534;
+                        border: 1px solid #bbf7d0;
+                    }
+                    .param-bool-val.bool-false {
+                        background: #f1f5f9;
+                        color: #64748b;
+                        border: 1px solid #e2e8f0;
+                    }
+                    .param-multiline-val {
+                        margin: 0;
+                        padding: 0.5rem 0.75rem;
+                        background: #ffffff;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 6px;
+                        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                        font-size: 0.8rem;
+                        color: #0f172a;
+                        max-height: 140px;
+                        overflow-y: auto;
+                        white-space: pre-wrap;
+                        word-break: break-all;
+                    }
+                    .param-copy-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 3px;
+                        padding: 0.2rem 0.5rem;
+                        border-radius: 4px;
+                        border: 1px solid #cbd5e1;
+                        background: #ffffff;
+                        color: #475569;
+                        font-size: 0.72rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.12s ease;
+                    }
+                    .param-copy-btn:hover {
+                        background: #f1f5f9;
+                        color: #0f172a;
+                        border-color: #94a3b8;
+                    }
+                    .params-empty-state {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 3rem 1rem;
+                        color: #94a3b8;
+                        font-size: 0.88rem;
+                        text-align: center;
+                    }
+
+                    /* Dark theme overrides for parameters modal */
+                    .horizon-container.theme-dark .parameters-modal-dialog {
+                        background: #0f172a;
+                        border-color: #334155;
+                        color: #f8fafc;
+                    }
+                    .horizon-container.theme-dark .parameters-modal-dialog .horizon-modal-header {
+                        background: #1e293b;
+                        border-bottom-color: #334155;
+                    }
+                    .horizon-container.theme-dark .parameters-modal-dialog .horizon-modal-title {
+                        color: #f8fafc;
+                    }
+                    .horizon-container.theme-dark .parameters-modal-dialog .horizon-modal-footer {
+                        background: #1e293b !important;
+                        border-top-color: #334155 !important;
+                    }
+                    .horizon-container.theme-dark .parameters-modal-dialog .horizon-modal-close {
+                        color: #94a3b8;
+                    }
+                    .horizon-container.theme-dark .parameters-modal-dialog .horizon-modal-close:hover {
+                        color: #f8fafc;
+                        background: rgba(255, 255, 255, 0.1);
+                    }
+                    .horizon-container.theme-dark .param-modal-icon {
+                        background: rgba(56, 189, 248, 0.16);
+                        color: #38bdf8;
+                    }
+                    .horizon-container.theme-dark .params-search-input {
+                        background: #1e293b;
+                        border-color: #334155;
+                        color: #f8fafc;
+                    }
+                    .horizon-container.theme-dark .params-search-input:focus {
+                        border-color: #60a5fa;
+                        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+                    }
+                    .horizon-container.theme-dark .param-btn {
+                        background: #1e293b;
+                        border-color: #334155;
+                        color: #cbd5e1;
+                    }
+                    .horizon-container.theme-dark .param-btn:hover {
+                        background: #334155;
+                        color: #ffffff;
+                    }
+                    .horizon-container.theme-dark .param-card {
+                        background: #1e293b;
+                        border-color: #334155;
+                    }
+                    .horizon-container.theme-dark .param-card:hover {
+                        border-color: #475569;
+                    }
+                    .horizon-container.theme-dark .param-card-name {
+                        color: #f8fafc;
+                    }
+                    .horizon-container.theme-dark .param-single-val,
+                    .horizon-container.theme-dark .param-multiline-val {
+                        background: #090d16;
+                        border-color: #334155;
+                        color: #f1f5f9;
+                    }
+                    .horizon-container.theme-dark .param-copy-btn {
+                        background: #0f172a;
+                        border-color: #334155;
+                        color: #94a3b8;
+                    }
+                    .horizon-container.theme-dark .param-copy-btn:hover {
+                        background: #334155;
+                        color: #f8fafc;
+                        border-color: #64748b;
+                    }
+
                     /* Graph Canvas */
                     .graph-card {
                         background: #ffffff;
@@ -2202,7 +2633,7 @@
                         gap: 3.5rem;
                         position: relative;
                         width: max-content;
-                        min-width: 100%;
+                        min-width: 0;
                         margin-top: auto;
                         margin-bottom: auto;
                         transform-origin: 0 50%;
@@ -3863,6 +4294,38 @@
                         flex-shrink: 0;
                         white-space: nowrap;
                     }
+                    .parallel-summary {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 0.4rem;
+                        width: 220px;
+                        max-width: 220px;
+                        min-width: 0;
+                        margin-top: -0.12rem;
+                        color: #475569;
+                        font-size: 0.62rem;
+                        line-height: 1.2;
+                    }
+                    .parallel-join-badge {
+                        flex-shrink: 0;
+                        padding: 1px 5px;
+                        border: 1px solid #7dd3fc;
+                        border-radius: 999px;
+                        background: rgba(224, 242, 254, 0.75);
+                        color: #0369a1;
+                        font-size: 0.56rem;
+                        font-weight: 800;
+                        letter-spacing: 0.04em;
+                    }
+                    .parallel-state-text {
+                        min-width: 0;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        text-align: right;
+                        font-variant-numeric: tabular-nums;
+                    }
                     .pipeline-flow.compact-density .parallel-label {
                         width: 175px;
                         max-width: 175px;
@@ -3874,6 +4337,15 @@
                     .pipeline-flow.compact-density .parallel-duration-badge {
                         font-size: 0.6rem;
                         padding: 0 0.3rem;
+                    }
+                    .pipeline-flow.compact-density .parallel-summary {
+                        width: 175px;
+                        max-width: 175px;
+                        font-size: 0.56rem;
+                    }
+                    .pipeline-flow.compact-density .parallel-join-badge {
+                        font-size: 0.5rem;
+                        padding: 1px 4px;
                     }
 
                     /* Stop Build Button &amp; Paused Input Header Theme */
@@ -6315,6 +6787,14 @@
                         color: #7dd3fc;
                         border-color: rgba(56, 189, 248, 0.35);
                     }
+                    .horizon-container.theme-dark .parallel-summary {
+                        color: #94a3b8;
+                    }
+                    .horizon-container.theme-dark .parallel-join-badge {
+                        background: rgba(56, 189, 248, 0.12);
+                        color: #7dd3fc;
+                        border-color: rgba(56, 189, 248, 0.35);
+                    }
                     .horizon-container.theme-dark .step-accordion-container {
                         background: #0b1120;
                         border-color: #1e293b;
@@ -7181,6 +7661,17 @@
                                             </span>
                                         </button>
 
+                                        <!-- View Parameters Action -->
+                                        <button class="horizon-dropdown-item action-item" id="menu-item-params" role="menuitem" onclick="openParametersModal()" style="display:none;" title="View build parameters">
+                                            <span class="dropdown-item-icon icon-params" aria-hidden="true">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                                            </span>
+                                            <span class="dropdown-item-text">
+                                                <span class="dropdown-item-title">View Parameters</span>
+                                                <span class="dropdown-item-desc" id="menu-item-params-desc">Inspect parameters passed to this build</span>
+                                            </span>
+                                        </button>
+
                                         <!-- Restart from Stage Section -->
                                         <div id="menu-restart-section" style="display:none;">
                                             <div class="horizon-dropdown-divider" role="separator"></div>
@@ -7241,6 +7732,10 @@
                         <div class="meta-item" id="meta-agents-item" style="cursor:pointer;" role="button" tabindex="0" aria-label="View all agents used in this build" onclick="openAgentModal(null, 'ALL')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAgentModal(null, 'ALL');}" title="Click to view all agents used in this build">
                             <span class="meta-label">Agents Used</span>
                             <span class="meta-value" id="meta-agents">--</span>
+                        </div>
+                        <div class="meta-item" id="meta-params-item" style="cursor:pointer;" role="button" tabindex="0" aria-label="View build parameters in modal" onclick="openParametersModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openParametersModal();}" title="Click to inspect build parameters">
+                            <span class="meta-label">Parameters</span>
+                            <span class="meta-value" id="meta-params">--</span>
                         </div>
                         <div class="meta-item" id="meta-tests-item" style="cursor:pointer;" role="button" tabindex="0" aria-label="View test results in modal" onclick="openTestsModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTestsModal();}" title="Click to inspect test case results and failure stacktraces">
                             <span class="meta-label">Tests</span>
@@ -7715,6 +8210,60 @@
                     </div>
                 </div>
 
+                <!-- Build Parameters Modal Overlay -->
+                <div id="parameters-modal" class="horizon-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="parameters-modal-title" onclick="if(event.target===this)closeParametersModal()">
+                    <div class="horizon-modal-dialog parameters-modal-dialog">
+                        <div class="horizon-modal-header">
+                            <div style="display:flex; align-items:center; gap:0.6rem; min-width:0;">
+                                <div class="param-modal-icon" style="width:30px; height:30px; border-radius:6px; flex-shrink:0;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                                </div>
+                                <div>
+                                    <h2 class="horizon-modal-title" id="parameters-modal-title">Build Parameters</h2>
+                                    <div id="parameters-modal-subtitle" style="font-size:0.75rem; color:#94a3b8; font-weight:500;">Parameters passed to Build #${it.run.number}</div>
+                                </div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:0.5rem;">
+                                <a id="btn-modal-classic-params" href="${runBase}parameters/" target="_blank" class="horizon-tab-link" title="Open Jenkins classic parameters page" aria-label="Classic Parameters View">
+                                    Classic View
+                                    <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                </a>
+                                <button class="horizon-modal-close" onclick="closeParametersModal()" aria-label="Close build parameters modal" title="Close (Esc)">
+                                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="horizon-modal-body" style="padding:1.25rem; overflow-y:auto; flex:1;">
+                            <div class="params-toolbar">
+                                <div class="params-search-box">
+                                    <svg class="params-search-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <input type="text" id="params-search-input" class="params-search-input" placeholder="Filter parameters by name or value..." aria-label="Filter build parameters" onkeyup="filterBuildParameters()" />
+                                </div>
+                                <div class="params-toolbar-actions">
+                                    <span id="params-stats-text" class="params-stats">0 parameters</span>
+                                    <button id="btn-copy-params-json" class="param-btn" onclick="copyParameters('json')" title="Copy all parameters as JSON formatted key-values" aria-label="Copy parameters as JSON">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy JSON
+                                    </button>
+                                    <button id="btn-copy-params-env" class="param-btn" onclick="copyParameters('env')" title="Copy all parameters as KEY=VALUE environment export format" aria-label="Copy parameters as ENV">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg> Copy KEY=VAL
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Parameters List/Cards Container -->
+                            <div id="params-cards-container" class="params-cards-container" role="list">
+                                <!-- Dynamically rendered -->
+                            </div>
+                        </div>
+
+                        <div class="horizon-modal-footer" style="padding:0.75rem 1.25rem; display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:0.75rem; color:#64748b;" id="params-modal-footer-hint">Click Copy button to copy any parameter to clipboard</span>
+                            <button class="btn-modal-cancel" onclick="closeParametersModal()">Close</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Keyboard Shortcuts Cheat Sheet Modal Dialog -->
                 <div id="shortcuts-modal" class="horizon-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="shortcuts-modal-title" onclick="if(event.target===this)closeShortcutsModal()">
                     <div class="horizon-modal-dialog shortcuts-modal-dialog">
@@ -7767,6 +8316,7 @@
                                     <div class="shortcut-row"><span class="shortcut-desc">Toggle keyboard shortcuts cheat sheet</span><div class="shortcut-keys"><kbd class="hkbd">?</kbd></div></div>
                                     <div class="shortcut-row"><span class="shortcut-desc">Close modal or clear log search</span><div class="shortcut-keys"><kbd class="hkbd">Esc</kbd></div></div>
                                     <div class="shortcut-row"><span class="shortcut-desc">Submit Replay / Input Approval</span><div class="shortcut-keys"><kbd class="hkbd">Ctrl</kbd><span>+</span><kbd class="hkbd">Enter</kbd></div></div>
+                                    <div class="shortcut-row"><span class="shortcut-desc">Open build parameters modal</span><div class="shortcut-keys"><kbd class="hkbd">p</kbd></div></div>
                                     <div class="shortcut-row"><span class="shortcut-desc">Validate script in Replay editor</span><div class="shortcut-keys"><kbd class="hkbd">Ctrl</kbd><span>+</span><kbd class="hkbd">S</kbd></div></div>
                                 </div>
                             </div>
@@ -7920,6 +8470,7 @@
                 var currentTestsFilter = 'ALL';
 
                 var ICON_SERVER = '<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:3px; flex-shrink:0;"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>';
+                var ICON_SLIDERS = '<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:3px; flex-shrink:0;"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>';
                 var ICON_HOURGLASS = '<svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:3px; flex-shrink:0;"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>';
                 var ICON_BOLT = '<svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px; margin-right:3px; flex-shrink:0;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
                 var ICON_SUCCESS = '<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
@@ -8118,12 +8669,12 @@
                     localStorage.setItem('horizon_screen_mode', currentScreenMode);
                     applyScreenMode();
                     if (typeof drawFlowConnectors === 'function') {
-                        setTimeout(drawFlowConnectors, 40);
+                        setTimeout(scheduleDrawFlowConnectors, 40);
                     }
                 }
 
                 function isAnyHorizonModalOpen() {
-                    var ids = ['artifact-preview-modal', 'artifacts-modal', 'agent-modal', 'replay-modal'];
+                    var ids = ['artifact-preview-modal', 'artifacts-modal', 'agent-modal', 'replay-modal', 'tests-modal', 'shortcuts-modal', 'parameters-modal'];
                     for (var i = 0; i &lt; ids.length; i++) {
                         var el = document.getElementById(ids[i]);
                         if (el &amp;&amp; el.classList.contains('active')) {
@@ -8283,7 +8834,7 @@
                     }
 
                     if (typeof drawFlowConnectors === 'function') {
-                        setTimeout(drawFlowConnectors, 40);
+                        setTimeout(scheduleDrawFlowConnectors, 40);
                     }
                 }
 
@@ -8323,7 +8874,7 @@
                         if (selectedStageId) {
                             scrollStageIntoPipelineView(selectedStageId, false);
                         }
-                        drawFlowConnectors();
+                        scheduleDrawFlowConnectors();
                     }, 40);
                 }
 
@@ -8334,7 +8885,7 @@
                     applyViewPreferences();
                     setTimeout(function() {
                         applyCanvasZoom();
-                        drawFlowConnectors();
+                        scheduleDrawFlowConnectors();
                     }, 30);
                 }
 
@@ -8365,8 +8916,19 @@
                     // clientWidth includes, which used to push the graph off-centre by that padding.
                     var cs = window.getComputedStyle(flow);
                     var padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+                    var padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
                     var availableW = Math.max(0, flow.clientWidth - padX);
+                    var availableH = Math.max(0, flow.clientHeight - padY);
                     var zoom = currentZoom;
+
+                    var startNode = document.getElementById('terminal-node-start');
+                    var endNode = document.getElementById('terminal-node-end');
+                    var contentSpanW = 0;
+                    if (startNode &amp;&amp; endNode) {
+                        var sR = startNode.getBoundingClientRect();
+                        var eR = endNode.getBoundingClientRect();
+                        contentSpanW = (eR.right - sR.left);
+                    }
 
                     if (currentLayoutMode === 'wrap') {
                         // A single row of stages is centred as a block; multi-row graphs keep the
@@ -8383,59 +8945,82 @@
                                 break;
                             }
                         }
-                        if (singleRow) canvas.classList.add('wrap-center');
-                        canvas.style.transformOrigin = singleRow ? 'left center' : 'left top';
 
-                        // Scale the canvas box inversely so its *visual* width equals the available width:
-                        // no horizontal overflow, and content re-wraps/centres against the real viewport.
-                        if (zoom !== 1.0 &amp;&amp; availableW &gt; 0) {
-                            var wrapW = (availableW / zoom) + 'px';
-                            canvas.style.setProperty('width', wrapW, 'important');
-                            canvas.style.setProperty('max-width', wrapW, 'important');
-                        }
-                        canvas.style.transform = (zoom === 1.0) ? 'none' : 'scale(' + zoom + ')';
-                        if (singleRow) {
-                            canvas.style.marginTop = 'auto';
-                            canvas.style.marginBottom = 'auto';
-                        } else if (zoom !== 1.0) {
-                            canvas.style.marginBottom = Math.round(canvas.offsetHeight * (zoom - 1)) + 'px';
+                        var fitsSingleRow = singleRow &amp;&amp; (contentSpanW * zoom &lt;= availableW + 4);
+
+                        if (fitsSingleRow) {
+                            canvas.classList.add('wrap-center');
+                            canvas.style.setProperty('min-width', '0px', 'important');
+                            canvas.style.setProperty('width', 'max-content', 'important');
+                            canvas.style.setProperty('max-width', 'none', 'important');
+                            var wrapLayoutW = canvas.offsetWidth;
+                            var wrapLayoutH = canvas.offsetHeight;
+                            var wrapVisualH = wrapLayoutH * zoom;
+                            var wrapBaseBottom = (zoom !== 1.0) ? Math.round(wrapLayoutH * (zoom - 1)) : 0;
+                            canvas.style.transformOrigin = 'left top';
+                            canvas.style.transform = (zoom === 1.0) ? 'none' : 'scale(' + zoom + ')';
+                            canvas.style.margin = '0';
+                            canvas.style.marginLeft = Math.max(0, Math.round((availableW - (wrapLayoutW * zoom)) / 2)) + 'px';
+                            canvas.style.marginRight = (zoom !== 1.0) ? Math.round(wrapLayoutW * (zoom - 1)) + 'px' : '0px';
+                            canvas.style.marginTop = '0px';
+                            canvas.style.marginBottom = wrapBaseBottom + 'px';
+                            var settledWrapH = Math.max(0, flow.clientHeight - padY);
+                            var wrapTopOffset = (wrapVisualH + 4 &lt;= settledWrapH) ? Math.max(0, Math.round((settledWrapH - wrapVisualH) / 2)) : 0;
+                            canvas.style.marginTop = wrapTopOffset + 'px';
+                            canvas.style.marginBottom = (wrapBaseBottom - wrapTopOffset) + 'px';
+                        } else {
+                            canvas.classList.remove('wrap-center');
+                            canvas.style.setProperty('min-width', '0px', 'important');
+                            if (zoom !== 1.0 &amp;&amp; availableW &gt; 0) {
+                                var wrapW = (availableW / zoom) + 'px';
+                                canvas.style.setProperty('width', wrapW, 'important');
+                                canvas.style.setProperty('max-width', wrapW, 'important');
+                            }
+                            var multiLayoutH = canvas.offsetHeight;
+                            var multiVisualH = multiLayoutH * zoom;
+                            var multiBaseBottom = (zoom !== 1.0) ? Math.round(multiLayoutH * (zoom - 1)) : 0;
+                            canvas.style.transformOrigin = 'left top';
+                            canvas.style.transform = (zoom === 1.0) ? 'none' : 'scale(' + zoom + ')';
+                            canvas.style.margin = '0';
+                            canvas.style.marginTop = '0px';
+                            canvas.style.marginBottom = multiBaseBottom + 'px';
+                            var settledMultiH = Math.max(0, flow.clientHeight - padY);
+                            var multiTopOffset = (multiVisualH + 4 &lt;= settledMultiH) ? Math.max(0, Math.round((settledMultiH - multiVisualH) / 2)) : 0;
+                            canvas.style.marginTop = multiTopOffset + 'px';
+                            canvas.style.marginBottom = (multiBaseBottom - multiTopOffset) + 'px';
                         }
                     } else {
-                        // Let the canvas shrink to its content so a centred graph never creates a phantom scrollbar.
-                        canvas.style.minWidth = '0px';
-                        var canvasRect = canvas.getBoundingClientRect();
+                        // Canvas Flow (scroll) mode
+                        canvas.style.setProperty('min-width', '0px', 'important');
+                        canvas.style.setProperty('width', 'max-content', 'important');
+                        canvas.style.setProperty('max-width', 'none', 'important');
+
                         var layoutW = canvas.offsetWidth;
-                        var contentW = layoutW;
-                        var contentLeft = 0;
-
-                        var startNode = document.getElementById('terminal-node-start');
-                        var endNode = document.getElementById('terminal-node-end');
-                        if (startNode &amp;&amp; endNode) {
-                            var startR = startNode.getBoundingClientRect();
-                            var endR = endNode.getBoundingClientRect();
-                            var span = endR.right - startR.left;
-                            if (span &gt; 50) {
-                                contentW = span;
-                                contentLeft = startR.left - canvasRect.left;
-                            }
-                        }
-
-                        canvas.style.transformOrigin = 'left center';
+                        var layoutH = canvas.offsetHeight;
+                        var visualW = (contentSpanW || layoutW) * zoom;
+                        var visualH = layoutH * zoom;
+                        var baseBottom = (zoom !== 1.0) ? Math.round(layoutH * (zoom - 1)) : 0;
+                        canvas.style.transformOrigin = 'left top';
                         canvas.style.transform = (zoom === 1.0) ? 'none' : 'scale(' + zoom + ')';
+                        canvas.style.margin = '0';
+                        canvas.style.marginRight = (zoom !== 1.0) ? Math.round(layoutW * (zoom - 1)) + 'px' : '0px';
+                        canvas.style.marginTop = '0px';
+                        canvas.style.marginBottom = baseBottom + 'px';
 
-                        var visualContentW = contentW * zoom;
-                        var marginLeft = 0;
-                        if (visualContentW + (16 * zoom) &lt;= availableW) {
-                            marginLeft = Math.max(0, Math.floor((availableW - visualContentW) / 2 - (contentLeft * zoom)));
+                        if (visualW + (16 * zoom) &lt;= availableW) {
+                            canvas.style.marginLeft = Math.max(0, Math.round((availableW - (layoutW * zoom)) / 2)) + 'px';
+                        } else {
+                            canvas.style.marginLeft = '0px';
                         }
-                        canvas.style.marginLeft = marginLeft + 'px';
-                        if (zoom !== 1.0) {
-                            canvas.style.marginRight = Math.round(layoutW * (zoom - 1)) + 'px';
-                        }
+
+                        var settledFlowH = Math.max(0, flow.clientHeight - padY);
+                        var flowTopOffset = (visualH + 4 &lt;= settledFlowH) ? Math.max(0, Math.round((settledFlowH - visualH) / 2)) : 0;
+                        canvas.style.marginTop = flowTopOffset + 'px';
+                        canvas.style.marginBottom = (baseBottom - flowTopOffset) + 'px';
                     }
 
                     updateZoomDisplay();
-                    drawFlowConnectors();
+                    scheduleDrawFlowConnectors();
                 }
 
                 function setZoom(scale, isUserManual) {
@@ -8461,10 +9046,12 @@
 
                 function resetCanvasLayoutOverrides(canvas) {
                     canvas.style.transform = 'none';
+                    canvas.style.transformOrigin = '';
                     canvas.style.marginLeft = '0px';
                     canvas.style.marginRight = '0px';
                     canvas.style.marginBottom = '0px';
                     canvas.style.marginTop = '';
+                    canvas.style.margin = '';
                     canvas.style.minWidth = '';
                     canvas.style.removeProperty('width');
                     canvas.style.removeProperty('max-width');
@@ -8540,7 +9127,7 @@
                         // It is natural and intended for multi-row pipelines to scroll vertically.
                         // Never crush multi-stage pipelines vertically in wrap mode!
                         if (colCount &lt;= 1) {
-                            fitScale = 1.30;
+                            fitScale = 1.25;
                         } else if (colCount === 2) {
                             fitScale = 1.15;
                         } else if (colCount === 3) {
@@ -8561,10 +9148,11 @@
                             fitScale = Math.min(fitScale, Math.max(0.6, minWrapScale));
                         }
                         // Fit the whole wrapped graph into the visible height when possible without
-                        // becoming unreadable (floor 0.7), so first load looks as intentional as Canvas Flow.
+                        // becoming unreadable (floor 0.7), leaving 16px vertical breathing room so
+                        // bottom pointers never clip or cramp against scrollbars.
                         var wrapNaturalH = canvas.scrollHeight;
-                        if (wrapNaturalH &gt; 0 &amp;&amp; availableH &gt; 0 &amp;&amp; wrapNaturalH * fitScale &gt; availableH) {
-                            fitScale = Math.min(fitScale, Math.max(0.7, availableH / wrapNaturalH));
+                        if (wrapNaturalH &gt; 0 &amp;&amp; availableH &gt; 0 &amp;&amp; wrapNaturalH * fitScale &gt; (availableH - 16)) {
+                            fitScale = Math.min(fitScale, Math.max(0.7, (availableH - 16) / wrapNaturalH));
                         }
                     } else {
                         // In Canvas Flow (horizontal scroll) view:
@@ -8582,18 +9170,19 @@
                         }
 
                         var scaleW = (naturalW &gt; 0 &amp;&amp; availableW &gt; 0) ? (availableW / naturalW) : 1.0;
-                        var scaleH = (naturalH &gt; 0 &amp;&amp; availableH &gt; 0) ? (availableH / naturalH) : 1.0;
+                        var scaleH = (naturalH &gt; 0 &amp;&amp; availableH &gt; 0) ? ((availableH - 16) / naturalH) : 1.0;
                         fitScale = Math.min(scaleW, scaleH);
 
                         if (colCount &lt;= 1) {
-                            fitScale = Math.min(1.35, Math.max(1.15, scaleW));
+                            fitScale = Math.min(1.25, Math.max(1.10, scaleW));
                         } else if (colCount === 2) {
-                            fitScale = Math.min(1.20, Math.max(1.05, fitScale));
+                            fitScale = Math.min(1.15, Math.max(1.00, fitScale));
                         } else if (colCount === 3) {
-                            fitScale = Math.min(1.10, Math.max(0.95, fitScale));
+                            fitScale = Math.min(1.05, Math.max(0.95, fitScale));
                         } else {
                             // Multi-stage pipeline: scale down to fit Start-to-End comfortably on screen
-                            fitScale = Math.min(1.0, fitScale);
+                            // with a readable 50% minimum floor for initial load; wider pipelines scroll horizontally.
+                            fitScale = Math.min(1.0, Math.max(0.50, fitScale));
                         }
                     }
 
@@ -8869,18 +9458,259 @@
                     }
                 }
 
+                var deferredTrendsPending = false;
+                var deferredArtifactsPending = false;
+                var deferredTestsPending = false;
+                var deferredReplayPending = false;
+
+                function applyStageTrendsToStages(stages, trendsInput) {
+                    if (!stages || !trendsInput) return;
+                    var byId = {};
+                    var byName = {};
+                    if (Array.isArray(trendsInput)) {
+                        for (var t = 0; t &lt; trendsInput.length; t++) {
+                            var item = trendsInput[t];
+                            if (item &amp;&amp; item.stageId) byId[item.stageId] = item;
+                            if (item &amp;&amp; item.stageName) byName[item.stageName] = item;
+                        }
+                    } else {
+                        byName = trendsInput;
+                    }
+                    function walk(list) {
+                        for (var i = 0; i &lt; list.length; i++) {
+                            var st = list[i];
+                            var trend = byId[st.id] || byName[st.name];
+                            if (trend) {
+                                st.avgDurationMillis = trend.avgDurationMillis;
+                                st.variancePercent = trend.variancePercent;
+                                st.formattedVariance = trend.formattedVariance;
+                                st.isSpike = !!(trend.isSpike || trend.spike);
+                                st.isFaster = !!(trend.isFaster || trend.faster);
+                            }
+                            if (st.children &amp;&amp; st.children.length &gt; 0) {
+                                walk(st.children);
+                            }
+                        }
+                    }
+                    walk(stages);
+                }
+
+                function updateStageVarianceDomInPlace(stages) {
+                    if (!stages) return;
+                    for (var i = 0; i &lt; stages.length; i++) {
+                        var st = stages[i];
+                        if (st.formattedVariance) {
+                            var isSpike = !!(st.isSpike || st.spike);
+                            var isFaster = !!(st.isFaster || st.faster);
+                            var vClass = isSpike ? "spike" : (isFaster ? "faster" : "neutral");
+                            var vIcon = isSpike ? ICON_TREND_UP : (isFaster ? ICON_TREND_DOWN : "");
+                            var vTitle = isSpike
+                                ? ("Duration Spike: " + st.formattedVariance + " vs avg " + formatDuration(st.avgDurationMillis))
+                                : (isFaster
+                                    ? ("Faster: " + st.formattedVariance.replace('-', '') + " vs avg " + formatDuration(st.avgDurationMillis))
+                                    : ("Historical avg: " + formatDuration(st.avgDurationMillis)));
+                            var pillHtml = '&lt;span class="stage-variance-pill ' + vClass + '" title="' + vTitle.replace(/"/g, '&amp;quot;') + '"&gt;' + vIcon + st.formattedVariance + '&lt;/span&gt;';
+                            var cardEl = document.getElementById('stage-card-' + st.id);
+                            if (cardEl) {
+                                var durVal = cardEl.querySelector('.stage-duration-val');
+                                if (durVal &amp;&amp; durVal.parentElement) {
+                                    var existingPill = durVal.parentElement.querySelector('.stage-variance-pill');
+                                    if (existingPill) existingPill.remove();
+                                    durVal.insertAdjacentHTML('afterend', ' ' + pillHtml);
+                                }
+                                var compactRow = cardEl.querySelector('.stage-compact-metric-row');
+                                if (compactRow) {
+                                    var existingCompactPill = compactRow.querySelector('.stage-variance-pill');
+                                    if (existingCompactPill) existingCompactPill.remove();
+                                    compactRow.insertAdjacentHTML('beforeend', pillHtml);
+                                }
+                            }
+                        }
+                        if (st.children &amp;&amp; st.children.length &gt; 0) {
+                            updateStageVarianceDomInPlace(st.children);
+                        }
+                    }
+                    if (selectedStageId &amp;&amp; graphData &amp;&amp; graphData.stages) {
+                        var selSt = findStage(graphData.stages, selectedStageId);
+                        var varBadge = document.getElementById('stage-banner-variance-badge');
+                        if (selSt &amp;&amp; varBadge &amp;&amp; selSt.formattedVariance) {
+                            var bSpike = !!(selSt.isSpike || selSt.spike);
+                            var bFaster = !!(selSt.isFaster || selSt.faster);
+                            var avgFmt = formatDuration(selSt.avgDurationMillis);
+                            var trendIcon = bSpike ? ICON_TREND_UP : (bFaster ? ICON_TREND_DOWN : '');
+                            var title = bSpike
+                                ? ('Duration Spiked by ' + selSt.formattedVariance + ' vs historical average (' + avgFmt + ')')
+                                : (bFaster ? ('Finished ' + selSt.formattedVariance.replace('-', '') + ' faster than historical avg (' + avgFmt + ')') : ('Historical avg: ' + avgFmt));
+                            varBadge.className = 'stage-banner-badge ' + (bSpike ? 'stage-badge-variance-spike' : (bFaster ? 'stage-badge-variance-faster' : 'stage-badge-variance-neutral'));
+                            varBadge.innerHTML = trendIcon + (bSpike ? ('SPIKE ' + selSt.formattedVariance) : (bFaster ? (selSt.formattedVariance + ' FASTER') : ('VARIANCE ' + selSt.formattedVariance)));
+                            varBadge.title = title;
+                            varBadge.style.display = 'inline-flex';
+                        }
+                    }
+                }
+
+                function applyArtifactsToStages(stages, artifacts) {
+                    if (!stages) return;
+                    var countByStage = {};
+                    if (artifacts &amp;&amp; Array.isArray(artifacts)) {
+                        for (var a = 0; a &lt; artifacts.length; a++) {
+                            var sid = artifacts[a].stageId;
+                            if (sid) {
+                                countByStage[sid] = (countByStage[sid] || 0) + 1;
+                            }
+                        }
+                    }
+                    function walk(list) {
+                        for (var i = 0; i &lt; list.length; i++) {
+                            var s = list[i];
+                            var c = countByStage[s.id] || 0;
+                            if (c &gt; 0) {
+                                s.hasArtifacts = true;
+                                s.artifactCount = c;
+                            }
+                            if (s.children &amp;&amp; s.children.length &gt; 0) {
+                                walk(s.children);
+                            }
+                        }
+                    }
+                    walk(stages);
+                }
+
+                function loadDeferredTrends() {
+                    if (deferredTrendsPending || !graphData || graphData.stageTrendsLoaded) return;
+                    deferredTrendsPending = true;
+                    fetch(horizonBaseUrl + 'apiDetails?section=trends')
+                        .then(function(r) { return r.ok ? r.json() : null; })
+                        .then(function(sec) {
+                            deferredTrendsPending = false;
+                            if (!sec || !graphData) return;
+                            graphData.stageTrends = sec.stageTrends || {};
+                            graphData.stageTrendsLoaded = true;
+                            applyStageTrendsToStages(graphData.stages, graphData.stageTrends);
+                            updateStageVarianceDomInPlace(graphData.stages);
+                        })
+                        .catch(function() {
+                            deferredTrendsPending = false;
+                        });
+                }
+
+                function loadDeferredArtifacts(forceRenderModal) {
+                    if (!graphData) return Promise.resolve();
+                    if (graphData.artifactsLoaded) {
+                        if (forceRenderModal) {
+                            renderArtifactStagePills();
+                            filterArtifacts();
+                        }
+                        return Promise.resolve();
+                    }
+                    if (deferredArtifactsPending &amp;&amp; window._horizonArtifactsPromise) {
+                        return window._horizonArtifactsPromise;
+                    }
+                    deferredArtifactsPending = true;
+                    window._horizonArtifactsPromise = fetch(horizonBaseUrl + 'apiDetails?section=artifacts')
+                        .then(function(r) { return r.ok ? r.json() : null; })
+                        .then(function(sec) {
+                            deferredArtifactsPending = false;
+                            if (!sec || !graphData) return;
+                            graphData.artifacts = sec.artifacts || [];
+                            graphData.artifactCount = sec.artifactCount || graphData.artifacts.length;
+                            graphData.totalArtifactSize = sec.totalArtifactSize || sec.totalArtifactSizeBytes || 0;
+                            graphData.formattedTotalArtifactSize = sec.formattedTotalArtifactSize || "0 B";
+                            graphData.artifactsLoaded = true;
+                            applyArtifactsToStages(graphData.stages, graphData.artifacts);
+
+                            var artCount = graphData.artifactCount;
+                            var artSize = graphData.formattedTotalArtifactSize;
+                            var metaArt = document.getElementById('meta-artifacts');
+                            if (metaArt) {
+                                metaArt.innerText = artCount &gt; 0 ? (artCount + " (" + artSize + ")") : "0 recorded";
+                            }
+                            var headerArtBadge = document.getElementById('header-artifacts-badge');
+                            if (headerArtBadge) {
+                                headerArtBadge.innerText = artCount;
+                                headerArtBadge.style.display = artCount &gt; 0 ? "inline-block" : "none";
+                            }
+                            var tabArtBadge = document.getElementById('tab-artifacts-badge');
+                            if (tabArtBadge) {
+                                tabArtBadge.innerText = artCount;
+                            }
+                            var statsText = document.getElementById('artifacts-stats-text');
+                            if (statsText) {
+                                statsText.innerText = artCount + " files (" + artSize + ")";
+                            }
+                            var zipBtn = document.getElementById('btn-download-all-zip');
+                            if (zipBtn) {
+                                zipBtn.style.display = artCount &gt; 0 ? "inline-flex" : "none";
+                            }
+                            renderArtifactsList(graphData.artifacts);
+                            var modal = document.getElementById('artifacts-modal');
+                            if (forceRenderModal || (modal &amp;&amp; modal.classList.contains('active'))) {
+                                renderArtifactStagePills();
+                                filterArtifacts();
+                            }
+                        })
+                        .catch(function() {
+                            deferredArtifactsPending = false;
+                        });
+                    return window._horizonArtifactsPromise;
+                }
+
+                function scheduleDeferredSectionsLoad(data) {
+                    if (!data) return;
+                    setTimeout(function() {
+                        if (!data.stageTrendsLoaded) {
+                            loadDeferredTrends();
+                        }
+                        if (!data.artifactsLoaded) {
+                            loadDeferredArtifacts(false);
+                        }
+                    }, 20);
+                }
+
                 function fetchGraph() {
-                    fetch(horizonBaseUrl + 'apiGraph')
-                        .then(function(res) { return res.json(); })
+                    var initialPromise = window._horizonInitialCanvasPromise;
+                    window._horizonInitialCanvasPromise = null;
+                    var requestPromise = initialPromise
+                        ? initialPromise.then(function(preloaded) {
+                            if (preloaded) return preloaded;
+                            return fetch(horizonBaseUrl + 'apiGraph?view=canvas').then(function(res) { return res.json(); });
+                        })
+                        : fetch(horizonBaseUrl + 'apiGraph?view=canvas').then(function(res) { return res.json(); });
+
+                    requestPromise
                         .then(function(data) {
                             if (data.building) {
                                 window._horizonWasBuilding = true;
                                 invalidateRunningStepLogCache(data);
                             }
+                            if (graphData &amp;&amp; !data.building) {
+                                if (!data.stageTrendsLoaded &amp;&amp; graphData.stageTrendsLoaded &amp;&amp; graphData.stageTrends) {
+                                    data.stageTrends = graphData.stageTrends;
+                                    data.stageTrendsLoaded = true;
+                                    applyStageTrendsToStages(data.stages, data.stageTrends);
+                                }
+                                if (!data.artifactsLoaded &amp;&amp; graphData.artifactsLoaded) {
+                                    data.artifacts = graphData.artifacts || [];
+                                    data.artifactCount = graphData.artifactCount || 0;
+                                    data.totalArtifactSizeBytes = graphData.totalArtifactSizeBytes || 0;
+                                    data.formattedTotalArtifactSize = graphData.formattedTotalArtifactSize || "0 B";
+                                    data.artifactsLoaded = true;
+                                    applyArtifactsToStages(data.stages, data.artifacts);
+                                }
+                                if (!data.testCasesLoaded &amp;&amp; graphData.testCasesLoaded) {
+                                    data.testCases = graphData.testCases || [];
+                                    data.testCasesLoaded = true;
+                                }
+                                if (!data.replayScriptLoaded &amp;&amp; graphData.replayScriptLoaded) {
+                                    data.originalScript = graphData.originalScript;
+                                    data.replayScriptLoaded = true;
+                                }
+                            }
                             graphData = data;
                             computeRunTimingBreakdown(data);
                             renderHeader(data);
                             renderGraph(data);
+                            scheduleDeferredSectionsLoad(data);
                             if (data.building) {
                                 var isHidden = (typeof document.hidden !== 'undefined' &amp;&amp; document.hidden);
                                 document.getElementById('refresh-indicator').innerText = isHidden
@@ -9085,11 +9915,58 @@
                         if (commitItem) commitItem.style.display = 'none';
                     }
 
-                    var causeText = (data.causes &amp;&amp; data.causes.length) ? data.causes[0] : "Direct trigger";
-                    if (data.culprits &amp;&amp; data.culprits.length &gt; 0) {
-                        causeText += " (Culprits: " + data.culprits.join(", ") + ")";
+                    var causeMetaEl = document.getElementById('meta-cause');
+                    if (causeMetaEl) {
+                        var causeHtml = '';
+                        var userUrl = data.triggeredByUserUrl;
+                        if (userUrl) {
+                            if (userUrl.indexOf('/') === 0) {
+                                userUrl = appRootUrl + userUrl.substring(1);
+                            } else {
+                                userUrl = appRootUrl + userUrl;
+                            }
+                        } else if (data.triggeredByUserId) {
+                            userUrl = appRootUrl + 'user/' + encodeURIComponent(data.triggeredByUserId) + '/';
+                        }
+
+                        if (userUrl) {
+                            var userDisplayName = escapeHtml(data.triggeredByUserName || data.triggeredByUserId);
+                            var userTitle = "View Jenkins User Profile: " + (data.triggeredByUserName || data.triggeredByUserId) + (data.triggeredByUserId ? " (" + data.triggeredByUserId + ")" : "");
+                            causeHtml = '&lt;span class="trigger-label-prefix"&gt;Started by &lt;/span&gt;' +
+                                '&lt;a href="' + escapeHtml(userUrl) + '" target="_blank" rel="noopener noreferrer" class="trigger-user-btn" title="' + escapeHtml(userTitle) + '" aria-label="' + escapeHtml(userTitle) + '"&gt;' +
+                                    '&lt;svg class="user-btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"&gt;' +
+                                        '&lt;path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/&gt;' +
+                                        '&lt;circle cx="12" cy="7" r="4"/&gt;' +
+                                    '&lt;/svg&gt;' +
+                                    '&lt;span class="user-btn-name"&gt;' + userDisplayName + '&lt;/span&gt;' +
+                                    '&lt;svg class="user-btn-ext" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"&gt;' +
+                                        '&lt;path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/&gt;' +
+                                        '&lt;polyline points="15 3 21 3 21 9"/&gt;' +
+                                        '&lt;line x1="10" y1="14" x2="21" y2="3"/&gt;' +
+                                    '&lt;/svg&gt;' +
+                                '&lt;/a&gt;';
+                        } else if (data.upstreamProject) {
+                            var upUrl = data.upstreamUrl ? (data.upstreamUrl.indexOf('/') === 0 ? appRootUrl + data.upstreamUrl.substring(1) : appRootUrl + data.upstreamUrl) : (appRootUrl + 'job/' + encodeURIComponent(data.upstreamProject) + '/' + (data.upstreamBuild ? data.upstreamBuild + '/' : ''));
+                            causeHtml = '&lt;span class="trigger-label-prefix"&gt;Upstream &lt;/span&gt;' +
+                                '&lt;a href="' + escapeHtml(upUrl) + '" target="_blank" rel="noopener noreferrer" class="trigger-upstream-btn" title="View upstream build"&gt;' +
+                                    '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;polyline points="17 1 21 5 17 9"/&gt;&lt;path d="M3 11V9a4 4 0 0 1 4-4h14"/&gt;&lt;polyline points="7 23 3 19 7 15"/&gt;&lt;path d="M21 13v2a4 4 0 0 1-4 4H3"/&gt;&lt;/svg&gt;' +
+                                    '&lt;span&gt;' + escapeHtml(data.upstreamProject) + (data.upstreamBuild ? ' #' + data.upstreamBuild : '') + '&lt;/span&gt;' +
+                                '&lt;/a&gt;';
+                        } else {
+                            var rawCause = (data.causes &amp;&amp; data.causes.length) ? data.causes[0] : "Direct trigger";
+                            causeHtml = '&lt;span class="trigger-text"&gt;' + escapeHtml(rawCause) + '&lt;/span&gt;';
+                        }
+
+                        if (data.culprits &amp;&amp; data.culprits.length &gt; 0) {
+                            causeHtml += ' &lt;span class="trigger-culprits" style="font-size:0.75rem; color:#94a3b8;"&gt;(Culprits: ' +
+                                data.culprits.map(function(c) {
+                                    return '&lt;a href="' + appRootUrl + 'user/' + encodeURIComponent(c) + '/" target="_blank" rel="noopener noreferrer" class="culprit-link" style="color:#60a5fa; text-decoration:underline;"&gt;' + escapeHtml(c) + '&lt;/a&gt;';
+                                }).join(', ') +
+                            ')&lt;/span&gt;';
+                        }
+
+                        causeMetaEl.innerHTML = causeHtml;
                     }
-                    document.getElementById('meta-cause').innerText = causeText;
                     
                     var agentsContainer = document.getElementById('meta-agents');
                     if (agentsContainer) {
@@ -9114,6 +9991,39 @@
                             agentsContainer.innerHTML = htmlParts.join(' ');
                         } else {
                             agentsContainer.innerHTML = '&lt;span class="agent-chip" title="Agent: Built-In Node \u2014 Click for agent details" onclick="event.stopPropagation(); openAgentModal(null, \'Built-In Node\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(null, \'Built-In Node\');}" role="button" tabindex="0"&gt;' + ICON_SERVER + '&lt;span class="agent-chip-name"&gt;Built-In Node&lt;/span&gt;&lt;/span&gt;';
+                        }
+                    }
+
+                    var paramsMetaEl = document.getElementById('meta-params');
+                    var paramsMenuItem = document.getElementById('menu-item-params');
+                    var paramsList = (data.buildParameters &amp;&amp; data.buildParameters.length &gt; 0)
+                        ? data.buildParameters
+                        : (data.parameters ? Object.keys(data.parameters).map(function(k) { return { name: k, value: data.parameters[k], type: 'String', sensitive: false, description: '' }; }) : []);
+
+                    if (paramsMetaEl) {
+                        if (paramsList.length &gt; 0) {
+                            var pCount = paramsList.length;
+                            var pNames = paramsList.map(function(p){ return p.name; }).slice(0, 3).join(', ') + (paramsList.length &gt; 3 ? '...' : '');
+                            var pTitle = pCount + ' parameter' + (pCount === 1 ? '' : 's') + ' (' + pNames + ') \u2014 Click to inspect in modal';
+                            paramsMetaEl.innerHTML = '&lt;span class="param-chip" title="' + escapeHtml(pTitle) + '" onclick="event.stopPropagation(); openParametersModal()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openParametersModal();}" role="button" tabindex="0"&gt;' +
+                                ICON_SLIDERS +
+                                '&lt;span class="param-chip-name"&gt;' + pCount + (pCount === 1 ? ' Parameter' : ' Parameters') + '&lt;/span&gt;' +
+                            '&lt;/span&gt;';
+                        } else {
+                            paramsMetaEl.innerHTML = '&lt;span class="param-none" title="No parameters were provided for this build"&gt;None&lt;/span&gt;';
+                        }
+                    }
+
+                    if (paramsMenuItem) {
+                        if (paramsList.length &gt; 0) {
+                            paramsMenuItem.style.display = 'flex';
+                            hasAnyAction = true;
+                            var descEl = document.getElementById('menu-item-params-desc');
+                            if (descEl) {
+                                descEl.innerText = paramsList.length + ' parameter' + (paramsList.length === 1 ? '' : 's') + ' configured for this run';
+                            }
+                        } else {
+                            paramsMenuItem.style.display = 'none';
                         }
                     }
 
@@ -9504,6 +10414,9 @@
                     renderArtifactStagePills();
                     filterArtifacts();
                     if (modal) modal.classList.add('active');
+                    if (graphData &amp;&amp; !graphData.artifactsLoaded) {
+                        loadDeferredArtifacts(true);
+                    }
                 }
 
                 function closeArtifactsModal() {
@@ -10532,11 +11445,25 @@
                         if (col.isParallel) {
                             var maxChildDur = 0;
                             var longestChildName = "";
+                            var parallelDoneCount = 0;
+                            var parallelRunningCount = 0;
+                            var parallelFailedCount = 0;
+                            var parallelSkippedCount = 0;
                             for (var c = 0; c &lt; col.children.length; c++) {
                                 var cDur = col.children[c].durationMillis || 0;
                                 if (cDur &gt; maxChildDur) {
                                     maxChildDur = cDur;
                                     longestChildName = col.children[c].name;
+                                }
+                                var childStatus = col.children[c].status || "SUCCESS";
+                                if (childStatus === "IN_PROGRESS" || childStatus === "PAUSED_INPUT") {
+                                    parallelRunningCount++;
+                                } else if (childStatus === "FAILED" || childStatus === "FAILURE" || childStatus === "UNSTABLE") {
+                                    parallelFailedCount++;
+                                } else if (childStatus.indexOf("SKIPPED") !== -1 || childStatus === "NOT_EXECUTED") {
+                                    parallelSkippedCount++;
+                                } else {
+                                    parallelDoneCount++;
                                 }
                             }
                             var parallelDur = Math.max(col.stage ? (col.stage.durationMillis || 0) : 0, maxChildDur);
@@ -10564,6 +11491,14 @@
                                 html += formatDuration(parallelDur) + (parallelPctOfStages &gt; 0 ? (' (' + parallelPctOfStages + '%)') : '');
                                 html += '&lt;/span&gt;';
                             }
+                            html += '&lt;/div&gt;';
+                            var parallelState = parallelDoneCount + '/' + col.children.length + ' done';
+                            if (parallelRunningCount &gt; 0) parallelState += ' • ' + parallelRunningCount + ' running';
+                            if (parallelFailedCount &gt; 0) parallelState += ' • ' + parallelFailedCount + ' attention';
+                            if (parallelSkippedCount &gt; 0) parallelState += ' • ' + parallelSkippedCount + ' skipped';
+                            html += '&lt;div class="parallel-summary" title="Parallel stages form a barrier: the next stage starts after all branches finish."&gt;';
+                            html += '&lt;span class="parallel-join-badge"&gt;ALL BRANCHES JOIN&lt;/span&gt;';
+                            html += '&lt;span class="parallel-state-text"&gt;' + parallelState + '&lt;/span&gt;';
                             html += '&lt;/div&gt;';
                             for (var c = 0; c &lt; col.children.length; c++) {
                                 html += renderStageCard(col.children[c], col.stage, parallelDur);
@@ -10625,7 +11560,7 @@
                     } else {
                         applyCanvasZoom();
                     }
-                    setTimeout(drawFlowConnectors, 25);
+                    setTimeout(scheduleDrawFlowConnectors, 25);
 
                     // Re-select stage from URL hash if present, otherwise auto-jump to failure / active, or first stage
                     var hashApplied = applyHashSelection(true);
@@ -10749,6 +11684,17 @@
                     return circle;
                 }
 
+                var flowConnectorRaf = null;
+
+                function scheduleDrawFlowConnectors() {
+                    if (flowConnectorRaf !== null) return;
+                    var frameScheduler = window.requestAnimationFrame || function(callback) { return window.setTimeout(callback, 16); };
+                    flowConnectorRaf = frameScheduler(function() {
+                        flowConnectorRaf = null;
+                        drawFlowConnectors();
+                    });
+                }
+
                 function drawFlowConnectors() {
                     var flow = document.getElementById("pipeline-flow");
                     var canvas = document.getElementById("pipeline-flow-canvas") || flow;
@@ -10767,8 +11713,8 @@
 
                     var width = (currentLayoutMode === "wrap")
                         ? Math.max(canvas.clientWidth, canvas.scrollWidth)
-                        : Math.max(canvas.scrollWidth, canvas.clientWidth, flow.scrollWidth);
-                    var height = Math.max(canvas.scrollHeight, canvas.clientHeight);
+                        : Math.max(canvas.offsetWidth, canvas.scrollWidth);
+                    var height = Math.max(canvas.offsetHeight, canvas.scrollHeight);
                     svg.setAttribute("width", width);
                     svg.setAttribute("height", height);
                     svg.style.width = width + "px";
@@ -10863,6 +11809,30 @@
                         return srcBottom + 26;
                     }
 
+                    // Parallel stages are a barrier: all incoming branches converge before
+                    // the next column starts, and all outgoing branches fan out afterwards.
+                    // Keeping the shared junction explicit avoids the N x M edge explosion
+                    // that made two large parallel groups unreadable.
+                    function appendFanOut(source, targets, junctionX, junctionY, wrapFloor) {
+                        if (!source || !targets || targets.length === 0) return;
+                        svg.appendChild(createFlowPathElement(source.x, source.y, junctionX, junctionY, source.status, "SUCCESS", source.bottomY, wrapFloor));
+                        svg.appendChild(createJunctionDotElement(junctionX, junctionY, source.status));
+                        for (var targetIndex = 0; targetIndex &lt; targets.length; targetIndex++) {
+                            var target = targets[targetIndex];
+                            svg.appendChild(createFlowPathElement(junctionX, junctionY, target.x, target.y, source.status, target.status));
+                        }
+                    }
+
+                    function appendFanIn(sources, target, junctionX, junctionY, wrapFloor) {
+                        if (!sources || sources.length === 0 || !target) return;
+                        for (var sourceIndex = 0; sourceIndex &lt; sources.length; sourceIndex++) {
+                            var source = sources[sourceIndex];
+                            svg.appendChild(createFlowPathElement(source.x, source.y, junctionX, junctionY, source.status, "SUCCESS", source.bottomY));
+                        }
+                        svg.appendChild(createJunctionDotElement(junctionX, junctionY, "SUCCESS"));
+                        svg.appendChild(createFlowPathElement(junctionX, junctionY, target.x, target.y, "SUCCESS", target.status, undefined, wrapFloor));
+                    }
+
                     // 1. Connect Start Node to First Column
                     var startNode = document.getElementById("terminal-node-start");
                     if (startNode) {
@@ -10874,11 +11844,14 @@
                             var tgt = getNodeAnchor(firstCards[0], "left");
                             svg.appendChild(createFlowPathElement(startAnchor.x, startAnchor.y, tgt.x, tgt.y, "SUCCESS", tgt.status, startAnchor.bottomY));
                         } else if (firstCards.length &gt; 1) {
-                            svg.appendChild(createJunctionDotElement(startAnchor.x, startAnchor.y, "SUCCESS"));
-                            for (var k = 0; k &lt; firstCards.length; k++) {
-                                var tgt = getNodeAnchor(firstCards[k], "left");
-                                svg.appendChild(createFlowPathElement(startAnchor.x, startAnchor.y, tgt.x, tgt.y, "SUCCESS", tgt.status, startAnchor.bottomY));
+                            var firstAnchors = firstCards.map(function(c) { return getNodeAnchor(c, "left"); });
+                            var firstMinX = Infinity;
+                            var firstY = 0;
+                            for (var k = 0; k &lt; firstAnchors.length; k++) {
+                                if (firstAnchors[k].x &lt; firstMinX) firstMinX = firstAnchors[k].x;
+                                firstY += firstAnchors[k].y;
                             }
+                            appendFanOut(startAnchor, firstAnchors, startAnchor.x + Math.max(18, (firstMinX - startAnchor.x) * 0.5), firstY / firstAnchors.length);
                         }
                     }
 
@@ -10914,18 +11887,13 @@
                                 }
                                 var divX = Math.max(12, minTgtX - 22);
                                 var divY = sumTgtY / nextAnchors.length;
-                                svg.appendChild(createJunctionDotElement(src.x, src.y, src.status));
-                                svg.appendChild(createFlowPathElement(src.x, src.y, divX, divY, src.status, "SUCCESS", src.bottomY, wrapFloor));
-                                svg.appendChild(createJunctionDotElement(divX, divY, src.status));
-                                for (var k = 0; k &lt; nextAnchors.length; k++) {
-                                    svg.appendChild(createFlowPathElement(divX, divY, nextAnchors[k].x, nextAnchors[k].y, src.status, nextAnchors[k].status));
-                                }
+                                appendFanOut(src, nextAnchors, divX, divY, wrapFloor);
                             } else {
-                                svg.appendChild(createJunctionDotElement(src.x, src.y, src.status));
-                                for (var k = 0; k &lt; nextCards.length; k++) {
-                                    var tgt = nextAnchors[k];
-                                    svg.appendChild(createFlowPathElement(src.x, src.y, tgt.x, tgt.y, src.status, tgt.status, src.bottomY, wrapFloor));
+                                var fanOutY = 0;
+                                for (var k = 0; k &lt; nextAnchors.length; k++) {
+                                    fanOutY += nextAnchors[k].y;
                                 }
+                                appendFanOut(src, nextAnchors, src.x + Math.max(18, (nextAnchors[0].x - src.x) * 0.5), fanOutY / nextAnchors.length, wrapFloor);
                             }
                         } else if (currCards.length &gt; 1 &amp;&amp; nextCards.length === 1) {
                             var tgt = getNodeAnchor(nextCards[0], "left");
@@ -10952,12 +11920,8 @@
                                 svg.appendChild(createFlowPathElement(convX, convY, tgt.x, tgt.y, tgt.status, tgt.status, undefined, wrapFloor));
                                 svg.appendChild(createJunctionDotElement(tgt.x, tgt.y, tgt.status));
                             } else {
-                                // Normal horizontal flow on the same row:
-                                for (var k = 0; k &lt; srcAnchors.length; k++) {
-                                    var src = srcAnchors[k];
-                                    svg.appendChild(createFlowPathElement(src.x, src.y, tgt.x, tgt.y, src.status, tgt.status, src.bottomY, wrapFloor));
-                                }
-                                svg.appendChild(createJunctionDotElement(tgt.x, tgt.y, tgt.status));
+                                // Normal horizontal flow: fan-in to one synchronization point.
+                                appendFanIn(srcAnchors, tgt, (maxSrcX + tgt.x) * 0.5, avgSrcY, wrapFloor);
                             }
                         } else {
                             var srcAnchors = currCards.map(function(c) { return getNodeAnchor(c, "right"); });
@@ -10992,12 +11956,16 @@
                                     svg.appendChild(createFlowPathElement(divX, divY, nextAnchors[m].x, nextAnchors[m].y, "SUCCESS", nextAnchors[m].status));
                                 }
                             } else {
+                                // Keep the barrier visible while reducing a 12 x 12 graph to
+                                // one fan-in/fan-out junction.
+                                var syncX = (maxSrcX + minTgtX) * 0.5;
+                                var syncY = ((sumSrcY / srcAnchors.length) + (sumTgtY / nextAnchors.length)) * 0.5;
                                 for (var k = 0; k &lt; srcAnchors.length; k++) {
-                                    var src = srcAnchors[k];
-                                    for (var m = 0; m &lt; nextCards.length; m++) {
-                                        var tgt = nextAnchors[m];
-                                        svg.appendChild(createFlowPathElement(src.x, src.y, tgt.x, tgt.y, src.status, tgt.status, src.bottomY, wrapFloor));
-                                    }
+                                    svg.appendChild(createFlowPathElement(srcAnchors[k].x, srcAnchors[k].y, syncX, syncY, srcAnchors[k].status, "SUCCESS", srcAnchors[k].bottomY));
+                                }
+                                svg.appendChild(createJunctionDotElement(syncX, syncY, "SUCCESS"));
+                                for (var m = 0; m &lt; nextAnchors.length; m++) {
+                                    svg.appendChild(createFlowPathElement(syncX, syncY, nextAnchors[m].x, nextAnchors[m].y, "SUCCESS", nextAnchors[m].status));
                                 }
                             }
                         }
@@ -11023,11 +11991,15 @@
                             var src = getNodeAnchor(lastCards[0], "right");
                             svg.appendChild(createFlowPathElement(src.x, src.y, endAnchor.x, endAnchor.y, src.status, endStatus, src.bottomY, endWrapFloor));
                         } else if (lastCards.length &gt; 1) {
-                            for (var k = 0; k &lt; lastCards.length; k++) {
-                                var src = getNodeAnchor(lastCards[k], "right");
-                                svg.appendChild(createFlowPathElement(src.x, src.y, endAnchor.x, endAnchor.y, src.status, endStatus, src.bottomY, endWrapFloor));
+                            var lastAnchors = lastCards.map(function(c) { return getNodeAnchor(c, "right"); });
+                            var lastMaxX = 0;
+                            var lastY = 0;
+                            for (var k = 0; k &lt; lastAnchors.length; k++) {
+                                if (lastAnchors[k].x &gt; lastMaxX) lastMaxX = lastAnchors[k].x;
+                                lastY += lastAnchors[k].y;
                             }
-                            svg.appendChild(createJunctionDotElement(endAnchor.x, endAnchor.y, endStatus));
+                            var endJunctionX = endAnchor.x &lt; lastMaxX ? lastMaxX + 20 : (lastMaxX + endAnchor.x) * 0.5;
+                            appendFanIn(lastAnchors, endAnchor, endJunctionX, lastY / lastAnchors.length, endWrapFloor);
                         }
                     }
                 }
@@ -11035,7 +12007,7 @@
                 if (!window._horizonResizeBound) {
                     window._horizonResizeBound = true;
                     window.addEventListener("resize", function() {
-                        drawFlowConnectors();
+                        scheduleDrawFlowConnectors();
                     });
                 }
 
@@ -11171,11 +12143,13 @@
                     card += '&lt;/div&gt;';
                     var variancePillHtml = "";
                     if (stage.formattedVariance) {
-                        var vClass = stage.isSpike ? "spike" : (stage.isFaster ? "faster" : "neutral");
-                        var vIcon = stage.isSpike ? ICON_TREND_UP : (stage.isFaster ? ICON_TREND_DOWN : "");
-                        var vTitle = stage.isSpike
+                        var stIsSpike = !!(stage.isSpike || stage.spike);
+                        var stIsFaster = !!(stage.isFaster || stage.faster);
+                        var vClass = stIsSpike ? "spike" : (stIsFaster ? "faster" : "neutral");
+                        var vIcon = stIsSpike ? ICON_TREND_UP : (stIsFaster ? ICON_TREND_DOWN : "");
+                        var vTitle = stIsSpike
                             ? ("Duration Spike: " + stage.formattedVariance + " vs avg " + formatDuration(stage.avgDurationMillis))
-                            : (stage.isFaster
+                            : (stIsFaster
                                 ? ("Faster: " + stage.formattedVariance.replace('-', '') + " vs avg " + formatDuration(stage.avgDurationMillis))
                                 : ("Historical avg: " + formatDuration(stage.avgDurationMillis)));
                         variancePillHtml = ' &lt;span class="stage-variance-pill ' + vClass + '" title="' + vTitle.replace(/"/g, '&amp;quot;') + '"&gt;' + vIcon + stage.formattedVariance + '&lt;/span&gt;';
@@ -11293,6 +12267,14 @@
                             hashInfo.tabParam = 'artifacts';
                             return;
                         }
+                        if (str === 'parameters' || str === 'params' || str === 'param') {
+                            hashInfo.tabParam = 'parameters';
+                            return;
+                        }
+                        if (str === 'tests' || str === 'test') {
+                            hashInfo.tabParam = 'tests';
+                            return;
+                        }
                         if (str.indexOf('=') !== -1) {
                             var pairs = str.split('&amp;');
                             for (var i = 0; i &lt; pairs.length; i++) {
@@ -11306,6 +12288,8 @@
                                 }
                                 else if (key === 'tab') {
                                     if (val === 'artifacts' || val === 'artifact') hashInfo.tabParam = 'artifacts';
+                                    else if (val === 'parameters' || val === 'params' || val === 'param') hashInfo.tabParam = 'parameters';
+                                    else if (val === 'tests' || val === 'test') hashInfo.tabParam = 'tests';
                                     else if (val === 'steps') hashInfo.tabParam = 'steps';
                                 }
                             }
@@ -11368,6 +12352,14 @@
 
                     var cardRelativeTop = (cardRect.top - containerRect.top) + flowContainer.scrollTop;
                     var targetScrollTop = cardRelativeTop - (flowContainer.clientHeight / 2) + (cardRect.height / 2);
+
+                    // If the pipeline content fits comfortably inside the container, keep initial view centered without scrolling
+                    if (flowContainer.scrollWidth &lt;= flowContainer.clientWidth + 4) {
+                        targetScrollLeft = 0;
+                    }
+                    if (flowContainer.scrollHeight &lt;= flowContainer.clientHeight + 4) {
+                        targetScrollTop = 0;
+                    }
 
                     flowContainer.scrollTo({
                         left: Math.max(0, targetScrollLeft),
@@ -11640,6 +12632,16 @@
                     if (hashInfo.tabParam === 'artifacts') {
                         var stObj = hashInfo.stageParam ? findStageByParam(graphData.stages, hashInfo.stageParam) : null;
                         openArtifactsModal(stObj ? stObj.id : null);
+                        return true;
+                    }
+
+                    if (hashInfo.tabParam === 'parameters') {
+                        openParametersModal();
+                        return true;
+                    }
+
+                    if (hashInfo.tabParam === 'tests') {
+                        openTestsModal();
                         return true;
                     }
 
@@ -11918,8 +12920,8 @@
                     var varBadge = document.getElementById('stage-banner-variance-badge');
                     if (varBadge) {
                         if (stage.formattedVariance) {
-                            var isSpike = stage.isSpike;
-                            var isFaster = stage.isFaster;
+                            var isSpike = !!(stage.isSpike || stage.spike);
+                            var isFaster = !!(stage.isFaster || stage.faster);
                             var avgFmt = formatDuration(stage.avgDurationMillis);
                             var trendIcon = isSpike ? ICON_TREND_UP : (isFaster ? ICON_TREND_DOWN : '');
                             var title = isSpike
@@ -14925,6 +15927,197 @@
                     });
                 }
 
+                /* Build Parameters Modal */
+                var currentParametersList = [];
+                var currentRenderedParams = [];
+
+                function openParametersModal() {
+                    var modal = document.getElementById('parameters-modal');
+                    if (!modal) return;
+
+                    if (graphData &amp;&amp; graphData.buildParameters &amp;&amp; graphData.buildParameters.length &gt; 0) {
+                        currentParametersList = graphData.buildParameters;
+                    } else if (graphData &amp;&amp; graphData.parameters) {
+                        currentParametersList = Object.keys(graphData.parameters).map(function(k) {
+                            return {
+                                name: k,
+                                value: graphData.parameters[k],
+                                type: 'String',
+                                description: '',
+                                sensitive: false
+                            };
+                        });
+                    } else {
+                        currentParametersList = [];
+                    }
+
+                    var searchInput = document.getElementById('params-search-input');
+                    if (searchInput) searchInput.value = '';
+
+                    renderBuildParameters(currentParametersList);
+                    modal.classList.add('active');
+                    if (searchInput) {
+                        setTimeout(function() { searchInput.focus(); }, 50);
+                    }
+                }
+
+                function closeParametersModal() {
+                    var modal = document.getElementById('parameters-modal');
+                    if (modal) modal.classList.remove('active');
+                }
+
+                function filterBuildParameters() {
+                    var searchInput = document.getElementById('params-search-input');
+                    var q = (searchInput ? searchInput.value : '').trim().toLowerCase();
+                    if (!q) {
+                        renderBuildParameters(currentParametersList);
+                        return;
+                    }
+                    var filtered = currentParametersList.filter(function(p) {
+                        var nameMatch = p.name &amp;&amp; p.name.toLowerCase().indexOf(q) !== -1;
+                        var valMatch = p.value &amp;&amp; String(p.value).toLowerCase().indexOf(q) !== -1;
+                        var typeMatch = p.type &amp;&amp; p.type.toLowerCase().indexOf(q) !== -1;
+                        var descMatch = p.description &amp;&amp; p.description.toLowerCase().indexOf(q) !== -1;
+                        return nameMatch || valMatch || typeMatch || descMatch;
+                    });
+                    renderBuildParameters(filtered);
+                }
+
+                function getParamTypeBadgeClass(type) {
+                    var t = (type || '').toLowerCase();
+                    if (t.indexOf('bool') !== -1) return 'badge-type-bool';
+                    if (t.indexOf('choice') !== -1) return 'badge-type-choice';
+                    if (t.indexOf('pass') !== -1 || t.indexOf('secret') !== -1 || t.indexOf('credential') !== -1) return 'badge-type-password';
+                    if (t.indexOf('file') !== -1) return 'badge-type-file';
+                    if (t.indexOf('text') !== -1) return 'badge-type-text';
+                    return 'badge-type-string';
+                }
+
+                function renderBuildParameters(params) {
+                    currentRenderedParams = params || [];
+                    var container = document.getElementById('params-cards-container');
+                    var statsEl = document.getElementById('params-stats-text');
+                    if (!container) return;
+
+                    var totalCount = currentParametersList.length;
+                    var count = currentRenderedParams.length;
+
+                    if (statsEl) {
+                        if (count === totalCount) {
+                            statsEl.innerText = count + (count === 1 ? ' parameter' : ' parameters');
+                        } else {
+                            statsEl.innerText = count + ' of ' + totalCount + ' parameters';
+                        }
+                    }
+
+                    if (currentRenderedParams.length === 0) {
+                        if (totalCount === 0) {
+                            container.innerHTML = '&lt;div class="params-empty-state"&gt;' +
+                                '&lt;div style="font-size:1.8rem; margin-bottom:0.5rem; opacity:0.6;"&gt;\u2699&lt;/div&gt;' +
+                                '&lt;div style="font-weight:600; margin-bottom:0.25rem;"&gt;No Build Parameters&lt;/div&gt;' +
+                                '&lt;div style="font-size:0.8rem; color:#94a3b8;"&gt;This build was run without any parameters.&lt;/div&gt;' +
+                            '&lt;/div&gt;';
+                        } else {
+                            container.innerHTML = '&lt;div class="params-empty-state"&gt;' +
+                                '&lt;div style="font-size:1.8rem; margin-bottom:0.5rem; opacity:0.6;"&gt;\ud83d\udd0d&lt;/div&gt;' +
+                                '&lt;div style="font-weight:600; margin-bottom:0.25rem;"&gt;No Matching Parameters&lt;/div&gt;' +
+                                '&lt;div style="font-size:0.8rem; color:#94a3b8;"&gt;No parameters matched your search filter.&lt;/div&gt;' +
+                            '&lt;/div&gt;';
+                        }
+                        return;
+                    }
+
+                    var html = '';
+                    for (var i = 0; i &lt; currentRenderedParams.length; i++) {
+                        var p = currentRenderedParams[i];
+                        var isSensitive = !!p.sensitive;
+                        var pType = p.type || 'String';
+                        var isBool = (pType.toLowerCase().indexOf('bool') !== -1) || (typeof p.value === 'boolean');
+                        var isMultiLine = (pType.toLowerCase().indexOf('text') !== -1) || (typeof p.value === 'string' &amp;&amp; p.value.indexOf('\n') !== -1);
+
+                        html += '&lt;div class="param-card" id="param-card-' + i + '"&gt;';
+                        html += '&lt;div class="param-card-header"&gt;';
+                        html += '&lt;div class="param-card-title-group"&gt;';
+                        html += '&lt;span class="param-card-name"&gt;' + escapeHtml(p.name || '') + '&lt;/span&gt;';
+                        html += '&lt;span class="param-type-badge ' + getParamTypeBadgeClass(pType) + '"&gt;' + escapeHtml(pType) + '&lt;/span&gt;';
+                        if (isSensitive) {
+                            html += '&lt;span class="param-sensitive-badge" title="Sensitive / Secret parameter (value masked)"&gt;Sensitive&lt;/span&gt;';
+                        }
+                        html += '&lt;/div&gt;';
+                        html += '&lt;div class="param-card-actions"&gt;';
+                        html += '&lt;button type="button" class="param-copy-btn" onclick="copySingleParam(' + i + ')" title="Copy parameter value" aria-label="Copy parameter ' + escapeHtml(p.name || '') + '"&gt;';
+                        html += '&lt;svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;rect x="9" y="9" width="13" height="13" rx="2" ry="2"/&gt;&lt;path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/&gt;&lt;/svg&gt; Copy';
+                        html += '&lt;/button&gt;';
+                        html += '&lt;/div&gt;';
+                        html += '&lt;/div&gt;';
+
+                        if (p.description) {
+                            html += '&lt;div class="param-card-desc"&gt;' + escapeHtml(p.description) + '&lt;/div&gt;';
+                        }
+
+                        html += '&lt;div class="param-val-wrap"&gt;';
+                        if (isSensitive) {
+                            html += '&lt;span class="param-single-val val-masked" title="Masked sensitive value"&gt;\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022&lt;/span&gt;';
+                        } else if (isBool) {
+                            var bVal = (p.value === true || p.value === 'true' || p.value === 'TRUE' || p.value === '1');
+                            html += '&lt;span class="param-bool-val ' + (bVal ? 'bool-true' : 'bool-false') + '"&gt;' + (bVal ? 'TRUE' : 'FALSE') + '&lt;/span&gt;';
+                        } else if (isMultiLine) {
+                            html += '&lt;pre class="param-multiline-val"&gt;' + escapeHtml(p.value != null ? String(p.value) : '') + '&lt;/pre&gt;';
+                        } else {
+                            var rawVal = (p.value != null ? String(p.value) : '');
+                            if (rawVal === '') {
+                                html += '&lt;span class="param-single-val" style="color:#94a3b8; font-style:italic;"&gt;(empty string)&lt;/span&gt;';
+                            } else {
+                                html += '&lt;span class="param-single-val"&gt;' + escapeHtml(rawVal) + '&lt;/span&gt;';
+                            }
+                        }
+                        html += '&lt;/div&gt;';
+                        html += '&lt;/div&gt;';
+                    }
+
+                    container.innerHTML = html;
+                }
+
+                function copySingleParam(idx) {
+                    var p = currentRenderedParams &amp;&amp; currentRenderedParams[idx];
+                    if (!p) return;
+                    var textToCopy = (p.value != null) ? String(p.value) : '';
+                    copyTextToClipboard(textToCopy, "Copied '" + (p.name || 'parameter') + "' value to clipboard!");
+                }
+
+                function copyParameters(format) {
+                    if (!currentParametersList || currentParametersList.length === 0) {
+                        showToast("No parameters to copy", "info");
+                        return;
+                    }
+
+                    if (format === 'json') {
+                        var obj = {};
+                        for (var i = 0; i &lt; currentParametersList.length; i++) {
+                            var item = currentParametersList[i];
+                            if (item.name) {
+                                obj[item.name] = (item.value != null ? item.value : "");
+                            }
+                        }
+                        var jsonText = JSON.stringify(obj, null, 2);
+                        copyTextToClipboard(jsonText, "Copied " + Object.keys(obj).length + " parameters as JSON!");
+                    } else if (format === 'env') {
+                        var lines = [];
+                        for (var j = 0; j &lt; currentParametersList.length; j++) {
+                            var p = currentParametersList[j];
+                            if (p.name) {
+                                var val = (p.value != null ? String(p.value) : "");
+                                if (val.indexOf('\n') !== -1 || val.indexOf(' ') !== -1 || val.indexOf('"') !== -1) {
+                                    val = '"' + val.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+                                }
+                                lines.push(p.name + '=' + val);
+                            }
+                        }
+                        var envText = lines.join('\n');
+                        copyTextToClipboard(envText, "Copied " + lines.length + " parameters as KEY=VAL!");
+                    }
+                }
+
                 /* Interactive Test Results Modal */
                 function openTestsModal(initialFilter) {
                     var modal = document.getElementById('tests-modal');
@@ -14945,6 +16138,23 @@
                     }
 
                     var defaultFilter = initialFilter || (failed &gt; 0 ? 'FAILED' : 'ALL');
+                    if (!graphData.testCasesLoaded &amp;&amp; total &gt; 0 &amp;&amp; !deferredTestsPending) {
+                        deferredTestsPending = true;
+                        fetch(horizonBaseUrl + 'apiDetails?section=tests')
+                            .then(function(r) { return r.ok ? r.json() : null; })
+                            .then(function(sec) {
+                                deferredTestsPending = false;
+                                if (sec &amp;&amp; graphData) {
+                                    graphData.testCases = sec.testCases || [];
+                                    graphData.testCasesLoaded = true;
+                                }
+                                renderTestsModalList();
+                            })
+                            .catch(function() {
+                                deferredTestsPending = false;
+                                renderTestsModalList();
+                            });
+                    }
                     setTestsFilter(defaultFilter);
                     modal.classList.add('active');
                 }
@@ -14977,6 +16187,10 @@
 
                     var cases = graphData.testCases || [];
                     if (cases.length === 0) {
+                        if (deferredTestsPending) {
+                            listEl.innerHTML = '&lt;div style="padding:2rem; text-align:center; color:#94a3b8;"&gt;Loading JUnit test case details...&lt;/div&gt;';
+                            return;
+                        }
                         if ((graphData.totalTests || 0) &gt; 0) {
                             listEl.innerHTML = '&lt;div style="padding:2rem; text-align:center; color:#94a3b8;"&gt;Summary test counts were recorded (' + graphData.totalTests + ' total), but individual JUnit case details were not exposed by the test action. Use &lt;strong&gt;Classic Report&lt;/strong&gt; above to view details.&lt;/div&gt;';
                         } else {
@@ -15191,8 +16405,11 @@
                     clearReplayValidation();
                     var modal = document.getElementById('replay-modal');
                     var editor = document.getElementById('replay-script-editor');
+                    var needsReplayFetch = !!(graphData &amp;&amp; !graphData.replayScriptLoaded &amp;&amp; !graphData.originalScript &amp;&amp; graphData.replayEnabled);
                     if (graphData &amp;&amp; graphData.originalScript) {
                         editor.value = fixMojibake(graphData.originalScript);
+                    } else if (needsReplayFetch) {
+                        editor.value = "// Loading original Jenkinsfile script...";
                     } else {
                         editor.value = "// No original Jenkinsfile script captured for this run.";
                     }
@@ -15211,9 +16428,35 @@
                         });
                         editor._gutterScrollAttached = true;
                     }
+                    if (needsReplayFetch &amp;&amp; !deferredReplayPending) {
+                        deferredReplayPending = true;
+                        fetch(horizonBaseUrl + 'apiDetails?section=replay')
+                            .then(function(r) { return r.ok ? r.json() : null; })
+                            .then(function(sec) {
+                                deferredReplayPending = false;
+                                if (sec &amp;&amp; graphData) {
+                                    graphData.originalScript = sec.originalScript;
+                                    graphData.replayScriptLoaded = true;
+                                }
+                                if (graphData &amp;&amp; graphData.originalScript) {
+                                    editor.value = fixMojibake(graphData.originalScript);
+                                } else {
+                                    editor.value = "// No original Jenkinsfile script captured for this run.";
+                                }
+                                updateReplayGutter();
+                                validateReplayScript(false);
+                            })
+                            .catch(function() {
+                                deferredReplayPending = false;
+                                editor.value = "// No original Jenkinsfile script captured for this run.";
+                                updateReplayGutter();
+                            });
+                    }
                     setTimeout(function() {
                         editor.focus();
-                        validateReplayScript(false);
+                        if (!needsReplayFetch) {
+                            validateReplayScript(false);
+                        }
                     }, 60);
                 }
 
@@ -15508,6 +16751,14 @@
                             return;
                         }
                     }
+                    var paramsModal = document.getElementById('parameters-modal');
+                    if (paramsModal &amp;&amp; paramsModal.classList.contains('active')) {
+                        if (e.key === 'Escape') {
+                            e.preventDefault();
+                            closeParametersModal();
+                            return;
+                        }
+                    }
                     var artPreviewModal = document.getElementById('artifact-preview-modal');
                     if (artPreviewModal &amp;&amp; artPreviewModal.classList.contains('active')) {
                         if (e.key === 'Escape') {
@@ -15641,6 +16892,17 @@
                     if (e.key === 'e' || e.key === 'E') {
                         e.preventDefault();
                         toggleExportMenu();
+                        return;
+                    }
+
+                    if (e.key === 'p' || e.key === 'P') {
+                        e.preventDefault();
+                        var pModal = document.getElementById('parameters-modal');
+                        if (pModal &amp;&amp; pModal.classList.contains('active')) {
+                            closeParametersModal();
+                        } else {
+                            openParametersModal();
+                        }
                         return;
                     }
                 });

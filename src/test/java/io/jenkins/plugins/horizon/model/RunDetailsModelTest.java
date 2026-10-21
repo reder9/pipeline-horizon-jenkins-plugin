@@ -116,4 +116,37 @@ class RunDetailsModelTest {
         assertTrue(model.isWaitingForAgent());
         assertEquals("All nodes with label 'linux' are offline", model.getAgentQueueReason());
     }
+
+    @Test
+    void testBuildParametersAndTriggerIdentity() {
+        RunDetailsModel model = new RunDetailsModel();
+        model.setTriggeredByUserId("alice");
+        model.setTriggeredByUserName("Alice Jenkins");
+        model.setTriggeredByUserUrl("/user/alice/");
+        model.setUpstreamProject("Parent-Pipeline");
+        model.setUpstreamBuild(10);
+        model.setUpstreamUrl("/job/Parent-Pipeline/10/");
+
+        assertEquals("alice", model.getTriggeredByUserId());
+        assertEquals("Alice Jenkins", model.getTriggeredByUserName());
+        assertEquals("/user/alice/", model.getTriggeredByUserUrl());
+        assertEquals("Parent-Pipeline", model.getUpstreamProject());
+        assertEquals(10, model.getUpstreamBuild());
+        assertEquals("/job/Parent-Pipeline/10/", model.getUpstreamUrl());
+
+        BuildParameterModel p1 = new BuildParameterModel("DEPLOY_ENV", "staging", "Choice", "Target env", false);
+        BuildParameterModel p2 = new BuildParameterModel("SECRET_TOKEN", "********", "Password", "Auth token", true);
+        model.setBuildParameters(Arrays.asList(p1, p2));
+
+        assertNotNull(model.getBuildParameters());
+        assertEquals(2, model.getBuildParameters().size());
+        assertEquals("DEPLOY_ENV", model.getBuildParameters().get(0).getName());
+        assertEquals("staging", model.getBuildParameters().get(0).getValue());
+        assertTrue(model.getBuildParameters().get(1).isSensitive());
+
+        // Test defensive copying
+        model.setBuildParameters(null);
+        assertNotNull(model.getBuildParameters());
+        assertEquals(0, model.getBuildParameters().size());
+    }
 }

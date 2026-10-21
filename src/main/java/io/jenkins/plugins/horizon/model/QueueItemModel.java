@@ -102,4 +102,32 @@ public class QueueItemModel {
     public void setCanCancel(boolean canCancel) {
         this.canCancel = canCancel;
     }
+
+    private String triggeredByUserId;
+    private String triggeredByUserName;
+    private String triggeredByUserUrl;
+
+    public String getTriggeredByUserId() {
+        return triggeredByUserId;
+    }
+
+    public void setTriggeredByUserId(String triggeredByUserId) {
+        this.triggeredByUserId = triggeredByUserId;
+    }
+
+    public String getTriggeredByUserName() {
+        return triggeredByUserName;
+    }
+
+    public void setTriggeredByUserName(String triggeredByUserName) {
+        this.triggeredByUserName = triggeredByUserName;
+    }
+
+    public String getTriggeredByUserUrl() {
+        return triggeredByUserUrl;
+    }
+
+    public void setTriggeredByUserUrl(String triggeredByUserUrl) {
+        this.triggeredByUserUrl = triggeredByUserUrl;
+    }
 }

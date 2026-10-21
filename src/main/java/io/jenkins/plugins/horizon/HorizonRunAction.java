@@ -3,6 +3,7 @@ package io.jenkins.plugins.horizon;
 import hudson.model.Item;
 import hudson.model.Run;
 import io.jenkins.plugins.horizon.analysis.PipelineGraphAnalyzer;
+import io.jenkins.plugins.horizon.model.RunDetailSectionModel;
 import io.jenkins.plugins.horizon.model.RunDetailsModel;
 import io.jenkins.plugins.horizon.model.StageModel;
 import io.jenkins.plugins.horizon.model.StepModel;
@@ -70,16 +71,23 @@ public class HorizonRunAction implements RunAction2 {
     private static final Logger LOGGER = Logger.getLogger(HorizonRunAction.class.getName());
 
     /**
-     * Bounded thread-safe LRU cache storing pre-analyzed RunDetailsModel for completed builds.
-     * Avoids running costly FlowGraph / DepthFirstScanner traversals on repeated views.
+     * Bounded thread-safe LRU cache for immutable completed builds. A single entry
+     * carries the canvas, legacy/full, and on-demand detail representations so
+     * opening a secondary panel does not evict the already-rendered canvas.
      */
-    private static final Map<String, RunDetailsModel> COMPLETED_RUN_DETAILS_CACHE =
-            Collections.synchronizedMap(new LinkedHashMap<String, RunDetailsModel>(128, 0.75f, true) {
+    private static final Map<String, CachedRunAnalysis> COMPLETED_RUN_DETAILS_CACHE =
+            Collections.synchronizedMap(new LinkedHashMap<String, CachedRunAnalysis>(128, 0.75f, true) {
                 @Override
-                protected boolean removeEldestEntry(Map.Entry<String, RunDetailsModel> eldest) {
+                protected boolean removeEldestEntry(Map.Entry<String, CachedRunAnalysis> eldest) {
                     return size() > 256;
                 }
             });
+
+    private static final class CachedRunAnalysis {
+        private RunDetailsModel canvasDetails;
+        private RunDetailsModel fullDetails;
+        private final Map<String, RunDetailSectionModel> sections = new LinkedHashMap<>();
+    }
 
     public static void invalidateRunDetailsCache(String runExternalizableId) {
         if (runExternalizableId != null) {
@@ -89,20 +97,28 @@ public class HorizonRunAction implements RunAction2 {
 
     public static void clearRunDetailsCache() {
         COMPLETED_RUN_DETAILS_CACHE.clear();
+        PipelineGraphAnalyzer.clearCaches();
     }
 
     /**
      * REST API: Returns graph, stages, steps, status, timings, and agents for this build.
+     * The default remains the legacy full response; {@code view=canvas} omits
+     * large, nonessential data for a faster first render.
      */
-    public void doApiGraph(StaplerRequest2 req, StaplerResponse2 rsp) throws IOException {
+    public void doApiGraph(StaplerRequest2 req, StaplerResponse2 rsp,
+                           @QueryParameter(fixEmpty = true) String view) throws IOException {
         rsp.setContentType("application/json;charset=UTF-8");
         rsp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         if (run != null) {
             run.checkPermission(Item.READ);
         }
         if (run instanceof WorkflowRun) {
+            long startedAt = System.nanoTime();
             WorkflowRun wfRun = (WorkflowRun) run;
-            RunDetailsModel details = getOrBuildRunDetails(wfRun);
+            RunDetailsModel details = "canvas".equalsIgnoreCase(view)
+                    ? getOrBuildRunGraphDetails(wfRun)
+                    : getOrBuildRunDetails(wfRun);
+            setAnalysisTimingHeader(rsp, startedAt);
             JSONObject.fromObject(details).write(rsp.getWriter());
         } else {
             rsp.setStatus(400);
@@ -110,23 +126,151 @@ public class HorizonRunAction implements RunAction2 {
         }
     }
 
+    /**
+     * REST API: Returns one expensive build-detail section after it is requested
+     * by the user, rather than making the pipeline canvas wait for it.
+     */
+    public void doApiDetails(StaplerRequest2 req, StaplerResponse2 rsp,
+                             @QueryParameter(fixEmpty = true) String section) throws IOException {
+        rsp.setContentType("application/json;charset=UTF-8");
+        rsp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        if (run != null) {
+            run.checkPermission(Item.READ);
+        }
+        if (!(run instanceof WorkflowRun)) {
+            rsp.setStatus(400);
+            rsp.getWriter().write("{\"error\": \"Horizon only supports Pipeline (WorkflowRun) builds\"}");
+            return;
+        }
+
+        String normalizedSection = normalizeDetailSection(section);
+        if (normalizedSection == null) {
+            rsp.setStatus(400);
+            rsp.getWriter().write("{\"error\": \"Unsupported detail section\"}");
+            return;
+        }
+
+        long startedAt = System.nanoTime();
+        WorkflowRun wfRun = (WorkflowRun) run;
+        RunDetailSectionModel details = getOrBuildRunDetailSection(wfRun, normalizedSection);
+        setAnalysisTimingHeader(rsp, startedAt);
+        JSONObject.fromObject(details).write(rsp.getWriter());
+    }
+
     public RunDetailsModel getOrBuildRunDetails(WorkflowRun wfRun) {
+        return getOrBuildRunDetails(wfRun, false);
+    }
+
+    /**
+     * Returns the initial-view representation, which excludes deferred sections.
+     */
+    public RunDetailsModel getOrBuildRunGraphDetails(WorkflowRun wfRun) {
+        return getOrBuildRunDetails(wfRun, true);
+    }
+
+    private RunDetailsModel getOrBuildRunDetails(WorkflowRun wfRun, boolean canvasOnly) {
         if (wfRun == null) {
             return null;
         }
-        if (!wfRun.isBuilding()) {
-            String cacheKey = wfRun.getExternalizableId();
-            RunDetailsModel details = COMPLETED_RUN_DETAILS_CACHE.get(cacheKey);
-            if (details == null) {
-                details = PipelineGraphAnalyzer.buildRunDetails(wfRun);
-                if (!wfRun.isBuilding()) {
-                    COMPLETED_RUN_DETAILS_CACHE.put(cacheKey, details);
+        if (wfRun.isBuilding()) {
+            return canvasOnly
+                    ? PipelineGraphAnalyzer.buildCanvasDetails(wfRun)
+                    : PipelineGraphAnalyzer.buildRunDetails(wfRun);
+        }
+
+        String cacheKey = wfRun.getExternalizableId();
+        synchronized (COMPLETED_RUN_DETAILS_CACHE) {
+            CachedRunAnalysis cached = COMPLETED_RUN_DETAILS_CACHE.get(cacheKey);
+            if (cached != null) {
+                RunDetailsModel details = canvasOnly ? cached.canvasDetails : cached.fullDetails;
+                if (details != null) {
+                    return details;
                 }
             }
-            return details;
-        } else {
-            return PipelineGraphAnalyzer.buildRunDetails(wfRun);
         }
+
+        RunDetailsModel builtDetails = canvasOnly
+                ? PipelineGraphAnalyzer.buildCanvasDetails(wfRun)
+                : PipelineGraphAnalyzer.buildRunDetails(wfRun);
+        if (wfRun.isBuilding()) {
+            return builtDetails;
+        }
+
+        synchronized (COMPLETED_RUN_DETAILS_CACHE) {
+            CachedRunAnalysis cached = COMPLETED_RUN_DETAILS_CACHE.get(cacheKey);
+            if (cached == null) {
+                cached = new CachedRunAnalysis();
+                COMPLETED_RUN_DETAILS_CACHE.put(cacheKey, cached);
+            }
+            RunDetailsModel existing = canvasOnly ? cached.canvasDetails : cached.fullDetails;
+            if (existing != null) {
+                return existing;
+            }
+            if (canvasOnly) {
+                cached.canvasDetails = builtDetails;
+            } else {
+                cached.fullDetails = builtDetails;
+            }
+            return builtDetails;
+        }
+    }
+
+    private RunDetailSectionModel getOrBuildRunDetailSection(WorkflowRun wfRun, String section) {
+        if (wfRun == null) {
+            return new RunDetailSectionModel();
+        }
+        if (!wfRun.isBuilding()) {
+            String cacheKey = wfRun.getExternalizableId();
+            synchronized (COMPLETED_RUN_DETAILS_CACHE) {
+                CachedRunAnalysis cached = COMPLETED_RUN_DETAILS_CACHE.get(cacheKey);
+                if (cached != null) {
+                    RunDetailSectionModel existing = cached.sections.get(section);
+                    if (existing != null) {
+                        return existing;
+                    }
+                }
+            }
+
+            RunDetailsModel canvasDetails = getOrBuildRunGraphDetails(wfRun);
+            RunDetailSectionModel builtSection = PipelineGraphAnalyzer.buildDetailSection(
+                    wfRun, section, canvasDetails != null ? canvasDetails.getStages() : Collections.emptyList());
+            if (!wfRun.isBuilding()) {
+                synchronized (COMPLETED_RUN_DETAILS_CACHE) {
+                    CachedRunAnalysis cached = COMPLETED_RUN_DETAILS_CACHE.get(cacheKey);
+                    if (cached == null) {
+                        cached = new CachedRunAnalysis();
+                        COMPLETED_RUN_DETAILS_CACHE.put(cacheKey, cached);
+                    }
+                    RunDetailSectionModel existing = cached.sections.get(section);
+                    if (existing != null) {
+                        return existing;
+                    }
+                    cached.sections.put(section, builtSection);
+                }
+            }
+            return builtSection;
+        }
+
+        RunDetailsModel canvasDetails = getOrBuildRunGraphDetails(wfRun);
+        return PipelineGraphAnalyzer.buildDetailSection(
+                wfRun, section, canvasDetails != null ? canvasDetails.getStages() : Collections.emptyList());
+    }
+
+    private static String normalizeDetailSection(String section) {
+        if (section == null) {
+            return null;
+        }
+        String normalized = section.trim().toLowerCase(java.util.Locale.ROOT);
+        if ("tests".equals(normalized) || "artifacts".equals(normalized)
+                || "replay".equals(normalized) || "trends".equals(normalized)) {
+            return normalized;
+        }
+        return null;
+    }
+
+    private static void setAnalysisTimingHeader(StaplerResponse2 rsp, long startedAtNanos) {
+        long elapsedMillis = Math.max(0L, (System.nanoTime() - startedAtNanos) / 1_000_000L);
+        rsp.setHeader("Server-Timing", "horizon;dur=" + elapsedMillis);
     }
 
     private void collectStageStepIds(StageModel stage, List<String> stepIds) {
@@ -247,7 +391,7 @@ public class HorizonRunAction implements RunAction2 {
             // Node has no direct LogAction (e.g. it is a Stage or Container block).
             // Directly resolve enclosed step FlowNodes in O(1) via StageModel; fall back to FlowGraphWalker if unmodeled.
             List<FlowNode> enclosedNodes = new ArrayList<>();
-            RunDetailsModel details = getOrBuildRunDetails(wfRun);
+            RunDetailsModel details = getOrBuildRunGraphDetails(wfRun);
             StageModel targetStage = (details != null && details.getStages() != null)
                     ? PipelineGraphAnalyzer.findStageById(details.getStages(), nodeId)
                     : null;

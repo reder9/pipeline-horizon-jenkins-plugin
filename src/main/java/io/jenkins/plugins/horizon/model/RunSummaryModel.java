@@ -1,6 +1,7 @@
 package io.jenkins.plugins.horizon.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -217,5 +218,69 @@ public class RunSummaryModel {
 
     public void setFailedStageCount(int failedStageCount) {
         this.failedStageCount = failedStageCount;
+    }
+
+    private String triggeredByUserId;
+    private String triggeredByUserName;
+    private String triggeredByUserUrl;
+    private String upstreamProject;
+    private Integer upstreamBuild;
+    private String upstreamUrl;
+    private List<BuildParameterModel> buildParameters = new ArrayList<>();
+
+    public String getTriggeredByUserId() {
+        return triggeredByUserId;
+    }
+
+    public void setTriggeredByUserId(String triggeredByUserId) {
+        this.triggeredByUserId = triggeredByUserId;
+    }
+
+    public String getTriggeredByUserName() {
+        return triggeredByUserName;
+    }
+
+    public void setTriggeredByUserName(String triggeredByUserName) {
+        this.triggeredByUserName = triggeredByUserName;
+    }
+
+    public String getTriggeredByUserUrl() {
+        return triggeredByUserUrl;
+    }
+
+    public void setTriggeredByUserUrl(String triggeredByUserUrl) {
+        this.triggeredByUserUrl = triggeredByUserUrl;
+    }
+
+    public String getUpstreamProject() {
+        return upstreamProject;
+    }
+
+    public void setUpstreamProject(String upstreamProject) {
+        this.upstreamProject = upstreamProject;
+    }
+
+    public Integer getUpstreamBuild() {
+        return upstreamBuild;
+    }
+
+    public void setUpstreamBuild(Integer upstreamBuild) {
+        this.upstreamBuild = upstreamBuild;
+    }
+
+    public String getUpstreamUrl() {
+        return upstreamUrl;
+    }
+
+    public void setUpstreamUrl(String upstreamUrl) {
+        this.upstreamUrl = upstreamUrl;
+    }
+
+    public List<BuildParameterModel> getBuildParameters() {
+        return buildParameters == null ? Collections.emptyList() : new ArrayList<>(buildParameters);
+    }
+
+    public void setBuildParameters(List<BuildParameterModel> buildParameters) {
+        this.buildParameters = buildParameters == null ? new ArrayList<>() : new ArrayList<>(buildParameters);
     }
 }

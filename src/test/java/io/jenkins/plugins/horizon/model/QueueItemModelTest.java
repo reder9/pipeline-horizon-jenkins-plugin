@@ -29,6 +29,9 @@ class QueueItemModelTest {
         Map<String, String> params = new HashMap<>();
         params.put("ENV", "staging");
         model.setParameters(params);
+        model.setTriggeredByUserId("admin");
+        model.setTriggeredByUserName("Administrator");
+        model.setTriggeredByUserUrl("/user/admin/");
 
         assertEquals(42L, model.getId());
         assertEquals("Waiting for next available executor on docker-agent", model.getWhy());
@@ -45,5 +48,8 @@ class QueueItemModelTest {
 
         assertNotNull(model.getParameters());
         assertEquals("staging", model.getParameters().get("ENV"));
+        assertEquals("admin", model.getTriggeredByUserId());
+        assertEquals("Administrator", model.getTriggeredByUserName());
+        assertEquals("/user/admin/", model.getTriggeredByUserUrl());
     }
 }
