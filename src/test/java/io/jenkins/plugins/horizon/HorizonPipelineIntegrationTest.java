@@ -275,12 +275,18 @@ class HorizonPipelineIntegrationTest {
     @Test
     void testLabeledStepsInParallelBranchesAreNotStages(JenkinsRule jenkins) throws Exception {
         WorkflowJob job = jenkins.createProject(WorkflowJob.class, "labeled-steps-parallel-job");
+        String cmdA = hudson.Functions.isWindows()
+                ? "bat label: 'Create placeholder HTML report files', script: '@echo off\\necho a'"
+                : "sh label: 'Create placeholder HTML report files', script: 'echo a'";
+        String cmdB = hudson.Functions.isWindows()
+                ? "bat label: 'Create placeholder HTML report files', script: '@echo off\\necho b'"
+                : "sh label: 'Create placeholder HTML report files', script: 'echo b'";
         job.setDefinition(new CpsFlowDefinition(
                 "node {\n" +
                 "    stage('Validation') {\n" +
                 "        parallel(\n" +
-                "            'Dry Run': { sh label: 'Create placeholder HTML report files', script: 'echo a' },\n" +
-                "            'UAT': { sh label: 'Create placeholder HTML report files', script: 'echo b' }\n" +
+                "            'Dry Run': { " + cmdA + " },\n" +
+                "            'UAT': { " + cmdB + " }\n" +
                 "        )\n" +
                 "    }\n" +
                 "}", true));
