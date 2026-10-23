@@ -1717,7 +1717,9 @@ public class PipelineGraphAnalyzer {
                             absorbedStages.add(sub.getId());
                             if (child.isMatrix()) {
                                 if (sub.getName() != null && !sub.getName().trim().isEmpty()) {
-                                    child.setBranchName(sub.getName().trim());
+                                    child.setName(sub.getName().trim());
+                                    String axes = child.getMatrixShortAxes();
+                                    child.setBranchName(axes != null && !axes.isEmpty() ? axes : sub.getName().trim());
                                 }
                             } else {
                                 if (sub.getName() != null && !sub.getName().trim().isEmpty()

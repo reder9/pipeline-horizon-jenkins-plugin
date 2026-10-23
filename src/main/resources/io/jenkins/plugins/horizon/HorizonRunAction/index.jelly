@@ -4218,17 +4218,29 @@
                         display: flex;
                         flex-direction: column;
                         align-items: center;
+                        min-width: 260px;
                         width: fit-content;
+                        max-width: 100%;
                         gap: 0.55rem;
                         background: rgba(241, 245, 249, 0.72);
                         border: 1.5px solid #cbd5e1;
                         border-radius: 12px;
-                        padding: 0.65rem 0.65rem 0.75rem 0.65rem;
+                        padding: 0.75rem;
                         position: relative;
                         z-index: 1;
                         box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
                         box-sizing: border-box;
                         transition: border-color 0.25s ease, box-shadow 0.25s ease;
+                    }
+                    .parallel-stack .stage-node {
+                        width: 250px;
+                        min-width: 230px;
+                        max-width: 280px;
+                    }
+                    /* Remove floating port beads from stages inside parallel blocks */
+                    .parallel-stack .stage-node::before,
+                    .parallel-stack .stage-node::after {
+                        display: none !important;
                     }
                     .parallel-stack.is-running {
                         border-color: #0284c7 !important;
@@ -4244,7 +4256,8 @@
                         display: flex;
                         flex-direction: column;
                         gap: 5px;
-                        width: 220px;
+                        width: 100%;
+                        min-width: 220px;
                         padding: 0.6rem 0.75rem;
                         background: #ffffff;
                         border: 1px dashed #0284c7;
@@ -4280,25 +4293,49 @@
                     .parallel-label {
                         position: relative;
                         z-index: 3;
-                        font-size: 0.68rem;
-                        font-weight: 700;
-                        text-transform: uppercase;
-                        letter-spacing: 0.04em;
                         color: #0369a1;
                         background: #e0f2fe;
                         border: 1px solid #7dd3fc;
-                        padding: 0.25rem 0.5rem;
+                        padding: 0.35rem 0.55rem;
                         border-radius: 6px;
                         margin-bottom: 0.25rem;
-                        width: 220px;
-                        max-width: 220px;
+                        width: 100%;
+                        max-width: 100%;
                         min-width: 0;
-                        overflow: hidden;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                        box-sizing: border-box;
+                    }
+                    .parallel-label-top {
                         display: flex;
                         align-items: center;
                         justify-content: space-between;
+                        width: 100%;
                         gap: 6px;
-                        box-sizing: border-box;
+                    }
+                    .parallel-label-title-wrap {
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        min-width: 0;
+                        flex: 1;
+                    }
+                    .parallel-label-title-wrap .parallel-label-name {
+                        font-size: 0.72rem;
+                        font-weight: 800;
+                        color: #0369a1;
+                        text-transform: uppercase;
+                        letter-spacing: 0.04em;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .parallel-label-sub {
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                        flex-wrap: wrap;
                     }
                     .parallel-label-main {
                         display: flex;
@@ -4342,8 +4379,8 @@
                         align-items: center;
                         justify-content: space-between;
                         gap: 0.4rem;
-                        width: 220px;
-                        max-width: 220px;
+                        width: 100%;
+                        max-width: 100%;
                         min-width: 0;
                         margin-top: -0.12rem;
                         color: #475569;
@@ -4462,17 +4499,32 @@
                         100% { r: 11px; opacity: 0; stroke-width: 0.5px; }
                     }
                     /* Matrix styling */
-                    .stage-matrix-axes {
-                        font-size: 10.5px;
-                        font-weight: 500;
-                        color: #64748b;
-                        margin-top: 3px;
+                    .stage-matrix-pills {
                         display: flex;
                         align-items: center;
-                        gap: 3px;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
+                        gap: 4px;
+                        flex-wrap: wrap;
+                        margin-top: 3px;
+                        max-width: 100%;
+                    }
+                    .matrix-axis-pill {
+                        display: inline-flex;
+                        align-items: center;
+                        font-size: 0.65rem;
+                        font-weight: 700;
+                        padding: 1.5px 6px;
+                        border-radius: 4px;
+                        background: rgba(99, 102, 241, 0.12);
+                        color: #4338ca;
+                        border: 1px solid rgba(99, 102, 241, 0.28);
+                        letter-spacing: 0.02em;
                         white-space: nowrap;
+                        line-height: 1.25;
+                    }
+                    .matrix-pill-dot {
+                        color: #94a3b8;
+                        font-weight: 800;
+                        font-size: 0.7rem;
                     }
                     .stage-badge-matrix {
                         display: inline-flex;
@@ -6966,8 +7018,13 @@
                     .horizon-container.theme-dark .parallel-stack.is-collapsed .parallel-collapsed-card:hover {
                         background: #1e293b;
                     }
-                    .horizon-container.theme-dark .stage-matrix-axes {
-                        color: #94a3b8;
+                    .horizon-container.theme-dark .parallel-label-title-wrap .parallel-label-name {
+                        color: #38bdf8;
+                    }
+                    .horizon-container.theme-dark .matrix-axis-pill {
+                        background: rgba(129, 140, 248, 0.2);
+                        color: #c7d2fe;
+                        border-color: rgba(129, 140, 248, 0.4);
                     }
                     .horizon-container.theme-dark .stage-badge-matrix,
                     .horizon-container.theme-dark .parallel-matrix-badge {
@@ -11728,41 +11785,49 @@
                                 stackClasses += " is-running";
                             }
 
+                            var cleanParallelName = col.name;
+                            if (cleanParallelName.indexOf('Matrix:') === 0) {
+                                cleanParallelName = cleanParallelName.substring(7).trim();
+                            }
+
                             html += '&lt;div class="stage-column"&gt;';
                             html += '&lt;div class="' + stackClasses + '" data-status="' + parallelOverallStatus + '" data-parallel-name="' + col.name.replace(/"/g, '&amp;quot;') + '"&gt;';
                             html += '&lt;div class="parallel-label' + (parallelRunningCount &gt; 0 ? ' is-running' : '') + '"&gt;';
-                            html += '&lt;div class="parallel-label-main"&gt;';
+
+                            html += '&lt;div class="parallel-label-top"&gt;';
+                            html += '&lt;div class="parallel-label-title-wrap"&gt;';
                             if (isMatrixStack) {
                                 html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; flex-shrink:0;"&gt;&lt;rect x="3" y="3" width="7" height="7"/&gt;&lt;rect x="14" y="3" width="7" height="7"/&gt;&lt;rect x="14" y="14" width="7" height="7"/&gt;&lt;rect x="3" y="14" width="7" height="7"/&gt;&lt;/svg&gt;';
                             } else {
                                 html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; flex-shrink:0;"&gt;&lt;circle cx="6" cy="12" r="3"/&gt;&lt;circle cx="18" cy="6" r="3"/&gt;&lt;circle cx="18" cy="18" r="3"/&gt;&lt;path d="M8.5 10.5L15.5 7.5"/&gt;&lt;path d="M8.5 13.5L15.5 16.5"/&gt;&lt;/svg&gt;';
                             }
-                            html += '&lt;span class="parallel-label-name" title="' + (isMatrixStack ? 'Matrix: ' : 'Parallel: ') + col.name.replace(/"/g, '&amp;quot;') + '"&gt;' + (isMatrixStack ? 'Matrix: ' : 'Parallel: ') + col.name + '&lt;/span&gt;';
-                            html += '&lt;span class="parallel-count-badge" title="' + col.children.length + (isMatrixStack ? ' matrix cells' : ' parallel branches') + '"&gt;' + col.children.length + '&lt;/span&gt;';
+                            html += '&lt;span class="parallel-label-name" title="' + cleanParallelName.replace(/"/g, '&amp;quot;') + '"&gt;' + cleanParallelName + '&lt;/span&gt;';
                             if (isMatrixStack) {
                                 html += '&lt;span class="parallel-matrix-badge"&gt;MATRIX&lt;/span&gt;';
                             }
                             html += '&lt;/div&gt;';
+                            html += '&lt;button type="button" class="parallel-toggle-btn" title="Toggle parallel view" onclick="window.toggleParallelStack(this, event)" aria-expanded="true"&gt;';
+                            html += '&lt;svg class="parallel-toggle-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;polyline points="6 9 12 15 18 9"/&gt;&lt;/svg&gt;';
+                            html += '&lt;/button&gt;';
+                            html += '&lt;/div&gt;'; // end parallel-label-top
 
+                            html += '&lt;div class="parallel-label-sub"&gt;';
+                            html += '&lt;span class="parallel-count-badge" title="' + col.children.length + (isMatrixStack ? ' matrix cells' : ' parallel branches') + '"&gt;' + col.children.length + (isMatrixStack ? ' CELLS' : ' BRANCHES') + '&lt;/span&gt;';
                             if (parallelRunningCount &gt; 0) {
                                 html += '&lt;span class="parallel-running-chip" title="' + parallelRunningCount + ' branch(es) currently executing"&gt;';
                                 html += '&lt;svg class="horizon-spin" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align:-1px; margin-right:3px; flex-shrink:0;"&gt;&lt;circle cx="12" cy="12" r="9" stroke-opacity="0.3"/&gt;&lt;path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"/&gt;&lt;/svg&gt;';
                                 html += parallelRunningCount + ' RUNNING';
                                 html += '&lt;/span&gt;';
                             }
-
                             if (parallelDur &gt; 0) {
                                 html += '&lt;span class="parallel-duration-badge" title="' + parallelTooltip.replace(/"/g, '&amp;quot;') + '"&gt;';
                                 html += '&lt;svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:3px; flex-shrink:0;"&gt;&lt;circle cx="12" cy="12" r="10"/&gt;&lt;polyline points="12 6 12 12 16 14"/&gt;&lt;/svg&gt;';
                                 html += formatDuration(parallelDur) + (parallelPctOfStages &gt; 0 ? (' (' + parallelPctOfStages + '%)') : '');
                                 html += '&lt;/span&gt;';
                             }
+                            html += '&lt;/div&gt;'; // end parallel-label-sub
 
-                            html += '&lt;button type="button" class="parallel-toggle-btn" title="Toggle parallel branches view" onclick="window.toggleParallelStack(this, event)" aria-expanded="true"&gt;';
-                            html += '&lt;svg class="parallel-toggle-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;polyline points="6 9 12 15 18 9"/&gt;&lt;/svg&gt;';
-                            html += '&lt;/button&gt;';
-
-                            html += '&lt;/div&gt;';
+                            html += '&lt;/div&gt;'; // end parallel-label
 
                             html += '&lt;div class="parallel-summary" title="Parallel stages execute concurrently: the next stage starts after all branches finish."&gt;';
                             html += '&lt;span class="parallel-join-badge"&gt;' + (isMatrixStack ? 'ALL CELLS COMPLETE' : 'ALL BRANCHES JOIN') + '&lt;/span&gt;';
@@ -12325,12 +12390,18 @@
                         ? '&lt;span class="stage-bottleneck-badge" title="Bottleneck stage: Took ' + formatDuration(stage.durationMillis) + ' (' + pctOfTotal + '% of total run)"&gt;' + ICON_BOLT + 'Longest&lt;/span&gt;'
                         : '';
                     var isMatrixCell = !!(stage.matrix || (stage.matrixCell &amp;&amp; stage.matrixCell.length &gt; 0));
-                    var matrixBadge = isMatrixCell ? '&lt;span class="stage-badge-matrix" title="Matrix Cell"&gt;MATRIX&lt;/span&gt;' : '';
-                    var subStageBadge = (stage.branchName &amp;&amp; stage.branchName !== stage.name &amp;&amp; (!isParallelChild || isMatrixCell))
+                    var matrixPillsHtml = "";
+                    if (stage.matrixShortAxes &amp;&amp; stage.name !== stage.matrixShortAxes) {
+                        var axesParts = stage.matrixShortAxes.split(" · ");
+                        matrixPillsHtml = '&lt;div class="stage-matrix-pills" title="' + escapeHtml(stage.matrixCell || stage.matrixShortAxes) + '"&gt;';
+                        for (var ap = 0; ap &lt; axesParts.length; ap++) {
+                            if (ap &gt; 0) matrixPillsHtml += '&lt;span class="matrix-pill-dot" aria-hidden="true"&gt;·&lt;/span&gt;';
+                            matrixPillsHtml += '&lt;span class="matrix-axis-pill"&gt;' + escapeHtml(axesParts[ap]) + '&lt;/span&gt;';
+                        }
+                        matrixPillsHtml += '&lt;/div&gt;';
+                    }
+                    var subStageBadge = (stage.branchName &amp;&amp; stage.branchName !== stage.name &amp;&amp; !isParallelChild &amp;&amp; !isMatrixCell)
                         ? '&lt;span class="stage-badge-substage" title="Sub-stage: ' + escapeHtml(stage.branchName) + '"&gt;' + escapeHtml(stage.branchName) + '&lt;/span&gt;'
-                        : '';
-                    var matrixAxesHtml = (isMatrixCell &amp;&amp; stage.matrixCell &amp;&amp; stage.matrixCell !== stage.name)
-                        ? '&lt;div class="stage-matrix-axes" title="Matrix Axes: ' + escapeHtml(stage.matrixCell) + '"&gt;&lt;svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:3px; vertical-align:-1px; flex-shrink:0;"&gt;&lt;rect x="3" y="3" width="7" height="7"/&gt;&lt;rect x="14" y="3" width="7" height="7"/&gt;&lt;rect x="14" y="14" width="7" height="7"/&gt;&lt;rect x="3" y="14" width="7" height="7"/&gt;&lt;/svg&gt;' + escapeHtml(stage.matrixCell) + '&lt;/div&gt;'
                         : '';
                     var currentAttr = isSelected ? ' aria-current="step"' : '';
                     var card = '&lt;div id="stage-card-' + stage.id + '" data-status="' + status + '" class="stage-node status-' + status + optionalClass + selectedClass + '" role="button" tabindex="0" aria-pressed="' + (isSelected ? 'true' : 'false') + '"' + currentAttr + ' aria-label="' + a11yLabel.replace(/"/g, '&amp;quot;') + '" onclick="selectStage(\'' + stage.id + '\')" onkeydown="handleStageKeyNav(event, \'' + stage.id + '\')"&gt;';
@@ -12338,7 +12409,7 @@
                     card += '&lt;div class="stage-active-strip" aria-hidden="true"&gt;&lt;/div&gt;';
                     card += '&lt;div class="stage-drawer-pointer" aria-hidden="true"&gt;&lt;/div&gt;';
                     card += '&lt;div class="stage-header"&gt;';
-                    card += '&lt;div class="stage-title-wrap"&gt;&lt;div class="stage-name" title="' + stage.name.replace(/"/g, '&amp;quot;') + '"&gt;' + stage.name + '&lt;/div&gt;' + optionalBadge + bottleneckBadge + matrixBadge + subStageBadge + matrixAxesHtml + '&lt;/div&gt;';
+                    card += '&lt;div class="stage-title-wrap"&gt;&lt;div class="stage-name" title="' + stage.name.replace(/"/g, '&amp;quot;') + '"&gt;' + stage.name + '&lt;/div&gt;' + optionalBadge + bottleneckBadge + subStageBadge + matrixPillsHtml + '&lt;/div&gt;';
                     card += '&lt;div class="stage-card-actions"&gt;';
                     card += '&lt;span class="stage-status-icon" title="Stage status: ' + status + '"&gt;' + icon + '&lt;/span&gt;';
                     var escapedStageName = stage.name.replace(/'/g, "\\'");
