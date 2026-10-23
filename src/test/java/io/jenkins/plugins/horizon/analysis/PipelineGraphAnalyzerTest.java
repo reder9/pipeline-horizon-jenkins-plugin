@@ -86,5 +86,23 @@ class PipelineGraphAnalyzerTest {
         assertEquals("Expected 100 but was 99", tc.getErrorDetails());
         assertEquals(3, tc.getAge());
     }
+
+    @Test
+    void testFormatMatrixAxes() {
+        assertEquals("", PipelineGraphAnalyzer.formatMatrixAxes(null, true));
+        assertEquals("", PipelineGraphAnalyzer.formatMatrixAxes("", false));
+
+        String raw = "PLATFORM = 'linux', BROWSER = 'chrome'";
+        assertEquals("linux · chrome", PipelineGraphAnalyzer.formatMatrixAxes(raw, true));
+        assertEquals("PLATFORM: linux · BROWSER: chrome", PipelineGraphAnalyzer.formatMatrixAxes(raw, false));
+
+        String rawUnquoted = "OS = windows, JDK = 21";
+        assertEquals("windows · 21", PipelineGraphAnalyzer.formatMatrixAxes(rawUnquoted, true));
+        assertEquals("OS: windows · JDK: 21", PipelineGraphAnalyzer.formatMatrixAxes(rawUnquoted, false));
+
+        String single = "ARCH = arm64";
+        assertEquals("arm64", PipelineGraphAnalyzer.formatMatrixAxes(single, true));
+        assertEquals("ARCH: arm64", PipelineGraphAnalyzer.formatMatrixAxes(single, false));
+    }
 }
 

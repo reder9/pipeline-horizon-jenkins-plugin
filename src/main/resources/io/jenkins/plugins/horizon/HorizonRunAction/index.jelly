@@ -4461,6 +4461,52 @@
                         0% { r: 4px; opacity: 0.9; stroke-width: 2px; }
                         100% { r: 11px; opacity: 0; stroke-width: 0.5px; }
                     }
+                    /* Matrix styling */
+                    .stage-matrix-axes {
+                        font-size: 10.5px;
+                        font-weight: 500;
+                        color: #64748b;
+                        margin-top: 3px;
+                        display: flex;
+                        align-items: center;
+                        gap: 3px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    .stage-badge-matrix {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 3px;
+                        padding: 1px 5px;
+                        border-radius: 4px;
+                        font-size: 9.5px;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        letter-spacing: 0.03em;
+                        background: rgba(99, 102, 241, 0.12);
+                        color: #4f46e5;
+                        border: 1px solid rgba(99, 102, 241, 0.25);
+                        line-height: 1.3;
+                    }
+                    .parallel-stack.is-matrix {
+                        border-color: #a5b4fc;
+                        background: rgba(238, 242, 255, 0.65);
+                    }
+                    .parallel-matrix-badge {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 3px;
+                        padding: 1px 5px;
+                        border-radius: 4px;
+                        font-size: 9.5px;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        background: rgba(99, 102, 241, 0.14);
+                        color: #4f46e5;
+                        border: 1px solid rgba(99, 102, 241, 0.28);
+                        margin-left: 4px;
+                    }
                     .pipeline-flow.compact-density .parallel-label {
                         width: 175px;
                         max-width: 175px;
@@ -6919,6 +6965,19 @@
                     }
                     .horizon-container.theme-dark .parallel-stack.is-collapsed .parallel-collapsed-card:hover {
                         background: #1e293b;
+                    }
+                    .horizon-container.theme-dark .stage-matrix-axes {
+                        color: #94a3b8;
+                    }
+                    .horizon-container.theme-dark .stage-badge-matrix,
+                    .horizon-container.theme-dark .parallel-matrix-badge {
+                        background: rgba(129, 140, 248, 0.18);
+                        color: #c7d2fe;
+                        border-color: rgba(129, 140, 248, 0.35);
+                    }
+                    .horizon-container.theme-dark .parallel-stack.is-matrix {
+                        border-color: rgba(129, 140, 248, 0.35);
+                        background: rgba(30, 27, 75, 0.35);
                     }
                     .horizon-container.theme-dark .parallel-running-chip {
                         background: #0284c7;
@@ -11663,7 +11722,8 @@
                                 parallelOverallStatus = "SKIPPED";
                             }
 
-                            var stackClasses = "parallel-stack status-" + parallelOverallStatus;
+                            var isMatrixStack = (col.stage &amp;&amp; col.stage.matrix) || col.children.some(function(c) { return c.matrix; });
+                            var stackClasses = "parallel-stack status-" + parallelOverallStatus + (isMatrixStack ? " is-matrix" : "");
                             if (parallelRunningCount &gt; 0) {
                                 stackClasses += " is-running";
                             }
@@ -11672,9 +11732,16 @@
                             html += '&lt;div class="' + stackClasses + '" data-status="' + parallelOverallStatus + '" data-parallel-name="' + col.name.replace(/"/g, '&amp;quot;') + '"&gt;';
                             html += '&lt;div class="parallel-label' + (parallelRunningCount &gt; 0 ? ' is-running' : '') + '"&gt;';
                             html += '&lt;div class="parallel-label-main"&gt;';
-                            html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; flex-shrink:0;"&gt;&lt;circle cx="6" cy="12" r="3"/&gt;&lt;circle cx="18" cy="6" r="3"/&gt;&lt;circle cx="18" cy="18" r="3"/&gt;&lt;path d="M8.5 10.5L15.5 7.5"/&gt;&lt;path d="M8.5 13.5L15.5 16.5"/&gt;&lt;/svg&gt;';
-                            html += '&lt;span class="parallel-label-name" title="Parallel: ' + col.name.replace(/"/g, '&amp;quot;') + '"&gt;Parallel: ' + col.name + '&lt;/span&gt;';
-                            html += '&lt;span class="parallel-count-badge" title="' + col.children.length + ' parallel branches"&gt;' + col.children.length + '&lt;/span&gt;';
+                            if (isMatrixStack) {
+                                html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; flex-shrink:0;"&gt;&lt;rect x="3" y="3" width="7" height="7"/&gt;&lt;rect x="14" y="3" width="7" height="7"/&gt;&lt;rect x="14" y="14" width="7" height="7"/&gt;&lt;rect x="3" y="14" width="7" height="7"/&gt;&lt;/svg&gt;';
+                            } else {
+                                html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; flex-shrink:0;"&gt;&lt;circle cx="6" cy="12" r="3"/&gt;&lt;circle cx="18" cy="6" r="3"/&gt;&lt;circle cx="18" cy="18" r="3"/&gt;&lt;path d="M8.5 10.5L15.5 7.5"/&gt;&lt;path d="M8.5 13.5L15.5 16.5"/&gt;&lt;/svg&gt;';
+                            }
+                            html += '&lt;span class="parallel-label-name" title="' + (isMatrixStack ? 'Matrix: ' : 'Parallel: ') + col.name.replace(/"/g, '&amp;quot;') + '"&gt;' + (isMatrixStack ? 'Matrix: ' : 'Parallel: ') + col.name + '&lt;/span&gt;';
+                            html += '&lt;span class="parallel-count-badge" title="' + col.children.length + (isMatrixStack ? ' matrix cells' : ' parallel branches') + '"&gt;' + col.children.length + '&lt;/span&gt;';
+                            if (isMatrixStack) {
+                                html += '&lt;span class="parallel-matrix-badge"&gt;MATRIX&lt;/span&gt;';
+                            }
                             html += '&lt;/div&gt;';
 
                             if (parallelRunningCount &gt; 0) {
@@ -11698,7 +11765,7 @@
                             html += '&lt;/div&gt;';
 
                             html += '&lt;div class="parallel-summary" title="Parallel stages execute concurrently: the next stage starts after all branches finish."&gt;';
-                            html += '&lt;span class="parallel-join-badge"&gt;ALL BRANCHES JOIN&lt;/span&gt;';
+                            html += '&lt;span class="parallel-join-badge"&gt;' + (isMatrixStack ? 'ALL CELLS COMPLETE' : 'ALL BRANCHES JOIN') + '&lt;/span&gt;';
                             html += '&lt;div class="parallel-summary-pills"&gt;';
                             if (parallelRunningCount &gt; 0) {
                                 html += '&lt;span class="parallel-summary-pill pill-running"&gt;&lt;span class="parallel-pulsing-dot"&gt;&lt;/span&gt;' + parallelRunningCount + ' running&lt;/span&gt;';
@@ -11717,7 +11784,7 @@
 
                             html += '&lt;div class="parallel-collapsed-card" onclick="window.toggleParallelStack(this, event)" title="Click to expand parallel branches"&gt;';
                             html += '&lt;div class="parallel-collapsed-header"&gt;';
-                            html += '&lt;span&gt;' + col.children.length + ' Parallel Branches&lt;/span&gt;';
+                            html += '&lt;span&gt;' + col.children.length + (isMatrixStack ? ' Matrix Cells' : ' Parallel Branches') + '&lt;/span&gt;';
                             html += '&lt;span&gt;' + (parallelDur &gt; 0 ? formatDuration(parallelDur) : '') + '&lt;/span&gt;';
                             html += '&lt;/div&gt;';
                             html += '&lt;div class="parallel-collapsed-hint"&gt;';
@@ -12257,8 +12324,13 @@
                     var bottleneckBadge = isBottleneck
                         ? '&lt;span class="stage-bottleneck-badge" title="Bottleneck stage: Took ' + formatDuration(stage.durationMillis) + ' (' + pctOfTotal + '% of total run)"&gt;' + ICON_BOLT + 'Longest&lt;/span&gt;'
                         : '';
-                    var subStageBadge = (!isParallelChild &amp;&amp; stage.branchName &amp;&amp; stage.branchName !== stage.name)
+                    var isMatrixCell = !!(stage.matrix || (stage.matrixCell &amp;&amp; stage.matrixCell.length &gt; 0));
+                    var matrixBadge = isMatrixCell ? '&lt;span class="stage-badge-matrix" title="Matrix Cell"&gt;MATRIX&lt;/span&gt;' : '';
+                    var subStageBadge = (stage.branchName &amp;&amp; stage.branchName !== stage.name &amp;&amp; (!isParallelChild || isMatrixCell))
                         ? '&lt;span class="stage-badge-substage" title="Sub-stage: ' + escapeHtml(stage.branchName) + '"&gt;' + escapeHtml(stage.branchName) + '&lt;/span&gt;'
+                        : '';
+                    var matrixAxesHtml = (isMatrixCell &amp;&amp; stage.matrixCell &amp;&amp; stage.matrixCell !== stage.name)
+                        ? '&lt;div class="stage-matrix-axes" title="Matrix Axes: ' + escapeHtml(stage.matrixCell) + '"&gt;&lt;svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:3px; vertical-align:-1px; flex-shrink:0;"&gt;&lt;rect x="3" y="3" width="7" height="7"/&gt;&lt;rect x="14" y="3" width="7" height="7"/&gt;&lt;rect x="14" y="14" width="7" height="7"/&gt;&lt;rect x="3" y="14" width="7" height="7"/&gt;&lt;/svg&gt;' + escapeHtml(stage.matrixCell) + '&lt;/div&gt;'
                         : '';
                     var currentAttr = isSelected ? ' aria-current="step"' : '';
                     var card = '&lt;div id="stage-card-' + stage.id + '" data-status="' + status + '" class="stage-node status-' + status + optionalClass + selectedClass + '" role="button" tabindex="0" aria-pressed="' + (isSelected ? 'true' : 'false') + '"' + currentAttr + ' aria-label="' + a11yLabel.replace(/"/g, '&amp;quot;') + '" onclick="selectStage(\'' + stage.id + '\')" onkeydown="handleStageKeyNav(event, \'' + stage.id + '\')"&gt;';
@@ -12266,7 +12338,7 @@
                     card += '&lt;div class="stage-active-strip" aria-hidden="true"&gt;&lt;/div&gt;';
                     card += '&lt;div class="stage-drawer-pointer" aria-hidden="true"&gt;&lt;/div&gt;';
                     card += '&lt;div class="stage-header"&gt;';
-                    card += '&lt;div class="stage-title-wrap"&gt;&lt;div class="stage-name" title="' + stage.name.replace(/"/g, '&amp;quot;') + '"&gt;' + stage.name + '&lt;/div&gt;' + optionalBadge + bottleneckBadge + subStageBadge + '&lt;/div&gt;';
+                    card += '&lt;div class="stage-title-wrap"&gt;&lt;div class="stage-name" title="' + stage.name.replace(/"/g, '&amp;quot;') + '"&gt;' + stage.name + '&lt;/div&gt;' + optionalBadge + bottleneckBadge + matrixBadge + subStageBadge + matrixAxesHtml + '&lt;/div&gt;';
                     card += '&lt;div class="stage-card-actions"&gt;';
                     card += '&lt;span class="stage-status-icon" title="Stage status: ' + status + '"&gt;' + icon + '&lt;/span&gt;';
                     var escapedStageName = stage.name.replace(/'/g, "\\'");

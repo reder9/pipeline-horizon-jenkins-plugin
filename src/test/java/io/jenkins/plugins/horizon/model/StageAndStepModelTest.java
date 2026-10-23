@@ -180,4 +180,17 @@ class StageAndStepModelTest {
         assertTrue(stage.isWaitingForAgent());
         assertEquals("Waiting for next available executor", stage.getAgentQueueReason());
     }
+
+    @Test
+    void testStageMatrixProperties() {
+        StageModel stage = new StageModel("21", "linux · chrome", "SUCCESS");
+        stage.setMatrix(true);
+        stage.setMatrixCell("PLATFORM: linux · BROWSER: chrome");
+        stage.setMatrixShortAxes("linux · chrome");
+
+        assertTrue(stage.isMatrix());
+        assertEquals("PLATFORM: linux · BROWSER: chrome", stage.getMatrixCell());
+        assertEquals("linux · chrome", stage.getMatrixShortAxes());
+        assertEquals("linux · chrome", stage.getName());
+    }
 }

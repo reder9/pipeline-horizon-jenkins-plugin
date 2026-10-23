@@ -1532,6 +1532,39 @@ public class PipelineGraphAnalyzer {
         return step;
     }
 
+    static String formatMatrixAxes(String rawAxes, boolean shortFormat) {
+        if (rawAxes == null || rawAxes.trim().isEmpty()) {
+            return "";
+        }
+        String[] parts = rawAxes.split(",\\s*");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i].trim();
+            int eqIdx = part.indexOf('=');
+            if (eqIdx != -1) {
+                String key = part.substring(0, eqIdx).trim();
+                String val = part.substring(eqIdx + 1).trim();
+                if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith("\"") && val.endsWith("\""))) {
+                    val = val.substring(1, val.length() - 1).trim();
+                }
+                if (sb.length() > 0) {
+                    sb.append(" · ");
+                }
+                if (shortFormat) {
+                    sb.append(val);
+                } else {
+                    sb.append(key).append(": ").append(val);
+                }
+            } else {
+                if (sb.length() > 0) {
+                    sb.append(" · ");
+                }
+                sb.append(part);
+            }
+        }
+        return sb.toString();
+    }
+
     static boolean isParallelChildOf(FlowNode childNode, FlowNode parentNode) {
         if (childNode == null || parentNode == null) {
             return false;
@@ -1655,6 +1688,133 @@ public class PipelineGraphAnalyzer {
 
             if (parChildren != null && !parChildren.isEmpty()) {
                 // Stage has true parallel branches
+                boolean anyMatrixChild = false;
+                for (StageModel child : parChildren) {
+                    // Check if child is a matrix combination
+                    String rawMatrixStr = null;
+                    if (child.getName() != null && (child.getName().startsWith("Matrix - ") || child.getName().startsWith("Matrix: "))) {
+                        rawMatrixStr = child.getName().replaceFirst("^Matrix\\s*[-:]\\s*", "").trim();
+                    } else if (child.getBranchName() != null && (child.getBranchName().startsWith("Matrix - ") || child.getBranchName().startsWith("Matrix: "))) {
+                        rawMatrixStr = child.getBranchName().replaceFirst("^Matrix\\s*[-:]\\s*", "").trim();
+                    }
+                    if (rawMatrixStr != null) {
+                        child.setMatrix(true);
+                        anyMatrixChild = true;
+                        String shortAxes = formatMatrixAxes(rawMatrixStr, true);
+                        String fullAxes = formatMatrixAxes(rawMatrixStr, false);
+                        child.setMatrixShortAxes(shortAxes);
+                        child.setMatrixCell(fullAxes);
+                        if (child.getName() != null && (child.getName().startsWith("Matrix - ") || child.getName().startsWith("Matrix: "))) {
+                            child.setName(!shortAxes.isEmpty() ? shortAxes : fullAxes);
+                        }
+                    }
+
+                    // Absorb any sequential children belonging to this parallel child
+                    List<StageModel> childSeq = sequentialChildrenMap.get(child.getId());
+                    if (childSeq != null && !childSeq.isEmpty()) {
+                        if (childSeq.size() == 1) {
+                            StageModel sub = childSeq.get(0);
+                            absorbedStages.add(sub.getId());
+                            if (child.isMatrix()) {
+                                if (sub.getName() != null && !sub.getName().trim().isEmpty()) {
+                                    child.setBranchName(sub.getName().trim());
+                                }
+                            } else {
+                                if (sub.getName() != null && !sub.getName().trim().isEmpty()
+                                        && !sub.getName().trim().equalsIgnoreCase(child.getName().trim())) {
+                                    child.setBranchName(sub.getName().trim());
+                                }
+                            }
+                            if (child.getSteps().isEmpty() && !sub.getSteps().isEmpty()) {
+                                child.setSteps(new ArrayList<>(sub.getSteps()));
+                            } else if (!sub.getSteps().isEmpty()) {
+                                for (StepModel cStep : sub.getSteps()) {
+                                    boolean exists = false;
+                                    for (StepModel exStep : child.getSteps()) {
+                                        if (exStep.getId().equals(cStep.getId())) {
+                                            exists = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!exists) {
+                                        child.addStep(cStep);
+                                    }
+                                }
+                            }
+                            if (child.getDurationMillis() <= 0 && sub.getDurationMillis() > 0) {
+                                child.setDurationMillis(sub.getDurationMillis());
+                            }
+                            if ((child.getAgent() == null || child.getAgent().isEmpty()) && sub.getAgent() != null) {
+                                child.setAgent(sub.getAgent());
+                            }
+                            if (sub.getStatus() != null && !"SUCCESS".equalsIgnoreCase(sub.getStatus())) {
+                                child.setStatus(sub.getStatus());
+                            }
+                            if (sub.getError() != null && child.getError() == null) {
+                                child.setError(sub.getError());
+                            }
+                            if (sub.isHasArtifacts()) {
+                                child.setHasArtifacts(true);
+                                child.setArtifactCount(child.getArtifactCount() + sub.getArtifactCount());
+                                if (child.getArtifacts() == null) {
+                                    child.setArtifacts(new ArrayList<>());
+                                }
+                                for (ArtifactModel art : sub.getArtifacts()) {
+                                    if (!child.getArtifacts().contains(art)) {
+                                        child.addArtifact(art);
+                                    }
+                                }
+                            }
+                        } else {
+                            long totalSubDur = 0L;
+                            for (StageModel sub : childSeq) {
+                                absorbedStages.add(sub.getId());
+                                if (sub.getDurationMillis() > 0) {
+                                    totalSubDur += sub.getDurationMillis();
+                                }
+                                if (sub.getSteps() != null) {
+                                    for (StepModel cStep : sub.getSteps()) {
+                                        boolean exists = false;
+                                        for (StepModel exStep : child.getSteps()) {
+                                            if (exStep.getId().equals(cStep.getId())) {
+                                                exists = true;
+                                                break;
+                                            }
+                                        }
+                                        if (!exists) {
+                                            child.addStep(cStep);
+                                        }
+                                    }
+                                }
+                                if (sub.getStatus() != null && !"SUCCESS".equalsIgnoreCase(sub.getStatus()) && !"FAILED".equalsIgnoreCase(child.getStatus())) {
+                                    child.setStatus(sub.getStatus());
+                                }
+                                if (sub.getError() != null && child.getError() == null) {
+                                    child.setError(sub.getError());
+                                }
+                                if (sub.isHasArtifacts()) {
+                                    child.setHasArtifacts(true);
+                                    child.setArtifactCount(child.getArtifactCount() + sub.getArtifactCount());
+                                    if (child.getArtifacts() == null) {
+                                        child.setArtifacts(new ArrayList<>());
+                                    }
+                                    for (ArtifactModel art : sub.getArtifacts()) {
+                                        if (!child.getArtifacts().contains(art)) {
+                                            child.addArtifact(art);
+                                        }
+                                    }
+                                }
+                            }
+                            if (child.getDurationMillis() <= 0 && totalSubDur > 0) {
+                                child.setDurationMillis(totalSubDur);
+                            }
+                            child.setChildren(childSeq);
+                        }
+                    }
+                }
+                if (anyMatrixChild) {
+                    s.setMatrix(true);
+                }
                 s.setChildren(parChildren);
                 result.add(s);
             } else if (seqChildren != null && !seqChildren.isEmpty()) {

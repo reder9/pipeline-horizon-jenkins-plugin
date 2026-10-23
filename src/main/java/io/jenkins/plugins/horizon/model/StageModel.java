@@ -32,6 +32,9 @@ public class StageModel {
     private String formattedAgentAllocation;
     private boolean isWaitingForAgent;
     private String agentQueueReason;
+    private boolean isMatrix;
+    private String matrixCell;
+    private String matrixShortAxes;
 
     public long getAgentAllocationMillis() {
         return agentAllocationMillis;
@@ -276,5 +279,29 @@ public class StageModel {
 
     public void addStep(StepModel step) {
         this.steps.add(step);
+    }
+
+    public boolean isMatrix() {
+        return isMatrix;
+    }
+
+    public void setMatrix(boolean matrix) {
+        isMatrix = matrix;
+    }
+
+    public String getMatrixCell() {
+        return matrixCell;
+    }
+
+    public void setMatrixCell(String matrixCell) {
+        this.matrixCell = matrixCell;
+    }
+
+    public String getMatrixShortAxes() {
+        return matrixShortAxes;
+    }
+
+    public void setMatrixShortAxes(String matrixShortAxes) {
+        this.matrixShortAxes = matrixShortAxes;
     }
 }
