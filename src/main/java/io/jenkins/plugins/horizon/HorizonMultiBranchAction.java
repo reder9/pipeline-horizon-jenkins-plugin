@@ -232,6 +232,7 @@ public class HorizonMultiBranchAction implements Action {
     }
 
     public void doApiBranches(StaplerRequest2 req, StaplerResponse2 rsp) throws IOException {
+        project.checkPermission(Item.READ);
         rsp.setContentType("application/json;charset=UTF-8");
         MultiBranchSummaryModel summary = getSummary();
         JSONObject json = JSONObject.fromObject(summary);

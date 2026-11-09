@@ -2,22 +2,65 @@
 
 [![CI](https://github.com/reder9/pipeline-horizon-jenkins-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/reder9/pipeline-horizon-jenkins-plugin/actions/workflows/ci.yml)
 [![Release](https://github.com/reder9/pipeline-horizon-jenkins-plugin/actions/workflows/release.yml/badge.svg)](https://github.com/reder9/pipeline-horizon-jenkins-plugin/actions/workflows/release.yml)
+[![Jenkins Plugin](https://img.shields.io/badge/Jenkins-2.555.3+-007acc.svg?logo=jenkins)](https://plugins.jenkins.io/pipeline-horizon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**Pipeline Horizon** is a modern, interactive pipeline visualizer, live step log inspector, and build control center for Jenkins Pipelines. Designed as a fast, lightweight successor to Blue Ocean and the Pipeline Graph View plugin, it integrates directly into existing Jenkins Pipeline jobs and builds without requiring a separate single-page application overhaul.
+**Pipeline Horizon** is a modern, high-performance pipeline DAG visualizer, live step log streamer, and build operations control center for Jenkins Pipelines. Built as the modern, enterprise-ready successor to Blue Ocean and the barebones Pipeline Graph View plugin, Horizon delivers zero-click failure triage, matrix and parallel multi-column layouts, deep step performance telemetry, and full build control without taking developers out of standard Jenkins.
 
 ---
 
-## Quick Installation (Pre-Update Center / Direct `.hpi`)
+## Visual Showcase
 
-Before or independent of Jenkins Update Center hosting, you can install **Pipeline Horizon** directly into any Jenkins controller (baseline `2.555+`) using the published `.hpi` artifact from [GitHub Releases](https://github.com/reder9/pipeline-horizon-jenkins-plugin/releases):
+### 1. Declarative Matrix & Multi-Column Parallel Visualization
+Effortlessly handles 2x2, 3x2, and 10+ branch parallel/matrix executions with clean axis badges (`[linux] · [chrome]`), multi-column responsive grids, and sub-stage flow indicators.
 
-### Option 1: Jenkins Web UI (Upload or URL)
-1. Download `pipeline-horizon.hpi` from the [**Latest GitHub Release**](https://github.com/reder9/pipeline-horizon-jenkins-plugin/releases/latest/download/pipeline-horizon.hpi).
-2. In Jenkins, navigate to **Manage Jenkins** -> **Plugins** -> **Advanced settings**.
-3. Under **Deploy Plugin**, upload `pipeline-horizon.hpi` (or paste `https://github.com/reder9/pipeline-horizon-jenkins-plugin/releases/latest/download/pipeline-horizon.hpi`) and click **Deploy**.
+![Pipeline Horizon Matrix Flow](docs/images/ux_polish_08_matrix.png)
 
-### Option 2: `jenkins-plugin-cli` / Dockerfile
+### 2. Zero-Click Failure Triage & "Minimize Graph" Breadcrumb Strip
+When a build fails, Horizon immediately surfaces the failing step command, error exit code, and live terminal output with an inline **Auto-Jump** and **Reset to Start** control. The **Minimize Graph** mode collapses the 2D canvas into a compact horizontal breadcrumb bar to maximize terminal log height.
+
+![Pipeline Horizon Failure Triage & Minimized Strip](docs/images/ux_polish_10_minimized.png)
+
+### 3. Serpentine Multi-Row Wrap Mode (Fits 20+ Stages on One Screen)
+Say goodbye to infinite horizontal scrolling. Serpentine Wrap routes smooth SVG connectors across visual rows, displaying massive enterprise pipelines on a single desktop view.
+
+![Pipeline Horizon 22-Stage Serpentine Wrap](docs/images/ux_polish_11_wrap.png)
+
+### 4. Advanced Step Terminal & Live Output Inspector
+ANSI 16/256/TrueColor support, per-step live filtering, line-range deep-linking (`#stage=...&step=...&L=10-25`), duration micro-bars, `Wrap` / `Expand` / `Top` / `Bottom` jump buttons, and full download capabilities.
+
+![Pipeline Horizon Step Log Viewer](docs/images/ux_polish_12_drawer.png)
+
+---
+
+## Why Pipeline Horizon? (Feature Comparison)
+
+| Feature | Blue Ocean (Deprecated) | Pipeline Graph View | **Pipeline Horizon** |
+| :--- | :---: | :---: | :---: |
+| **Jenkins Integration** | Fullscreen SPA takeover (breaks breadcrumbs & sidebar) | Embedded | **Embedded with 1-click Fullscreen toggle & Minimized Strip** |
+| **Declarative `matrix` Builds** | Flattens into giant vertical lists | Basic single-column list | **Dedicated `MATRIX` container, multi-column grid & axis badges** |
+| **Skipped / `when` Conditions** | Greyed circle, no context | Greyed circle, no context | **Preserves topology with explicit skip-reason badge** |
+| **Failure Triage** | Manual click-and-search | Manual stage/step expansion | **Instant Root-Cause Banner + Auto-Jump to leaf failure** |
+| **Wide & Marathon Pipelines** | Infinite horizontal scrolling | Infinite horizontal scrolling | **Canvas Pan/Zoom, Serpentine Wrap & Minimized Strip** |
+| **Step Console UX** | Basic log | Expandable log | **ANSI TrueColor, per-step search, Word-Wrap, Expand, Top/Bottom** |
+| **Performance & Telemetry** | Raw duration only | Raw duration only | **Overhead vs. Stage Time, Queue Wait, `SLOWEST` badges, Micro-Bars** |
+| **Multi-Agent / Pod Awareness** | Buried in console logs | Buried in console logs | **`AGENTS USED` header + Interactive Agent Breakdown Modal** |
+| **Build Control Hub** | Basic abort | Basic rebuild | **Replay Modal with Groovy syntax linter, Restart Stage, Input approval** |
+| **Controller Resource Impact** | Heavy React bundle & REST churn | Moderate | **Sub-millisecond LRU cache & background tab auto-throttling** |
+
+---
+
+## Quick Installation
+
+### Option 1: Jenkins Update Center (Recommended once hosted)
+1. Navigate to **Manage Jenkins** -> **Plugins** -> **Available plugins**.
+2. Search for **Pipeline Horizon**.
+3. Click **Install**.
+
+### Option 2: Direct `.hpi` Deployment
+Download the latest `pipeline-horizon.hpi` from [GitHub Releases](https://github.com/reder9/pipeline-horizon-jenkins-plugin/releases/latest) and upload via **Manage Jenkins** -> **Plugins** -> **Advanced settings** -> **Deploy Plugin**.
+
+### Option 3: `jenkins-plugin-cli` / Dockerfile
 ```dockerfile
 RUN jenkins-plugin-cli --plugins \
     workflow-aggregator \
@@ -28,72 +71,59 @@ RUN jenkins-plugin-cli --plugins \
 
 ---
 
-## Key Features
+## Key Capabilities
 
-### 1. Interactive Stage Execution DAG (`/job/{jobName}/{buildNumber}/horizon/`)
-- **Pan & Zoom Flow Canvas:** Smooth SVG bezier stage connectors with animated in-progress stage glows, Comfort/Compact density toggle, and full-screen mode.
-- **Parallel & Nested Stage Grouping:** Clearly groups parallel branches with wall-clock duration headers, `% of par` branch share, and `% of run` timing pills.
-- **Conditional (`when`) & Skipped Stages:** Preserves skipped stages in the graph with dashed borders and explicit skip-reason badges (`when condition evaluated to false`, `Upstream Failure`) so pipeline topology never disappears.
-- **Bottleneck Detection:** Automatically highlights the slowest stage on the critical path (`Slowest` badge) with proportional duration bars.
-- **Multi-Agent Transparency:** Displays the executor node/pod badge directly on each stage card and provides an interactive **Build Agents Breakdown Modal** showing stage distribution across nodes.
+### 1. Interactive Pipeline Execution Flow (`/job/{jobName}/{buildNumber}/horizon/`)
+- **Three Layout Engines**:
+  - **Canvas Flow**: Infinite pan & drag canvas with floating zoom controls (`-`, `100%`, `+`, `Fit`, `Grid`).
+  - **Wrap Flow**: Serpentine multi-row layout wrapping stages smoothly below one another.
+  - **Minimized Graph**: Collapses canvas into an interactive breadcrumb stage strip, dedicating 100% vertical viewport to step inspection.
+- **Card Density Control**: Switch between **Expanded** (with durations, agent badges, and proportional execution bars) and **Compact** view.
+- **Critical Path & Anomaly Detection**: Highlights the critical path bottleneck stage (`Longest Stage`) and tags individual slowest steps (`SLOWEST` badge).
+- **Historical Variance**: Highlights execution time spikes (e.g. `SPIKE +48%` vs historical average) or faster completions (`-25% FASTER`).
 
-### 2. Inline Step Inspector & Live Log Drawer
-- **Accordion Step Drawer:** Clicking any stage opens its step execution breakdown (`sh`, `bat`, `checkout`, `junit`, `input`, etc.) with per-step durations and status badges.
-- **ANSI Color & Timestamp Support:** Full ANSI 16/256-color and truecolor rendering, optional `[HH:mm:ss]` log timestamps, in-log keyword search with match navigation, raw log download, and one-click copy.
-- **Smart Failure Triage Banner:** Automatically pinpoints the exact failed stage and step with a one-click **Jump to Error** button.
+### 2. Full Pipeline Operations Center
+- **Interactive `input` Approval**: High-visibility approval banners and parameter modals allow operators to approve or abort paused pipelines directly inside the view.
+- **Jenkinsfile Replay Editor**: Inspect or edit pipeline Groovy code with an integrated code editor featuring line numbers and live `/pipeline-model-converter/validate` syntax checking.
+- **Restart from Stage**: Safely re-trigger failed or selected stages in Declarative Pipelines with 1 click.
+- **Stop Build**: Instant CSRF-protected build cancellation for running runs.
 
-### 3. Full Pipeline Control Center
-- **Interactive `input` Step Approval:** Detects `PAUSED_INPUT` stages and surfaces a high-visibility approval banner and parameter modal so users can **Approve / Proceed** or **Abort** paused pipelines directly from Horizon.
-- **Stop / Cancel Running Builds:** One-click **Stop Build** button on both the Run view and Job Activity table with confirmation and CSRF crumb handling.
-- **Restart from Stage & Replay Jenkinsfile:** Trigger **Restart from Stage** (for Declarative Pipelines) or open the built-in **Replay Modal** to edit and re-run the `Jenkinsfile` script in-place.
-- **Rebuild with Parameters:** View build parameters or launch a customized **Rebuild** directly from the run header.
-
-### 4. Test Results, Artifacts & SCM Changes Modals
-- **JUnit Test Explorer Modal:** Filter tests by `Failed`, `Skipped`, or `Passed`, search by class/test name, and inspect failure stack traces and `stdout`/`stderr`.
-- **Build Artifacts Modal:** Browse and download archived build artifacts with file-size formatting.
-- **SCM Commits & Changes:** Inspect commits, authors, and affected file counts associated with the run.
-- **First-Class Light & Dark Themes:** Automatically adapts to Jenkins Theme Manager (`dark` / `light` / `system`) or user preferences.
+### 3. Integrated Test Explorer & Artifact Archive
+- **JUnit Test Explorer**: Filter test cases by `Failed`, `Skipped`, or `Passed`, search by class or test name, and inspect stack traces.
+- **Archived Artifacts Browser**: Browse, search, and download build artifacts with human-readable file sizes.
+- **SCM Commit Linking**: Displays commit messages, committers, and direct links to GitHub, GitLab, or Bitbucket.
 
 ---
 
-## Enterprise Performance & Security Architecture
+## Security & Architecture
 
-1. **Sub-Millisecond Completed Build Caching:**
-   - Completed pipeline builds are immutable. Horizon maintains a thread-safe bounded in-memory LRU cache (256 runs) for `RunDetailsModel`.
-   - Subsequent page views and dashboard switches return in **< 1ms** without re-traversing the FlowNode graph or causing GC churn.
-2. **Page Visibility API Auto-Throttling:**
-   - When a user minimizes or switches away from an in-progress build tab, Horizon detects `document.hidden` and automatically pauses all polling intervals.
-   - When the user returns, Horizon refreshes immediately and resumes polling if the build is still active—eliminating background controller flooding.
-3. **Tail-Safe Log Streaming:**
-   - Inline log drawers cap memory consumption to the last 512 KB (`MAX_LOG_BYTES`) with an automatic notice and direct raw download link for full logs, preventing browser memory exhaustion.
-4. **Strict Security & RBAC Enforcement:**
-   - All REST APIs (`apiGraph`, `apiLog`, `apiRuns`) strictly enforce `Item.READ` permissions, respecting Jenkins Matrix, Folder-level, and Role-Based Access Control (RBAC).
-   - All build mutations (`apiAbort`, `apiRestartStage`, `apiReplayRun`, `apiRebuild`, `apiInputSubmit`, `apiInputAbort`) require POST requests (`@RequirePOST`), appropriate write permissions (`Item.BUILD`, `Item.CANCEL`), and valid CSRF crumbs.
+1. **Sub-Millisecond Completed Build Caching**:
+   - Completed runs are immutable. Horizon maintains a thread-safe, bounded in-memory LRU cache (256 runs). Subsequent views return in **< 1ms** with zero FlowNode graph re-traversal or GC churn.
+2. **Page Visibility Auto-Throttling**:
+   - When a browser tab is hidden (`document.hidden`), Horizon automatically pauses background polling. Polling resumes immediately upon returning, preventing background controller flooding.
+3. **Strict RBAC Enforcement**:
+   - All REST APIs strictly enforce Jenkins permissions (`Item.READ`, `Item.BUILD`, `Item.CANCEL`). All mutations are guarded with `@RequirePOST` and valid CSRF crumbs.
+4. **Tail-Safe Log Buffering**:
+   - Step output streams buffer up to `512 KB` in memory with direct links to full raw logs, preventing browser memory exhaustion on multi-gigabyte builds.
 
 ---
 
-## Diagnostics & Logging
-
-Jenkins administrators can monitor and troubleshoot Horizon pipeline parsing in real time without restarting Jenkins:
-
-1. In Jenkins, navigate to **Manage Jenkins** -> **System Log** -> **Add new log recorder**.
-2. Name the recorder `Pipeline Horizon` and add the logger:
-   - Logger: `io.jenkins.plugins.horizon`
-   - Log Level: `FINE` (for graph building and lifecycle events) or `FINER` (for detailed block traversal).
-
----
-
-## Building from Source
+## Building & Contributing
 
 Requirements: **Java 21+** and **Maven 3.9+**.
 
 ```bash
-# Run unit tests, JenkinsRule integration tests, and SpotBugs checks
+# Run all unit tests, JenkinsRule integration tests, and SpotBugs
 mvn clean verify
 
-# Package target/pipeline-horizon.hpi without running tests
+# Package plugin HPI
 mvn clean package -DskipTests
+
+# Run local interactive Jenkins development instance
+mvn hpi:run
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for pull request guidelines.
 
 ---
 
