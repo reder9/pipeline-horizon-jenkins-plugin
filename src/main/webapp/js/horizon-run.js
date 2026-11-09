@@ -5320,6 +5320,153 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                     return false;
                 }
 
+                var hasAutoEngagedFollowOnScrollIntoDrawer = false;
+
+                function autoEngageFollowOnScrollIntoDrawer() {
+                    if (!isRunLive() || !graphData || !graphData.building) return;
+
+                    // 1. Ensure step follow is active
+                    stepFollowOn = true;
+                    updateFollowButton();
+
+                    // 2. Identify the active running stage
+                    var activeStage = null;
+                    var cur = selectedStageId ? findStage(graphData.stages, selectedStageId) : null;
+                    var curStatus = cur ? (cur.status || '').toUpperCase() : '';
+
+                    if (cur && isStepActiveStatus(curStatus)) {
+                        activeStage = cur;
+                    } else {
+                        var all = getAllStagesFlat(graphData.stages);
+                        for (var i = 0; i < all.length; i++) {
+                            var s = all[i];
+                            if (isStepActiveStatus((s.status || '').toUpperCase()) && (!s.children || s.children.length === 0)) {
+                                activeStage = s;
+                                break;
+                            }
+                        }
+                        if (activeStage && (!cur || activeStage.id !== cur.id)) {
+                            selectStage(activeStage.id, true, null, null, true);
+                        }
+                    }
+
+                    if (!activeStage) return;
+
+                    // 3. Locate the currently executing step
+                    var rt = computeStepRuntime(activeStage);
+                    var curStep = rt ? rt.current : null;
+                    if (!curStep) return;
+
+                    // 4. Expand any collapsed parent closure blocks
+                    var pid = curStep.parentStepId;
+                    var guard = 0;
+                    var byId = {};
+                    for (var s = 0; s < activeStage.steps.length; s++) {
+                        byId[activeStage.steps[s].id] = activeStage.steps[s];
+                    }
+                    while (pid && guard++ < 64) {
+                        delete collapsedClosures[pid];
+                        pid = byId[pid] ? byId[pid].parentStepId : null;
+                    }
+                    applyClosureCollapse();
+
+                    // 5. Expand the running step accordion if not already open
+                    var curItem = document.getElementById('step-item-' + curStep.id);
+                    if (!curItem || !curItem.classList.contains('expanded')) {
+                        stepAutoExpanded[curStep.id] = true;
+                        toggleStepAccordion(curStep.id, null, true, true);
+                    }
+
+                    // 6. Turn on live tail for this running step
+                    setStepLiveTailState(curStep.id, true);
+
+                    // 7. Auto-scroll terminal to bottom
+                    setTimeout(function() {
+                        var term = document.getElementById('terminal-' + curStep.id);
+                        if (term) {
+                            term.scrollTop = term.scrollHeight;
+                            if (stepTerminalVirtualizers && stepTerminalVirtualizers[curStep.id]) {
+                                var v = stepTerminalVirtualizers[curStep.id];
+                                v.forceNextRender = true;
+                                renderVirtualSlice(v, term.scrollHeight);
+                                term.scrollTop = term.scrollHeight;
+                            }
+                        }
+                    }, 80);
+                }
+
+                function checkScrollIntoDrawer() {
+                    var drawer = document.getElementById('drawer-steps-container') || document.getElementById('step-accordion-container');
+                    var app = document.getElementById('horizon-run-app');
+                    var isFullscreen = app && app.classList.contains('mode-fullscreen');
+
+                    var scrollY = isFullscreen
+                        ? (app ? app.scrollTop : 0)
+                        : (window.pageYOffset || document.documentElement.scrollTop || 0);
+
+                    // When the user scrolls back near the top of the page, reset the initial auto-engage flag
+                    // so scrolling down again will re-engage follow & live-tailing.
+                    if (scrollY < 80) {
+                        hasAutoEngagedFollowOnScrollIntoDrawer = false;
+                        return;
+                    }
+
+                    if (hasAutoEngagedFollowOnScrollIntoDrawer) return;
+                    if (!isRunLive() || !graphData || !graphData.building) return;
+
+                    var inDrawerSection = false;
+                    if (drawer) {
+                        var rect = drawer.getBoundingClientRect();
+                        var viewportH = window.innerHeight || 800;
+                        if (rect.top <= viewportH * 0.85) {
+                            inDrawerSection = true;
+                        }
+                    } else if (scrollY >= 180) {
+                        inDrawerSection = true;
+                    }
+
+                    if (inDrawerSection) {
+                        hasAutoEngagedFollowOnScrollIntoDrawer = true;
+                        autoEngageFollowOnScrollIntoDrawer();
+                    }
+                }
+
+                function initScrollIntoDrawerWatcher() {
+                    if (window._horizonDrawerScrollWatcherInit) return;
+                    window._horizonDrawerScrollWatcherInit = true;
+
+                    var scrollThrottle = null;
+                    function handleScroll() {
+                        if (scrollThrottle) return;
+                        scrollThrottle = window.requestAnimationFrame(function() {
+                            scrollThrottle = null;
+                            checkScrollIntoDrawer();
+                        });
+                    }
+
+                    window.addEventListener('scroll', handleScroll, { passive: true });
+                    var app = document.getElementById('horizon-run-app');
+                    if (app) {
+                        app.addEventListener('scroll', handleScroll, { passive: true });
+                    }
+
+                    if (window.IntersectionObserver) {
+                        var drawer = document.getElementById('drawer-steps-container') || document.getElementById('step-accordion-container');
+                        if (drawer) {
+                            var observer = new IntersectionObserver(function(entries) {
+                                entries.forEach(function(entry) {
+                                    if (entry.isIntersecting) {
+                                        checkScrollIntoDrawer();
+                                    }
+                                });
+                            }, { threshold: [0.05, 0.2] });
+                            observer.observe(drawer);
+                        }
+                    }
+
+                    setTimeout(checkScrollIntoDrawer, 400);
+                }
+
                 function updateStepToolbar(stage, rt) {
                     var bar = document.getElementById('step-toolbar');
                     if (!bar) return;
@@ -8910,3 +9057,4 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                 applyScreenMode();
                 applyViewPreferences();
                 fetchGraph();
+                initScrollIntoDrawerWatcher();
