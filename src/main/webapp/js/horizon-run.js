@@ -3245,8 +3245,14 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                     }
                     setTimeout(scheduleDrawFlowConnectors, 25);
 
-                    // Re-select stage from URL hash if present, otherwise auto-jump to failure / active, or first stage
-                    var hashApplied = applyHashSelection(true);
+
+                    // Re-select stage from URL hash only ONCE on initial load;
+                    // never re-invoke applyHashSelection during periodic live polling!
+                    var hashApplied = false;
+                    if (!window._horizonInitialHashSelectionDone) {
+                        window._horizonInitialHashSelectionDone = true;
+                        hashApplied = applyHashSelection(true);
+                    }
                     if (!hashApplied) {
                         if (!window._horizonInitialAutoJumpDone) {
                             window._horizonInitialAutoJumpDone = true;
@@ -4043,6 +4049,32 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                     }
                 }
 
+                function isUserViewingLogs() {
+                    // 1. Any step accordion item is currently expanded
+                    var hasExpandedStep = !!document.querySelector('.step-accordion-item.expanded');
+                    // 2. Any active live-tail is currently running
+                    var hasActiveTail = false;
+                    if (typeof activeLiveTailSteps === 'object' && activeLiveTailSteps) {
+                        for (var k in activeLiveTailSteps) {
+                            if (activeLiveTailSteps.hasOwnProperty(k) && activeLiveTailSteps[k] !== false) {
+                                hasActiveTail = true;
+                                break;
+                            }
+                        }
+                    }
+                    // 3. User has scrolled down into the drawer / step logs area past the graph
+                    var graphEl = document.querySelector('.graph-card') || document.getElementById('pipeline-flow');
+                    var isScrolledPastGraph = false;
+                    if (graphEl) {
+                        var gRect = graphEl.getBoundingClientRect();
+                        isScrolledPastGraph = (gRect.bottom <= 200);
+                    } else {
+                        var currentScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+                        isScrolledPastGraph = (currentScrollY > 200);
+                    }
+                    return hasExpandedStep || hasActiveTail || isScrolledPastGraph;
+                }
+
                 function scrollStageIntoPipelineView(stageId, smooth) {
                     var flowContainer = document.getElementById('pipeline-flow');
                     var cardEl = document.getElementById('stage-card-' + stageId);
@@ -4073,6 +4105,15 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
 
                 function scrollWindowToElement(targetEl, block) {
                     if (!targetEl) return;
+                    // GUARD: If user is viewing or live-tailing logs down in the drawer,
+                    // never yank the window scroll back up to the stage view / graph card!
+                    var isGraphTarget = (targetEl.classList && targetEl.classList.contains('graph-card')) ||
+                                        targetEl.id === 'pipeline-flow' ||
+                                        targetEl.id === 'pipeline-flow-canvas' ||
+                                        (targetEl.closest && targetEl.closest('.graph-card'));
+                    if (isGraphTarget && isUserViewingLogs()) {
+                        return;
+                    }
                     var app = document.getElementById('horizon-run-app');
                     var isFullscreen = app && app.classList.contains('mode-fullscreen');
                     var alignBlock = block || 'center';
@@ -4419,9 +4460,12 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                                 scrollWindowToElement(outputTarget, 'center');
                             }
                         } else if (hashInfo.stageParam) {
-                            var graphCard = document.querySelector('.graph-card');
-                            if (graphCard) {
-                                scrollWindowToElement(graphCard, 'center');
+                            // Only scroll to stage graph on initial permalink load, never when user is viewing/tailing logs
+                            if (isInitialLoad && !isUserViewingLogs()) {
+                                var graphCard = document.querySelector('.graph-card');
+                                if (graphCard) {
+                                    scrollWindowToElement(graphCard, 'center');
+                                }
                             }
                         }
                     }, 120);
@@ -5248,9 +5292,9 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                     }
 
                     var row = document.getElementById('step-row-' + cur.id);
-                    if (row && (forceScroll || !isElementComfortablyInView(row))) {
+                    if (row && (forceScroll || (!isElementComfortablyInView(row) && !isUserViewingLogs()))) {
                         setTimeout(function() {
-                            if (stepFollowOn) scrollWindowToElement(row, 'center');
+                            if (stepFollowOn && !isUserViewingLogs()) scrollWindowToElement(row, 'center');
                         }, 60);
                     }
                 }
