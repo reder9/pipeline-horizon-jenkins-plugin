@@ -139,13 +139,13 @@
                     /* Viewport and Page Containment to Prevent Horizontal Canvas Blowout */
                     html, body {
                         max-width: 100vw !important;
-                        overflow-x: hidden !important;
+                        overflow-x: clip !important;
                     }
                     #page-body,
                     .app-page-body {
                         max-width: 100vw !important;
                         min-width: 0 !important;
-                        overflow-x: hidden !important;
+                        overflow-x: clip !important;
                         box-sizing: border-box !important;
                     }
                     .app-page-body__contents,
@@ -155,7 +155,7 @@
                         min-width: 0 !important;
                         max-width: 100% !important;
                         width: 100% !important;
-                        overflow-x: hidden !important;
+                        overflow-x: clip !important;
                         box-sizing: border-box !important;
                     }
                     .horizon-container {
@@ -166,7 +166,7 @@
                         width: 100% !important;
                         max-width: 100% !important;
                         min-width: 0 !important;
-                        overflow-x: hidden !important;
+                        overflow-x: clip !important;
                         box-sizing: border-box !important;
                     }
                     .horizon-header,
@@ -5220,7 +5220,15 @@
                     }
                     .step-accordion-item.active > .accordion-step-row,
                     .step-accordion-item.expanded > .accordion-step-row {
-                        background: rgba(255, 255, 255, 0.02);
+                        background: rgba(30, 41, 59, 0.65);
+                        box-shadow: inset 3px 0 0 #38bdf8;
+                    }
+                    .step-accordion-item.expanded[data-status="FAILED"] > .accordion-step-row,
+                    .step-accordion-item.expanded[data-status="FAILURE"] > .accordion-step-row {
+                        box-shadow: inset 3px 0 0 #ef4444;
+                    }
+                    .step-accordion-item.expanded[data-status="UNSTABLE"] > .accordion-step-row {
+                        box-shadow: inset 3px 0 0 #f59e0b;
                     }
                     .accordion-step-left {
                         display: flex;
@@ -5596,7 +5604,15 @@
                     .step-inline-log {
                         display: none;
                         background: #070b13;
-                        border-top: 1px solid rgba(255, 255, 255, 0.06);
+                        border-top: 1px solid #1e293b;
+                        box-shadow: inset 3px 0 0 rgba(56, 189, 248, 0.45);
+                    }
+                    .step-accordion-item.expanded[data-status="FAILED"] > .step-inline-log,
+                    .step-accordion-item.expanded[data-status="FAILURE"] > .step-inline-log {
+                        box-shadow: inset 3px 0 0 rgba(239, 68, 68, 0.65);
+                    }
+                    .step-accordion-item.expanded[data-status="UNSTABLE"] > .step-inline-log {
+                        box-shadow: inset 3px 0 0 rgba(245, 158, 11, 0.65);
                     }
                     .step-accordion-item.expanded > .step-inline-log {
                         display: block;
@@ -5605,10 +5621,14 @@
                         display: flex;
                         align-items: center;
                         justify-content: space-between;
-                        padding: 0.4rem 0.85rem;
-                        background: rgba(255, 255, 255, 0.02);
-                        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-                        gap: 0.75rem;
+                        flex-wrap: wrap;
+                        padding: 0.45rem 0.9rem;
+                        background: #0f172a;
+                        border-bottom: 1px solid #1e293b;
+                        gap: 0.65rem;
+                        position: sticky;
+                        top: 0;
+                        z-index: 5;
                     }
                     .inline-log-search-wrap {
                         display: flex;
@@ -6075,49 +6095,112 @@
                         border-color: #38bdf8;
                         text-decoration: none !important;
                     }
+                    .inline-log-btn.is-active {
+                        background: rgba(56, 189, 248, 0.16) !important;
+                        border-color: rgba(56, 189, 248, 0.45) !important;
+                        color: #38bdf8 !important;
+                    }
+                    .inline-step-filter-wrap {
+                        position: relative;
+                        display: inline-flex;
+                        align-items: center;
+                        margin-left: 0.35rem;
+                    }
+                    .inline-step-filter-wrap svg {
+                        position: absolute;
+                        left: 7px;
+                        color: #64748b;
+                        pointer-events: none;
+                    }
+                    .inline-step-filter-input {
+                        background: #070b13;
+                        border: 1px solid #334155;
+                        border-radius: 5px;
+                        color: #e2e8f0;
+                        font-size: 0.73rem;
+                        padding: 0.2rem 0.5rem 0.2rem 1.45rem;
+                        width: 165px;
+                        outline: none;
+                        transition: border-color 0.15s, width 0.15s, box-shadow 0.15s;
+                    }
+                    .inline-step-filter-input:focus {
+                        border-color: #38bdf8;
+                        width: 220px;
+                        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+                    }
                     .inline-terminal-view {
-                        padding: 0.5rem 0;
-                        max-height: 440px;
+                        padding: 0.45rem 0;
+                        max-height: 480px;
                         overflow-y: auto;
                         overflow-x: auto;
-                        overflow-anchor: none !important;
+                        overscroll-behavior: contain;
+                        scrollbar-width: thin;
+                        scrollbar-color: #475569 #070b13;
                         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
                         font-size: 0.815rem;
-                        line-height: 1.55;
+                        line-height: 1.5;
+                        color: #e2e8f0;
+                    }
+                    .inline-terminal-view.tall-view {
+                        max-height: 78vh;
+                    }
+                    .inline-terminal-view::-webkit-scrollbar {
+                        width: 10px;
+                        height: 10px;
+                    }
+                    .inline-terminal-view::-webkit-scrollbar-track {
+                        background: #070b13;
+                    }
+                    .inline-terminal-view::-webkit-scrollbar-thumb {
+                        background: #334155;
+                        border-radius: 5px;
+                        border: 2px solid #070b13;
+                    }
+                    .inline-terminal-view::-webkit-scrollbar-thumb:hover {
+                        background: #475569;
                     }
                     .inline-terminal-view .log-line {
                         display: flex;
-                        align-items: center;
-                        /* Fixed row height: the virtualizer assumes lineHeight = 24px per row. Wrapped rows of
-                           variable height made scroll position map to the wrong lines on long stack traces. */
-                        height: 24px;
-                        min-height: 24px;
+                        align-items: flex-start;
+                        min-height: 23px;
                         box-sizing: border-box;
+                        width: 100%;
+                        padding: 1.5px 0.9rem 1.5px 0;
+                        transition: background 0.1s ease;
+                    }
+                    .inline-terminal-view.nowrap-mode .virtual-slice {
                         width: max-content;
                         min-width: 100%;
-                        padding: 0 0.85rem 0 0;
-                        transition: background 0.12s ease;
+                    }
+                    .inline-terminal-view.nowrap-mode .log-line {
+                        align-items: center;
+                        height: 24px;
+                        min-height: 24px;
+                        width: max-content;
+                        min-width: 100%;
+                        padding: 0 0.9rem 0 0;
                     }
                     .inline-terminal-view .log-line:hover {
-                        background: rgba(255, 255, 255, 0.04);
+                        background: rgba(255, 255, 255, 0.045);
                     }
                     .inline-terminal-view .log-line.selected {
-                        background: rgba(30, 58, 138, 0.4) !important;
+                        background: rgba(30, 58, 138, 0.45) !important;
                         box-shadow: inset 3px 0 0 0 #38bdf8;
-                        border-radius: 4px;
+                        border-radius: 2px;
                     }
                     .inline-terminal-view .log-line-gutter {
-                        width: 44px;
-                        min-width: 44px;
+                        width: 48px;
+                        min-width: 48px;
                         flex-shrink: 0;
                         text-align: right;
                         padding-right: 14px;
                         color: #64748b;
-                        font-size: 0.75rem;
+                        font-size: 0.74rem;
+                        line-height: 1.5;
                         cursor: pointer;
                         user-select: none;
                         display: flex;
-                        align-items: center;
+                        align-items: flex-start;
                         justify-content: flex-end;
                         font-variant-numeric: tabular-nums;
                     }
@@ -6133,8 +6216,15 @@
                     .inline-terminal-view .log-line-text {
                         flex: 1;
                         min-width: 0;
+                        white-space: pre-wrap;
+                        word-break: break-word;
+                        overflow-wrap: anywhere;
+                        color: #e2e8f0;
+                    }
+                    .inline-terminal-view.nowrap-mode .log-line-text {
                         white-space: pre;
-                        color: #cbd5e1;
+                        word-break: normal;
+                        overflow-wrap: normal;
                     }
                     .inline-terminal-view .log-line.selected .log-line-text {
                         color: #ffffff;
@@ -6364,18 +6454,25 @@
                         color: #0284c7;
                         text-decoration: none !important;
                     }
+                    .horizon-container:not(.theme-dark) .inline-log-toolbar {
+                        background: #0f172a;
+                        border-bottom-color: #1e293b;
+                    }
+                    .horizon-container:not(.theme-dark) .inline-log-line-count {
+                        color: #94a3b8;
+                    }
                     .horizon-container:not(.theme-dark) .inline-log-btn,
                     .horizon-container:not(.theme-dark) a.inline-log-btn {
-                        background: #f1f5f9;
-                        border-color: #cbd5e1;
-                        color: #1e293b;
+                        background: #1e293b;
+                        border-color: #334155;
+                        color: #e2e8f0;
                         text-decoration: none !important;
                     }
                     .horizon-container:not(.theme-dark) .inline-log-btn:hover,
                     .horizon-container:not(.theme-dark) a.inline-log-btn:hover {
-                        background: #e2e8f0;
-                        color: #0284c7;
-                        border-color: #0284c7;
+                        background: #334155;
+                        color: #38bdf8;
+                        border-color: #38bdf8;
                         text-decoration: none !important;
                     }
                     .horizon-container:not(.theme-dark) .step-accordion-container {
@@ -6391,7 +6488,17 @@
                     }
                     .horizon-container:not(.theme-dark) .step-accordion-item.active > .accordion-step-row,
                     .horizon-container:not(.theme-dark) .step-accordion-item.expanded > .accordion-step-row {
-                        background: #f8fafc;
+                        background: #f0f9ff;
+                        box-shadow: inset 3px 0 0 #0284c7;
+                    }
+                    .horizon-container:not(.theme-dark) .step-accordion-item.expanded[data-status="FAILED"] > .accordion-step-row,
+                    .horizon-container:not(.theme-dark) .step-accordion-item.expanded[data-status="FAILURE"] > .accordion-step-row {
+                        background: #fef2f2;
+                        box-shadow: inset 3px 0 0 #ef4444;
+                    }
+                    .horizon-container:not(.theme-dark) .step-accordion-item.expanded[data-status="UNSTABLE"] > .accordion-step-row {
+                        background: #fffbeb;
+                        box-shadow: inset 3px 0 0 #f59e0b;
                     }
                     .horizon-container:not(.theme-dark) .step-glyph {
                         color: #475569;
@@ -10715,6 +10822,13 @@
                     if (index &gt;= 0 &amp;&amp; index &lt; currentFailures.length) {
                         activeFailureIndex = index;
                         renderRootCauseBannerContent();
+                        var item = currentFailures[index];
+                        if (item &amp;&amp; item.stageId) {
+                            selectStage(item.stageId, false, item.stepId);
+                            setTimeout(function() {
+                                scrollStageIntoPipelineView(item.stageId, true);
+                            }, 50);
+                        }
                     }
                 }
 
@@ -12771,10 +12885,10 @@
                     } else {
                         var targetRect = targetEl.getBoundingClientRect();
                         var currentScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-                        var targetTop = currentScrollY + targetRect.top - (window.innerHeight / 2) + (targetEl.offsetHeight / 2);
-                        if (alignBlock === 'start') {
-                            targetTop = currentScrollY + targetRect.top - 20;
-                        }
+                        var useStart = (alignBlock === 'start') || (targetEl.offsetHeight &gt; window.innerHeight * 0.6);
+                        var targetTop = useStart
+                            ? (currentScrollY + targetRect.top - 24)
+                            : (currentScrollY + targetRect.top - (window.innerHeight / 2) + (targetEl.offsetHeight / 2));
                         window.scrollTo({
                             top: Math.max(0, targetTop),
                             behavior: 'smooth'
@@ -13618,11 +13732,17 @@
                     html += '&lt;/div&gt;';
 
                     // Step Inline Log (hidden by CSS for closures that merely wrap other steps)
+                    var wrapPref = (window._stepWrapLines !== false);
+                    var tallPref = !!window._stepTallView;
                     html += '&lt;div class="step-inline-log" id="step-log-' + step.id + '" role="region" aria-label="Console log for ' + escapeHtml(titleStr) + '"&gt;';
                     html += '&lt;div class="inline-log-toolbar"&gt;';
                     html += '&lt;div class="inline-log-meta-left"&gt;';
                     html += '&lt;span class="inline-log-line-count" id="log-count-' + step.id + '"&gt;0 lines&lt;/span&gt;';
                     html += '&lt;span class="step-match-pill" id="step-match-pill-' + step.id + '" style="display:none;"&gt;&lt;/span&gt;';
+                    html += '&lt;div class="inline-step-filter-wrap"&gt;';
+                    html += '&lt;svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;circle cx="11" cy="11" r="8"/&gt;&lt;line x1="21" y1="21" x2="16.65" y2="16.65"/&gt;&lt;/svg&gt;';
+                    html += '&lt;input type="text" class="inline-step-filter-input" id="step-filter-input-' + step.id + '" placeholder="Filter step output..." oninput="filterSingleStepLog(\'' + step.id + '\', this.value)" onclick="event.stopPropagation();" aria-label="Filter output for this step"/&gt;';
+                    html += '&lt;/div&gt;';
                     html += '&lt;/div&gt;';
                     html += '&lt;div class="inline-log-actions"&gt;';
 
@@ -13630,6 +13750,22 @@
                     if (isStepActive) {
                         html += '&lt;button class="inline-log-btn live-tail-btn live-tail-active" id="btn-tail-step-' + step.id + '" onclick="toggleStepLiveTail(\'' + step.id + '\')" title="Toggle auto-following live log stream"&gt;&lt;span class="live-tail-dot"&gt;&lt;/span&gt;&lt;span id="label-tail-step-' + step.id + '"&gt;Live Tail&lt;/span&gt;&lt;/button&gt;';
                     }
+
+                    html += '&lt;button type="button" class="inline-log-btn' + (wrapPref ? ' is-active' : '') + '" id="btn-wrap-step-' + step.id + '" onclick="toggleStepWordWrap(\'' + step.id + '\')" title="Toggle word wrapping for long lines"&gt;';
+                    html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;line x1="3" y1="6" x2="21" y2="6"/&gt;&lt;path d="M3 12h15a3 3 0 1 1 0 6h-4"/&gt;&lt;polyline points="16 16 14 18 16 20"/&gt;&lt;line x1="3" y1="18" x2="10" y2="18"/&gt;&lt;/svg&gt;';
+                    html += '&lt;span&gt;Wrap&lt;/span&gt;&lt;/button&gt;';
+
+                    html += '&lt;button type="button" class="inline-log-btn' + (tallPref ? ' is-active' : '') + '" id="btn-tall-step-' + step.id + '" onclick="toggleStepTallView(\'' + step.id + '\')" title="Toggle expanded log viewer height"&gt;';
+                    html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;polyline points="15 3 21 3 21 9"/&gt;&lt;polyline points="9 21 3 21 3 15"/&gt;&lt;line x1="21" y1="3" x2="14" y2="10"/&gt;&lt;line x1="3" y1="21" x2="10" y2="14"/&gt;&lt;/svg&gt;';
+                    html += '&lt;span id="label-tall-step-' + step.id + '"&gt;' + (tallPref ? 'Compact' : 'Expand') + '&lt;/span&gt;&lt;/button&gt;';
+
+                    html += '&lt;button type="button" class="inline-log-btn" onclick="scrollStepTerminalEdge(\'' + step.id + '\', \'top\')" title="Scroll to top of step output"&gt;';
+                    html += '&lt;svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;line x1="12" y1="19" x2="12" y2="5"/&gt;&lt;polyline points="5 12 12 5 19 12"/&gt;&lt;/svg&gt;';
+                    html += '&lt;span&gt;Top&lt;/span&gt;&lt;/button&gt;';
+
+                    html += '&lt;button type="button" class="inline-log-btn" onclick="scrollStepTerminalEdge(\'' + step.id + '\', \'bottom\')" title="Scroll to bottom of step output"&gt;';
+                    html += '&lt;svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;line x1="12" y1="5" x2="12" y2="19"/&gt;&lt;polyline points="19 12 12 19 5 12"/&gt;&lt;/svg&gt;';
+                    html += '&lt;span&gt;Bottom&lt;/span&gt;&lt;/button&gt;';
 
                     html += '&lt;button class="inline-log-btn" id="btn-share-step-' + step.id + '" onclick="copyCurrentDeepLink(\'step\', \'' + step.id + '\')" title="Copy direct link to this step / line"&gt;';
                     html += '&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/&gt;&lt;path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/&gt;&lt;/svg&gt;';
@@ -13642,7 +13778,7 @@
                     html += '&lt;/a&gt;';
                     html += '&lt;/div&gt;';
                     html += '&lt;/div&gt;';
-                    html += '&lt;div class="inline-terminal-view" id="terminal-' + step.id + '"&gt;';
+                    html += '&lt;div class="inline-terminal-view' + (wrapPref ? '' : ' nowrap-mode') + (tallPref ? ' tall-view' : '') + '" id="terminal-' + step.id + '"&gt;';
                     html += '&lt;div class="log-placeholder"&gt;Loading log stream...&lt;/div&gt;';
                     html += '&lt;/div&gt;';
                     html += '&lt;/div&gt;';
@@ -14358,6 +14494,95 @@
                 }
 
                 var stepTerminalVirtualizers = {};
+                window._stepWrapLines = true;
+                window._stepTallView = false;
+
+                function toggleStepWordWrap(stepId) {
+                    window._stepWrapLines = (window._stepWrapLines === false);
+                    var allTerms = document.querySelectorAll('.inline-terminal-view');
+                    for (var i = 0; i &lt; allTerms.length; i++) {
+                        allTerms[i].classList.toggle('nowrap-mode', !window._stepWrapLines);
+                    }
+                    var allBtns = document.querySelectorAll('[id^="btn-wrap-step-"]');
+                    for (var j = 0; j &lt; allBtns.length; j++) {
+                        allBtns[j].classList.toggle('is-active', window._stepWrapLines);
+                    }
+                    var v = stepTerminalVirtualizers[stepId];
+                    if (v) {
+                        v.forceNextRender = true;
+                        renderVirtualSlice(v);
+                    }
+                }
+
+                function toggleStepTallView(stepId) {
+                    window._stepTallView = !window._stepTallView;
+                    var allTerms = document.querySelectorAll('.inline-terminal-view');
+                    for (var i = 0; i &lt; allTerms.length; i++) {
+                        allTerms[i].classList.toggle('tall-view', window._stepTallView);
+                    }
+                    var allBtns = document.querySelectorAll('[id^="btn-tall-step-"]');
+                    for (var j = 0; j &lt; allBtns.length; j++) {
+                        allBtns[j].classList.toggle('is-active', window._stepTallView);
+                    }
+                    var allLabels = document.querySelectorAll('[id^="label-tall-step-"]');
+                    for (var k = 0; k &lt; allLabels.length; k++) {
+                        allLabels[k].innerText = window._stepTallView ? 'Compact' : 'Expand';
+                    }
+                    var v = stepTerminalVirtualizers[stepId];
+                    if (v) {
+                        v.forceNextRender = true;
+                        renderVirtualSlice(v);
+                    }
+                }
+
+                function scrollStepTerminalEdge(stepId, edge) {
+                    var terminal = document.getElementById('terminal-' + stepId);
+                    var v = stepTerminalVirtualizers[stepId];
+                    if (!terminal) return;
+                    if (edge === 'top') {
+                        terminal.scrollTop = 0;
+                        if (v) {
+                            v.forceNextRender = true;
+                            renderVirtualSlice(v, 0);
+                        }
+                    } else {
+                        if (v) {
+                            var totalItems = v.filteredIndices ? v.filteredIndices.length : v.rawLines.length;
+                            var approxEnd = totalItems * (v.lineHeight || 24);
+                            v.forceNextRender = true;
+                            renderVirtualSlice(v, approxEnd);
+                        }
+                        terminal.scrollTop = terminal.scrollHeight;
+                    }
+                }
+
+                function filterSingleStepLog(stepId, query) {
+                    var v = stepTerminalVirtualizers[stepId];
+                    var countEl = document.getElementById('log-count-' + stepId);
+                    if (!v) return;
+                    var q = (query || '').trim().toLowerCase();
+                    v.localFilterQuery = q;
+                    var effectiveQuery = q || currentStageSearchQuery;
+                    if (!effectiveQuery) {
+                        v.filteredIndices = null;
+                        if (countEl) {
+                            countEl.innerText = v.rawLines.length + (v.rawLines.length === 1 ? ' line' : ' lines');
+                        }
+                    } else {
+                        var matches = [];
+                        for (var i = 0; i &lt; v.rawLines.length; i++) {
+                            if (v.rawLines[i].toLowerCase().indexOf(effectiveQuery) !== -1) {
+                                matches.push(i);
+                            }
+                        }
+                        v.filteredIndices = matches;
+                        if (countEl) {
+                            countEl.innerText = matches.length + ' of ' + v.rawLines.length + ' lines';
+                        }
+                    }
+                    v.forceNextRender = true;
+                    renderVirtualSlice(v, 0);
+                }
 
                 function renderVirtualSlice(vState, forcedScrollTop) {
                     var stepId = vState.stepId;
@@ -14372,19 +14597,29 @@
                         topSpacer.style.height = '0px';
                         bottomSpacer.style.height = '0px';
                         sliceContainer.innerHTML = '&lt;div class="log-placeholder" style="padding:1rem 1.25rem;"&gt;No matching log lines found.&lt;/div&gt;';
+                        vState.lastStartIndex = -1;
+                        vState.lastEndIndex = -1;
                         return;
                     }
 
-                    var scrollTop = (forcedScrollTop !== undefined &amp;&amp; forcedScrollTop !== null) ? forcedScrollTop : terminal.scrollTop;
-                    var clientHeight = terminal.clientHeight || 440;
-                    var lineHeight = vState.lineHeight || 24;
+                    // Render directly without virtual windowing for logs &lt;= 2500 lines (or when word-wrap is active on &lt;= 3000 lines)
+                    // so scrolling never replaces DOM nodes mid-scroll or breaks multi-line text selection!
+                    var useDirectRender = (totalItems &lt;= 2500) || (window._stepWrapLines !== false &amp;&amp; totalItems &lt;= 3500);
+                    var startIndex = 0;
+                    var endIndex = totalItems - 1;
 
-                    var firstVisible = Math.floor(scrollTop / lineHeight);
-                    var visibleCount = Math.ceil(clientHeight / lineHeight);
-                    var OVERSCAN = 25;
+                    if (!useDirectRender) {
+                        var scrollTop = (forcedScrollTop !== undefined &amp;&amp; forcedScrollTop !== null) ? forcedScrollTop : terminal.scrollTop;
+                        var clientHeight = terminal.clientHeight || 480;
+                        var lineHeight = vState.lineHeight || 24;
 
-                    var startIndex = Math.max(0, firstVisible - OVERSCAN);
-                    var endIndex = Math.min(totalItems - 1, firstVisible + visibleCount + OVERSCAN);
+                        var firstVisible = Math.floor(scrollTop / lineHeight);
+                        var visibleCount = Math.ceil(clientHeight / lineHeight);
+                        var OVERSCAN = 60;
+
+                        startIndex = Math.max(0, firstVisible - OVERSCAN);
+                        endIndex = Math.min(totalItems - 1, firstVisible + visibleCount + OVERSCAN);
+                    }
 
                     if (vState.lastStartIndex === startIndex &amp;&amp; vState.lastEndIndex === endIndex &amp;&amp; !vState.forceNextRender) {
                         return;
@@ -14393,8 +14628,8 @@
                     vState.lastEndIndex = endIndex;
                     vState.forceNextRender = false;
 
-                    var topHeight = startIndex * lineHeight;
-                    var bottomHeight = Math.max(0, (totalItems - 1 - endIndex) * lineHeight);
+                    var topHeight = useDirectRender ? 0 : (startIndex * (vState.lineHeight || 24));
+                    var bottomHeight = useDirectRender ? 0 : Math.max(0, (totalItems - 1 - endIndex) * (vState.lineHeight || 24));
 
                     topSpacer.style.height = topHeight + 'px';
                     bottomSpacer.style.height = bottomHeight + 'px';
@@ -14438,17 +14673,17 @@
                         if (itemIdx === -1) return;
                     }
 
-                    var lineHeight = v.lineHeight || 24;
-                    var clientHeight = terminal.clientHeight || 440;
-                    var targetScrollTop = Math.max(0, (itemIdx * lineHeight) - Math.floor(clientHeight / 3));
-
-                    terminal.scrollTop = targetScrollTop;
                     v.forceNextRender = true;
-                    renderVirtualSlice(v, targetScrollTop);
+                    var lineHeight = v.lineHeight || 24;
+                    var clientHeight = terminal.clientHeight || 480;
+                    var approxScrollTop = Math.max(0, (itemIdx * lineHeight) - Math.floor(clientHeight / 3));
+                    renderVirtualSlice(v, approxScrollTop);
 
                     setTimeout(function() {
                         var lineEl = document.getElementById('log-line-' + stepId + '-' + lineNum);
                         if (lineEl) {
+                            var lineTop = lineEl.offsetTop;
+                            terminal.scrollTop = Math.max(0, lineTop - Math.floor((terminal.clientHeight || 480) / 3));
                             var className = (pulseType === 'error') ? 'error-pulse-highlight' : 'pulse-highlight';
                             lineEl.classList.remove(className);
                             void lineEl.offsetWidth;
@@ -14456,8 +14691,10 @@
                             setTimeout(function() {
                                 lineEl.classList.remove(className);
                             }, 2800);
+                        } else {
+                            terminal.scrollTop = approxScrollTop;
                         }
-                    }, 40);
+                    }, 30);
                 }
 
                 function renderStepLogLines(stepId, text, initialLineRange, updateOpts) {
@@ -15693,9 +15930,10 @@
                     if (!data || !data.stages || data.stages.length === 0) return null;
                     var allStages = getAllStagesFlat(data.stages);
 
-                    // 1. First look for FAILED or FAILURE
+                    // 1. First look for FAILED or FAILURE on selectable leaf stages (skipping parallel/matrix wrapper containers)
                     for (var i = 0; i &lt; allStages.length; i++) {
                         var st = allStages[i];
+                        if (st.children &amp;&amp; st.children.length &gt; 0) continue;
                         var status = (st.status || '').toUpperCase();
                         if (status === 'FAILED' || status === 'FAILURE') {
                             var failStep = pickLeafStepByStatus(st.steps, ['FAILED', 'FAILURE']);
@@ -15704,27 +15942,30 @@
                         }
                     }
 
-                    // 2. Next look for UNSTABLE
+                    // 2. Next look for UNSTABLE on selectable leaf stages
                     for (var i = 0; i &lt; allStages.length; i++) {
                         var st = allStages[i];
+                        if (st.children &amp;&amp; st.children.length &gt; 0) continue;
                         var status = (st.status || '').toUpperCase();
                         if (status === 'UNSTABLE') {
                             return { stage: st, step: pickLeafStepByStatus(st.steps, ['UNSTABLE']), type: 'unstable' };
                         }
                     }
 
-                    // 3. Next look for PAUSED_INPUT
+                    // 3. Next look for PAUSED_INPUT on selectable leaf stages
                     for (var i = 0; i &lt; allStages.length; i++) {
                         var st = allStages[i];
+                        if (st.children &amp;&amp; st.children.length &gt; 0) continue;
                         if ((st.status || '').toUpperCase() === 'PAUSED_INPUT') {
                             return { stage: st, step: pickLeafStepByStatus(st.steps, ['PAUSED_INPUT']), type: 'paused_input' };
                         }
                     }
 
-                    // 4. If build is active, look for IN_PROGRESS
+                    // 4. If build is active, look for IN_PROGRESS on selectable leaf stages
                     if (data.building || data.result === 'IN_PROGRESS') {
                         for (var i = 0; i &lt; allStages.length; i++) {
                             var st = allStages[i];
+                            if (st.children &amp;&amp; st.children.length &gt; 0) continue;
                             if ((st.status || '').toUpperCase() === 'IN_PROGRESS') {
                                 var runtime = computeStepRuntime(st);
                                 var progStep = runtime.current || pickLeafStepByStatus(st.steps, ['IN_PROGRESS']);
