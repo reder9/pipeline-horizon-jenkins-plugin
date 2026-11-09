@@ -251,8 +251,12 @@ public class PipelineGraphAnalyzer {
             allAgentsUsed.add(defaultAgent);
         }
 
-        // Pre-scan to find which branch nodes have inner stages
-        Set<String> branchNodesWithInnerStages = new HashSet<>();
+        // Pre-scan to find how many direct inner stages each branch node encloses.
+        // If a "Branch: ..." node wraps a single direct stage, we skip the wrapper and let
+        // that inner stage represent the branch. If it directly encloses 2+ sequential stages
+        // (e.g. multi-stage Declarative Matrix cell or scripted parallel branch with multiple stages),
+        // we keep the branch node so consolidateStages() groups those sub-stages into one branch card.
+        Map<String, Integer> branchDirectInnerStageCount = new HashMap<>();
         for (FlowNode node : allNodes) {
             if (!(node instanceof BlockStartNode)) {
                 continue;
@@ -263,7 +267,13 @@ public class PipelineGraphAnalyzer {
                 try {
                     for (BlockStartNode bsn : node.iterateEnclosingBlocks()) {
                         if (bsn.getAction(ThreadNameAction.class) != null) {
-                            branchNodesWithInnerStages.add(bsn.getId());
+                            branchDirectInnerStageCount.merge(bsn.getId(), 1, Integer::sum);
+                            break;
+                        }
+                        LabelAction parentLa = bsn.getAction(LabelAction.class);
+                        String parentLaDisp = parentLa != null ? parentLa.getDisplayName() : null;
+                        if (parentLaDisp != null && !parentLaDisp.trim().startsWith("Branch: ")) {
+                            break;
                         }
                     }
                 } catch (Throwable ignored) {}
@@ -284,8 +294,8 @@ public class PipelineGraphAnalyzer {
 
                 // If this is a branch launcher wrapper (e.g. "Branch: Unit Tests")
                 if (labelName.startsWith("Branch: ")) {
-                    // Only skip if the branch contains an inner stage (which has the real stage name)
-                    if (branchNodesWithInnerStages.contains(node.getId())) {
+                    // Only skip if the branch wraps a single direct inner stage
+                    if (branchDirectInnerStageCount.getOrDefault(node.getId(), 0) == 1) {
                         continue;
                     }
                     // Otherwise, use the branch name as the stage name
@@ -1501,7 +1511,20 @@ public class PipelineGraphAnalyzer {
         step.setDurationMillis(duration);
         step.setSelfDurationMillis(duration);
 
+        BlockEndNode stepEnd = startToEndMap != null ? startToEndMap.get(node.getId()) : null;
+        TagsAction stepTags = node.getAction(TagsAction.class);
+        if (stepTags != null) {
+            String tagStatus = stepTags.getTagValue("STAGE_STATUS");
+            if (tagStatus != null && tagStatus.startsWith("SKIPPED")) {
+                step.setStatus("SKIPPED");
+                return step;
+            }
+        }
+
         ErrorAction ea = node.getAction(ErrorAction.class);
+        if (ea == null && stepEnd != null) {
+            ea = stepEnd.getAction(ErrorAction.class);
+        }
         if (ea != null) {
             Throwable th = ea.getError();
             boolean isAborted = (th instanceof org.jenkinsci.plugins.workflow.steps.FlowInterruptedException)
@@ -1516,6 +1539,9 @@ public class PipelineGraphAnalyzer {
             }
         } else {
             org.jenkinsci.plugins.workflow.actions.WarningAction wa = node.getAction(org.jenkinsci.plugins.workflow.actions.WarningAction.class);
+            if (wa == null && stepEnd != null) {
+                wa = stepEnd.getAction(org.jenkinsci.plugins.workflow.actions.WarningAction.class);
+            }
             if (wa != null) {
                 step.setStatus("UNSTABLE");
                 String waMsg = wa.getMessage();
@@ -1752,6 +1778,9 @@ public class PipelineGraphAnalyzer {
                             if (sub.getStatus() != null && !"SUCCESS".equalsIgnoreCase(sub.getStatus())) {
                                 child.setStatus(sub.getStatus());
                             }
+                            if (sub.getSkipReason() != null && (child.getSkipReason() == null || child.getSkipReason().isEmpty())) {
+                                child.setSkipReason(sub.getSkipReason());
+                            }
                             if (sub.getError() != null && child.getError() == null) {
                                 child.setError(sub.getError());
                             }
@@ -1769,10 +1798,26 @@ public class PipelineGraphAnalyzer {
                             }
                         } else {
                             long totalSubDur = 0L;
+                            List<String> subNames = new ArrayList<>();
+                            boolean subHasFailure = false;
+                            boolean subHasAborted = false;
+                            boolean subHasPaused = false;
+                            boolean subHasInProgress = false;
+                            boolean subHasUnstable = false;
+                            boolean subAllSkipped = true;
+                            String firstSkipStatus = null;
+                            String firstSkipReason = null;
+
                             for (StageModel sub : childSeq) {
                                 absorbedStages.add(sub.getId());
+                                if (sub.getName() != null && !sub.getName().trim().isEmpty()) {
+                                    subNames.add(sub.getName().trim());
+                                }
                                 if (sub.getDurationMillis() > 0) {
                                     totalSubDur += sub.getDurationMillis();
+                                }
+                                if ((child.getAgent() == null || child.getAgent().isEmpty()) && sub.getAgent() != null) {
+                                    child.setAgent(sub.getAgent());
                                 }
                                 if (sub.getSteps() != null) {
                                     for (StepModel cStep : sub.getSteps()) {
@@ -1788,10 +1833,26 @@ public class PipelineGraphAnalyzer {
                                         }
                                     }
                                 }
-                                if (sub.getStatus() != null && !"SUCCESS".equalsIgnoreCase(sub.getStatus()) && !"FAILED".equalsIgnoreCase(child.getStatus())) {
-                                    child.setStatus(sub.getStatus());
+                                String subSt = sub.getStatus() != null ? sub.getStatus().toUpperCase(java.util.Locale.ROOT) : "SUCCESS";
+                                if (!subSt.startsWith("SKIPPED") && !"NOT_EXECUTED".equals(subSt)) {
+                                    subAllSkipped = false;
+                                } else if (firstSkipStatus == null) {
+                                    firstSkipStatus = sub.getStatus();
+                                    firstSkipReason = sub.getSkipReason();
                                 }
-                                if (sub.getError() != null && child.getError() == null) {
+                                if ("FAILED".equals(subSt) || "FAILURE".equals(subSt)) {
+                                    subHasFailure = true;
+                                } else if ("ABORTED".equals(subSt)) {
+                                    subHasAborted = true;
+                                } else if ("PAUSED_INPUT".equals(subSt) || sub.isPausedForInput()) {
+                                    subHasPaused = true;
+                                    child.setPausedForInput(true);
+                                } else if ("IN_PROGRESS".equals(subSt)) {
+                                    subHasInProgress = true;
+                                } else if ("UNSTABLE".equals(subSt)) {
+                                    subHasUnstable = true;
+                                }
+                                if (sub.getError() != null && (child.getError() == null || child.getError().isEmpty())) {
                                     child.setError(sub.getError());
                                 }
                                 if (sub.isHasArtifacts()) {
@@ -1807,10 +1868,37 @@ public class PipelineGraphAnalyzer {
                                     }
                                 }
                             }
+                            if (!subNames.isEmpty()) {
+                                String joinedSubNames = String.join(" \u2192 ", subNames);
+                                if (child.isMatrix()) {
+                                    child.setName(joinedSubNames);
+                                    String axes = child.getMatrixShortAxes();
+                                    child.setBranchName(axes != null && !axes.isEmpty() ? axes : joinedSubNames);
+                                } else {
+                                    child.setBranchName(joinedSubNames);
+                                }
+                            }
+                            if (subHasFailure) {
+                                child.setStatus("FAILED");
+                            } else if (subHasAborted) {
+                                child.setStatus("ABORTED");
+                            } else if (subHasPaused) {
+                                child.setStatus("PAUSED_INPUT");
+                            } else if (subHasInProgress) {
+                                child.setStatus("IN_PROGRESS");
+                            } else if (subHasUnstable) {
+                                child.setStatus("UNSTABLE");
+                            } else if (subAllSkipped && firstSkipStatus != null) {
+                                child.setStatus(firstSkipStatus);
+                                if (child.getSkipReason() == null || child.getSkipReason().isEmpty()) {
+                                    child.setSkipReason(firstSkipReason);
+                                }
+                            } else if (child.getStatus() == null || child.getStatus().startsWith("SKIPPED")) {
+                                child.setStatus("SUCCESS");
+                            }
                             if (child.getDurationMillis() <= 0 && totalSubDur > 0) {
                                 child.setDurationMillis(totalSubDur);
                             }
-                            child.setChildren(childSeq);
                         }
                     }
                 }

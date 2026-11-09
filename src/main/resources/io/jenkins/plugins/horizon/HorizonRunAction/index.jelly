@@ -10447,23 +10447,21 @@
                             }
 
                             if (isFailed || isUnstable) {
-                                // Find failed step in this stage
-                                var failedStep = null;
+                                // Prefer leaf failing/unstable step over enclosing closure blocks
+                                var targetStatuses = isFailed ? ['FAILED', 'FAILURE'] : ['UNSTABLE'];
+                                var failedStep = pickLeafStepByStatus(st.steps, targetStatuses);
+                                var fallbackStepWithError = null;
                                 if (st.steps &amp;&amp; st.steps.length &gt; 0) {
                                     for (var s = 0; s &lt; st.steps.length; s++) {
                                         var stepObj = st.steps[s];
                                         var stepStatus = (stepObj.status || '').toUpperCase();
-                                        if (isFailed &amp;&amp; (stepStatus === 'FAILED' || stepStatus === 'FAILURE')) {
-                                            failedStep = stepObj;
-                                            break;
-                                        } else if (isUnstable &amp;&amp; stepStatus === 'UNSTABLE') {
-                                            failedStep = stepObj;
-                                            break;
+                                        if (targetStatuses.indexOf(stepStatus) !== -1 &amp;&amp; stepObj.error &amp;&amp; !fallbackStepWithError) {
+                                            fallbackStepWithError = stepObj;
                                         }
                                     }
                                 }
 
-                                var errorMsg = (failedStep &amp;&amp; failedStep.error) ? failedStep.error : (st.error || '');
+                                var errorMsg = (failedStep &amp;&amp; failedStep.error) ? failedStep.error : ((fallbackStepWithError &amp;&amp; fallbackStepWithError.error) ? fallbackStepWithError.error : (st.error || ''));
                                 if (!errorMsg &amp;&amp; failedStep &amp;&amp; failedStep.arguments) {
                                     errorMsg = failedStep.arguments;
                                 }
@@ -10501,6 +10499,13 @@
                     }
 
                     walk(stages, null);
+                    failures.forEach(function(item, idx) { item._orderIdx = idx; });
+                    failures.sort(function(a, b) {
+                        var aRank = (a.status === 'FAILED') ? 0 : 1;
+                        var bRank = (b.status === 'FAILED') ? 0 : 1;
+                        if (aRank !== bRank) return aRank - bRank;
+                        return a._orderIdx - b._orderIdx;
+                    });
                     return failures;
                 }
 
@@ -10580,9 +10585,21 @@
                     html += '&lt;span class="root-cause-badge"&gt;' + badgeLabel + '&lt;/span&gt;';
 
                     if (currentFailures.length &gt; 1) {
-                        html += '&lt;span&gt;' + currentFailures.length + ' Failures Detected Across Execution&lt;/span&gt;';
+                        var hardFailCount = 0;
+                        var unstableWarnCount = 0;
+                        for (var fc = 0; fc &lt; currentFailures.length; fc++) {
+                            if (currentFailures[fc].status === 'FAILED') hardFailCount++;
+                            else unstableWarnCount++;
+                        }
+                        if (hardFailCount &gt; 0 &amp;&amp; unstableWarnCount &gt; 0) {
+                            html += '&lt;span&gt;' + hardFailCount + (hardFailCount === 1 ? ' Failure' : ' Failures') + ' &amp;amp; ' + unstableWarnCount + (unstableWarnCount === 1 ? ' Unstable Stage' : ' Unstable Stages') + ' Detected&lt;/span&gt;';
+                        } else if (hardFailCount === 0 &amp;&amp; unstableWarnCount &gt; 1) {
+                            html += '&lt;span&gt;' + unstableWarnCount + ' Unstable Stages Detected Across Execution&lt;/span&gt;';
+                        } else {
+                            html += '&lt;span&gt;' + currentFailures.length + ' Failures Detected Across Execution&lt;/span&gt;';
+                        }
                     } else {
-                        html += '&lt;span&gt;Failure in Stage: &lt;strong&gt;' + escapeHtml(f.stageName) + '&lt;/strong&gt;&lt;/span&gt;';
+                        html += '&lt;span&gt;' + (isFailed ? 'Failure' : 'Unstable Warning') + ' in Stage: &lt;strong&gt;' + escapeHtml(f.stageName) + '&lt;/strong&gt;&lt;/span&gt;';
                     }
 
                     if (f.isParallel &amp;&amp; f.parentStageName) {
@@ -12400,7 +12417,7 @@
                         }
                         matrixPillsHtml += '&lt;/div&gt;';
                     }
-                    var subStageBadge = (stage.branchName &amp;&amp; stage.branchName !== stage.name &amp;&amp; !isParallelChild &amp;&amp; !isMatrixCell)
+                    var subStageBadge = (stage.branchName &amp;&amp; stage.branchName !== stage.name &amp;&amp; !isMatrixCell)
                         ? '&lt;span class="stage-badge-substage" title="Sub-stage: ' + escapeHtml(stage.branchName) + '"&gt;' + escapeHtml(stage.branchName) + '&lt;/span&gt;'
                         : '';
                     var currentAttr = isSelected ? ' aria-current="step"' : '';

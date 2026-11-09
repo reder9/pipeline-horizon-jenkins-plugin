@@ -402,5 +402,47 @@ class HorizonPipelineIntegrationTest {
         assertTrue(replayJson.contains("\"section\":\"replay\""));
         assertTrue(replayJson.contains("hello progressive world"));
     }
+
+    @Test
+    void testParallelNestedSubStagesAndMatrixMultiStage(JenkinsRule jenkins) throws Exception {
+        WorkflowJob job = jenkins.createProject(WorkflowJob.class, "parallel-nested-substages-job");
+        job.setDefinition(new CpsFlowDefinition(
+                "node {\n" +
+                "    stage('Parallel Multi-Stage') {\n" +
+                "        parallel(\n" +
+                "            'Matrix - OS = linux, JDK = 21': {\n" +
+                "                stage('Compile') { echo 'Compiling linux 21' }\n" +
+                "                stage('Test') { echo 'Testing linux 21' }\n" +
+                "            },\n" +
+                "            'Backend Flow': {\n" +
+                "                stage('Migrate') { echo 'Migrating DB' }\n" +
+                "                stage('Verify') { echo 'Verifying API' }\n" +
+                "            }\n" +
+                "        )\n" +
+                "    }\n" +
+                "}", true));
+
+        WorkflowRun build = jenkins.buildAndAssertStatus(Result.SUCCESS, job);
+        RunDetailsModel details = PipelineGraphAnalyzer.buildRunDetails(build);
+        List<StageModel> stages = details.getStages();
+        assertEquals(1, stages.size());
+
+        StageModel parStage = stages.get(0);
+        assertTrue(parStage.isMatrix());
+        assertEquals(2, parStage.getChildren().size());
+
+        StageModel matrixCell = parStage.getChildren().get(0);
+        assertTrue(matrixCell.isMatrix());
+        assertEquals("Compile \u2192 Test", matrixCell.getName());
+        assertEquals("linux \u00b7 21", matrixCell.getMatrixShortAxes());
+        assertEquals("SUCCESS", matrixCell.getStatus());
+        assertTrue(matrixCell.getChildren() == null || matrixCell.getChildren().isEmpty(),
+                "Parallel branch should absorb sub-stages without nested child cards");
+
+        StageModel backendBranch = parStage.getChildren().get(1);
+        assertFalse(backendBranch.isMatrix());
+        assertEquals("Migrate \u2192 Verify", backendBranch.getBranchName());
+        assertEquals("SUCCESS", backendBranch.getStatus());
+    }
 }
 
