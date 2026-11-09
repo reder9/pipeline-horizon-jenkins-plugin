@@ -3304,20 +3304,19 @@
                         line-height: 1.2;
                     }
                     .stage-badge-substage {
-                        display: inline-flex;
-                        align-items: center;
+                        display: block;
                         font-size: 0.62rem;
                         font-weight: 600;
                         color: #0369a1;
                         background: #f0f9ff;
                         border: 1px solid #bae6fd;
-                        padding: 0.5px 5px;
-                        border-radius: 3px;
-                        line-height: 1.2;
+                        padding: 2px 6px;
+                        margin-top: 2px;
+                        border-radius: 4px;
+                        line-height: 1.3;
                         max-width: 100%;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        white-space: nowrap;
+                        white-space: normal;
+                        word-break: break-word;
                     }
                     .stage-node.is-optional {
                         border-left: 3.5px solid #8b5cf6;
@@ -4237,6 +4236,27 @@
                         min-width: 230px;
                         max-width: 280px;
                     }
+                    .parallel-cards-grid {
+                        display: grid;
+                        grid-template-columns: 1fr;
+                        gap: 0.55rem;
+                        width: 100%;
+                    }
+                    .parallel-cards-grid.cols-2 {
+                        grid-template-columns: repeat(2, 236px);
+                        gap: 0.42rem 0.55rem;
+                    }
+                    .parallel-cards-grid.cols-3 {
+                        grid-template-columns: repeat(3, 230px);
+                        gap: 0.55rem 0.65rem;
+                    }
+                    .parallel-cards-grid.cols-2 .stage-node,
+                    .parallel-cards-grid.cols-3 .stage-node {
+                        width: 100%;
+                        min-width: 0;
+                        max-width: none;
+                        box-sizing: border-box;
+                    }
                     /* Remove floating port beads from stages inside parallel blocks */
                     .parallel-stack .stage-node::before,
                     .parallel-stack .stage-node::after {
@@ -4246,7 +4266,8 @@
                         border-color: #0284c7 !important;
                         box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.25), 0 8px 24px -4px rgba(2, 132, 199, 0.2);
                     }
-                    .parallel-stack.is-collapsed .stage-node {
+                    .parallel-stack.is-collapsed .stage-node,
+                    .parallel-stack.is-collapsed .parallel-cards-grid {
                         display: none !important;
                     }
                     .parallel-stack .parallel-collapsed-card {
@@ -4289,6 +4310,17 @@
                         gap: 0.35rem;
                         padding: 0.45rem;
                         border-radius: 8px;
+                    }
+                    .pipeline-flow.compact-density .parallel-cards-grid {
+                        gap: 0.35rem;
+                    }
+                    .pipeline-flow.compact-density .parallel-cards-grid.cols-2 {
+                        grid-template-columns: repeat(2, 175px);
+                        gap: 0.35rem 0.45rem;
+                    }
+                    .pipeline-flow.compact-density .parallel-cards-grid.cols-3 {
+                        grid-template-columns: repeat(3, 175px);
+                        gap: 0.35rem 0.45rem;
                     }
                     .parallel-label {
                         position: relative;
@@ -5266,6 +5298,27 @@
                         margin-left: 0.35rem;
                         line-height: 1.2;
                         flex-shrink: 0;
+                    }
+                    .step-slowest-badge {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 2px;
+                        font-size: 0.60rem;
+                        font-weight: 700;
+                        letter-spacing: 0.04em;
+                        text-transform: uppercase;
+                        padding: 1px 5px;
+                        border-radius: 4px;
+                        background: rgba(245, 158, 11, 0.14);
+                        color: #fbbf24;
+                        border: 1px solid rgba(245, 158, 11, 0.35);
+                        margin-left: 0.35rem;
+                        line-height: 1.2;
+                        flex-shrink: 0;
+                    }
+                    .step-slowest-badge svg {
+                        width: 10px;
+                        height: 10px;
                     }
                     .step-tree-elbow {
                         display: inline-flex;
@@ -6358,6 +6411,11 @@
                         background: #e0f2fe;
                         color: #0284c7;
                         border-color: #bae6fd;
+                    }
+                    .horizon-container:not(.theme-dark) .step-slowest-badge {
+                        background: #fef3c7;
+                        color: #b45309;
+                        border-color: #fde68a;
                     }
                     .horizon-container:not(.theme-dark) .step-tree-elbow {
                         color: #94a3b8;
@@ -9633,6 +9691,8 @@
 
                 function formatDuration(ms) {
                     if (!ms || ms &lt;= 0) return "0s";
+                    if (ms &lt; 100) return ms + "ms";
+                    if (ms &lt; 1000) return (ms / 1000).toFixed(1) + "s";
                     var sec = Math.floor(ms / 1000);
                     if (sec &lt; 60) return sec + "s";
                     var min = Math.floor(sec / 60);
@@ -11875,9 +11935,12 @@
                             html += '&lt;/div&gt;';
                             html += '&lt;/div&gt;';
 
+                            var gridCols = (col.children.length &gt;= 12) ? 3 : ((col.children.length &gt;= 5) ? 2 : 1);
+                            html += '&lt;div class="parallel-cards-grid cols-' + gridCols + '"&gt;';
                             for (var c = 0; c &lt; col.children.length; c++) {
                                 html += renderStageCard(col.children[c], col.stage, parallelDur);
                             }
+                            html += '&lt;/div&gt;';
                             html += '&lt;/div&gt;&lt;/div&gt;';
                         } else {
                             html += '&lt;div class="stage-column"&gt;';
@@ -12407,6 +12470,7 @@
                         ? '&lt;span class="stage-bottleneck-badge" title="Bottleneck stage: Took ' + formatDuration(stage.durationMillis) + ' (' + pctOfTotal + '% of total run)"&gt;' + ICON_BOLT + 'Longest&lt;/span&gt;'
                         : '';
                     var isMatrixCell = !!(stage.matrix || (stage.matrixCell &amp;&amp; stage.matrixCell.length &gt; 0));
+                    var isMultiStageMatrixCell = isMatrixCell &amp;&amp; stage.matrixShortAxes &amp;&amp; stage.name !== stage.matrixShortAxes &amp;&amp; stage.name.indexOf('\u2192') !== -1;
                     var matrixPillsHtml = "";
                     if (stage.matrixShortAxes &amp;&amp; stage.name !== stage.matrixShortAxes) {
                         var axesParts = stage.matrixShortAxes.split(" · ");
@@ -12418,15 +12482,21 @@
                         matrixPillsHtml += '&lt;/div&gt;';
                     }
                     var subStageBadge = (stage.branchName &amp;&amp; stage.branchName !== stage.name &amp;&amp; !isMatrixCell)
-                        ? '&lt;span class="stage-badge-substage" title="Sub-stage: ' + escapeHtml(stage.branchName) + '"&gt;' + escapeHtml(stage.branchName) + '&lt;/span&gt;'
-                        : '';
+                        ? '&lt;span class="stage-badge-substage" title="Sub-stage flow: ' + escapeHtml(stage.branchName) + '"&gt;' + escapeHtml(stage.branchName) + '&lt;/span&gt;'
+                        : (isMultiStageMatrixCell
+                            ? '&lt;span class="stage-badge-substage" title="Cell stages: ' + escapeHtml(stage.name) + '"&gt;' + escapeHtml(stage.name) + '&lt;/span&gt;'
+                            : '');
                     var currentAttr = isSelected ? ' aria-current="step"' : '';
                     var card = '&lt;div id="stage-card-' + stage.id + '" data-status="' + status + '" class="stage-node status-' + status + optionalClass + selectedClass + '" role="button" tabindex="0" aria-pressed="' + (isSelected ? 'true' : 'false') + '"' + currentAttr + ' aria-label="' + a11yLabel.replace(/"/g, '&amp;quot;') + '" onclick="selectStage(\'' + stage.id + '\')" onkeydown="handleStageKeyNav(event, \'' + stage.id + '\')"&gt;';
                     card += '&lt;div class="stage-selected-pill" aria-hidden="true"&gt;&lt;span class="stage-selected-pill-dot"&gt;&lt;/span&gt;Viewing&lt;/div&gt;';
                     card += '&lt;div class="stage-active-strip" aria-hidden="true"&gt;&lt;/div&gt;';
                     card += '&lt;div class="stage-drawer-pointer" aria-hidden="true"&gt;&lt;/div&gt;';
                     card += '&lt;div class="stage-header"&gt;';
-                    card += '&lt;div class="stage-title-wrap"&gt;&lt;div class="stage-name" title="' + stage.name.replace(/"/g, '&amp;quot;') + '"&gt;' + stage.name + '&lt;/div&gt;' + optionalBadge + bottleneckBadge + subStageBadge + matrixPillsHtml + '&lt;/div&gt;';
+                    if (isMultiStageMatrixCell) {
+                        card += '&lt;div class="stage-title-wrap"&gt;' + matrixPillsHtml + optionalBadge + bottleneckBadge + subStageBadge + '&lt;/div&gt;';
+                    } else {
+                        card += '&lt;div class="stage-title-wrap"&gt;&lt;div class="stage-name" title="' + stage.name.replace(/"/g, '&amp;quot;') + '"&gt;' + stage.name + '&lt;/div&gt;' + optionalBadge + bottleneckBadge + subStageBadge + matrixPillsHtml + '&lt;/div&gt;';
+                    }
                     card += '&lt;div class="stage-card-actions"&gt;';
                     card += '&lt;span class="stage-status-icon" title="Stage status: ' + status + '"&gt;' + icon + '&lt;/span&gt;';
                     var escapedStageName = stage.name.replace(/'/g, "\\'");
@@ -12449,7 +12519,12 @@
                     card += '&lt;/div&gt;';
                     card += '&lt;/div&gt;';
                     var variancePillHtml = "";
-                    if (stage.formattedVariance) {
+                    var hasMeaningfulVariance = stage.formattedVariance &amp;&amp;
+                        stage.formattedVariance !== '+0%' &amp;&amp;
+                        stage.formattedVariance !== '-0%' &amp;&amp;
+                        stage.formattedVariance !== '0%' &amp;&amp;
+                        ((stage.durationMillis || 0) &gt;= 500 || (stage.avgDurationMillis || 0) &gt;= 500);
+                    if (hasMeaningfulVariance) {
                         var stIsSpike = !!(stage.isSpike || stage.spike);
                         var stIsFaster = !!(stage.isFaster || stage.faster);
                         var vClass = stIsSpike ? "spike" : (stIsFaster ? "faster" : "neutral");
@@ -13226,7 +13301,12 @@
 
                     var varBadge = document.getElementById('stage-banner-variance-badge');
                     if (varBadge) {
-                        if (stage.formattedVariance) {
+                        var showBannerVariance = stage.formattedVariance &amp;&amp;
+                            stage.formattedVariance !== '+0%' &amp;&amp;
+                            stage.formattedVariance !== '-0%' &amp;&amp;
+                            stage.formattedVariance !== '0%' &amp;&amp;
+                            ((stage.durationMillis || 0) &gt;= 500 || (stage.avgDurationMillis || 0) &gt;= 500);
+                        if (showBannerVariance) {
                             var isSpike = !!(stage.isSpike || stage.spike);
                             var isFaster = !!(stage.isFaster || stage.faster);
                             var avgFmt = formatDuration(stage.avgDurationMillis);
@@ -13414,6 +13494,8 @@
                     var leafList = [];
                     var failed = 0;
                     var unstable = 0;
+                    var maxLeafDur = 0;
+                    var slowestStepId = null;
                     for (i = 0; i &lt; steps.length; i++) {
                         var st = (steps[i].status || '').toUpperCase();
                         if (live &amp;&amp; isStepActiveStatus(st) &amp;&amp; !containerActive[steps[i].id]) {
@@ -13422,6 +13504,14 @@
                         }
                         if (st === 'FAILED' || st === 'FAILURE') failed++;
                         else if (st === 'UNSTABLE') unstable++;
+                        if (!isStepGroup(steps[i]) &amp;&amp; (steps[i].durationMillis || 0) &gt; maxLeafDur) {
+                            maxLeafDur = steps[i].durationMillis || 0;
+                            slowestStepId = steps[i].id;
+                        }
+                    }
+                    var stageDur = (stage &amp;&amp; stage.durationMillis) ? stage.durationMillis : maxLeafDur;
+                    if (steps.length &lt; 4 || maxLeafDur &lt; 500 || maxLeafDur &lt; stageDur * 0.35) {
+                        slowestStepId = null;
                     }
                     return {
                         leaf: leaf,
@@ -13430,7 +13520,8 @@
                         current: leafList.length &gt; 0 ? leafList[leafList.length - 1] : null,
                         total: steps.length,
                         failed: failed,
-                        unstable: unstable
+                        unstable: unstable,
+                        slowestStepId: slowestStepId
                     };
                 }
 
@@ -13479,6 +13570,9 @@
                     var pausedBadge = (st === 'PAUSED_INPUT')
                         ? '&lt;button type="button" class="btn-input-proceed" style="padding:2px 8px; font-size:0.68rem; margin-left:0.4rem;" onclick="event.stopPropagation(); openInputApprovalModal(0);"&gt;Review Input&lt;/button&gt;' : '';
                     var closureBadge = buildClosureBadgeHtml(step);
+                    var slowestBadge = (rt &amp;&amp; rt.slowestStepId === step.id)
+                        ? '&lt;span class="step-slowest-badge" title="Slowest step in this stage (' + formatStepDuration(step.durationMillis) + ')"&gt;' + ICON_BOLT + 'SLOWEST&lt;/span&gt;'
+                        : '';
                     var isRunningLeaf = !!(rt &amp;&amp; rt.leaf[step.id]);
                     var livePill = '&lt;span class="step-live-pill" id="step-live-pill-' + step.id + '" style="' + (isRunningLeaf ? '' : 'display:none;') + '"&gt;&lt;span class="live-tail-dot"&gt;&lt;/span&gt;LIVE&lt;/span&gt;';
 
@@ -13510,7 +13604,7 @@
                     if (argsStr) {
                         html += '&lt;span class="step-args" title="' + escapeHtml(argsStr) + '"&gt;' + escapeHtml(argsStr) + '&lt;/span&gt;';
                     }
-                    html += optBadge + pausedBadge + closureBadge + livePill;
+                    html += optBadge + pausedBadge + closureBadge + slowestBadge + livePill;
                     html += '&lt;span class="step-chevron"&gt;&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;polyline points="9 18 15 12 9 6"/&gt;&lt;/svg&gt;&lt;/span&gt;';
                     html += '&lt;/div&gt;';
 
@@ -13921,7 +14015,7 @@
                         var chosen = attention || anyAttention;
                         if (chosen) {
                             stepToExpand = chosen.id;
-                        } else {
+                        } else if (stage.steps.length &lt;= 3) {
                             for (var f = 0; f &lt; stage.steps.length; f++) {
                                 if (!isStepGroup(stage.steps[f])) { stepToExpand = stage.steps[f].id; break; }
                             }
