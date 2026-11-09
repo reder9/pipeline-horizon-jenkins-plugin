@@ -40,6 +40,25 @@ public class HorizonJobAction implements Action {
         return "horizon";
     }
 
+    public org.jenkinsci.plugins.workflow.job.WorkflowRun getLastBuild() {
+        if (job instanceof WorkflowJob) {
+            return ((WorkflowJob) job).getLastBuild();
+        }
+        return null;
+    }
+
+    public io.jenkins.plugins.horizon.model.RunDetailsModel getLastRunDetails() {
+        org.jenkinsci.plugins.workflow.job.WorkflowRun last = getLastBuild();
+        if (last != null) {
+            return io.jenkins.plugins.horizon.analysis.PipelineGraphAnalyzer.buildRunDetails(last);
+        }
+        return null;
+    }
+
+    public String formatDuration(long millis) {
+        return io.jenkins.plugins.horizon.analysis.PipelineGraphAnalyzer.formatDuration(millis);
+    }
+
     /**
      * REST API: Returns high-level job summary, branches, and recent runs.
      */

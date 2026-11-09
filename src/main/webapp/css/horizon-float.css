@@ -1,0 +1,213 @@
+/* Pipeline Horizon Floating Card & Summary Widget */
+.horizon-floating-card,
+.horizon-summary-card {
+    background: var(--card-background, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    font-family: inherit;
+    color: var(--text-color, #1e293b);
+}
+
+.horizon-floating-header,
+.horizon-summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.horizon-floating-title-area {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.horizon-floating-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #0284c7;
+}
+
+.horizon-floating-title,
+.horizon-summary-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color, #1e293b);
+}
+
+.horizon-floating-run-number {
+    font-family: monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-color-secondary, #64748b);
+    background: var(--background, rgba(0, 0, 0, 0.04));
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.horizon-floating-meta-area {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.horizon-floating-duration,
+.horizon-summary-meta {
+    font-size: 0.8rem;
+    color: var(--text-color-secondary, #64748b);
+    font-family: monospace;
+}
+
+/* Status Badges */
+.horizon-float-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.horizon-float-badge.status-success {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.horizon-float-badge.status-failure,
+.horizon-float-badge.status-failed {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.horizon-float-badge.status-unstable {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.horizon-float-badge.status-in_progress,
+.horizon-float-badge.status-building {
+    background: rgba(2, 132, 199, 0.15);
+    color: #0284c7;
+    border: 1px solid rgba(2, 132, 199, 0.3);
+}
+
+.horizon-float-badge.status-aborted {
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+/* Horizontal Stage Track */
+.horizon-float-stage-track {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.5rem 0 0.75rem 0;
+    scrollbar-width: thin;
+}
+
+.horizon-float-stage-track::-webkit-scrollbar {
+    height: 4px;
+}
+
+.horizon-float-stage-track::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 4px;
+}
+
+.horizon-float-stage-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: var(--card-background, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 6px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+    color: var(--text-color, #334155);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.horizon-float-stage-pill:hover {
+    border-color: #0284c7;
+    background: rgba(2, 132, 199, 0.05);
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.horizon-float-stage-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.horizon-float-stage-pill.status-success .horizon-float-stage-status-dot {
+    background-color: #10b981;
+}
+
+.horizon-float-stage-pill.status-failed .horizon-float-stage-status-dot,
+.horizon-float-stage-pill.status-failure .horizon-float-stage-status-dot {
+    background-color: #ef4444;
+}
+
+.horizon-float-stage-pill.status-unstable .horizon-float-stage-status-dot {
+    background-color: #f59e0b;
+}
+
+.horizon-float-stage-pill.status-in_progress .horizon-float-stage-status-dot,
+.horizon-float-stage-pill.status-building .horizon-float-stage-status-dot {
+    background-color: #0284c7;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.3);
+}
+
+.horizon-float-stage-pill.status-aborted .horizon-float-stage-status-dot {
+    background-color: #94a3b8;
+}
+
+.horizon-float-stage-pill.status-skipped .horizon-float-stage-status-dot {
+    background-color: #cbd5e1;
+}
+
+.horizon-float-stage-name {
+    font-weight: 500;
+}
+
+.horizon-float-stage-duration {
+    font-size: 0.72rem;
+    font-family: monospace;
+    color: var(--text-color-secondary, #64748b);
+}
+
+/* Footer Actions */
+.horizon-floating-footer,
+.horizon-summary-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color, rgba(0, 0, 0, 0.06));
+    flex-wrap: wrap;
+}
+
+.horizon-floating-empty {
+    padding: 0.5rem 0;
+    color: var(--text-color-secondary, #64748b);
+    font-size: 0.875rem;
+}

@@ -68,6 +68,17 @@ public class HorizonRunAction implements RunAction2 {
         return "horizon";
     }
 
+    public RunDetailsModel getRunDetails() {
+        if (run instanceof WorkflowRun) {
+            return getOrBuildRunDetails((WorkflowRun) run, true);
+        }
+        return null;
+    }
+
+    public String formatDuration(long millis) {
+        return PipelineGraphAnalyzer.formatDuration(millis);
+    }
+
     private static final Logger LOGGER = Logger.getLogger(HorizonRunAction.class.getName());
 
     /**

@@ -44,6 +44,8 @@ ANSI 16/256/TrueColor support, per-step live filtering, line-range deep-linking 
 | **Wide & Marathon Pipelines** | Infinite horizontal scrolling | Infinite horizontal scrolling | **Canvas Pan/Zoom, Serpentine Wrap & Minimized Strip** |
 | **Step Console UX** | Basic log | Expandable log | **ANSI TrueColor, per-step search, Word-Wrap, Expand, Top/Bottom** |
 | **Performance & Telemetry** | Raw duration only | Raw duration only | **Overhead vs. Stage Time, Queue Wait, `SLOWEST` badges, Micro-Bars** |
+| **Classic Job & Build Pages** | None (Isolated SPA) | Basic stage graph | **Native Floating Box & Build Summary widgets with 1-click CTA** |
+| **Asset Architecture** | Monolithic React bundle | Modular assets | **Clean Modular Webapp Assets (`webapp/css/`, `webapp/js/`) & HTTP Caching** |
 | **Multi-Agent / Pod Awareness** | Buried in console logs | Buried in console logs | **`AGENTS USED` header + Interactive Agent Breakdown Modal** |
 | **Build Control Hub** | Basic abort | Basic rebuild | **Replay Modal with Groovy syntax linter, Restart Stage, Input approval** |
 | **Controller Resource Impact** | Heavy React bundle & REST churn | Moderate | **Sub-millisecond LRU cache & background tab auto-throttling** |
@@ -92,6 +94,11 @@ RUN jenkins-plugin-cli --plugins \
 - **JUnit Test Explorer**: Filter test cases by `Failed`, `Skipped`, or `Passed`, search by class or test name, and inspect stack traces.
 - **Archived Artifacts Browser**: Browse, search, and download build artifacts with human-readable file sizes.
 - **SCM Commit Linking**: Displays commit messages, committers, and direct links to GitHub, GitLab, or Bitbucket.
+
+### 4. Seamless Classic Jenkins Integration
+- **Job Overview Floating Box**: Automatically embeds a sleek Pipeline Horizon summary card on the classic Jenkins pipeline page (`/job/{jobName}/`) showing the latest run status, duration, stage progression pills, and a 1-click CTA button to open Pipeline Horizon.
+- **Build Page Summary Widget**: Displays a Pipeline Horizon summary card right inside the classic build overview (`/job/{jobName}/{buildNumber}/`) with stage progression and direct link into the interactive viewer.
+- **Modular Static Web Assets**: All styles and client-side logic are cleanly separated into `src/main/webapp/css/` and `src/main/webapp/js/`, served with standard Jenkins static resource caching (`${resURL}/plugin/pipeline-horizon/...`).
 
 ---
 

@@ -1,0 +1,63 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <j:set var="action" value="${from != null ? from : it}" />
+    <j:set var="lastBuild" value="${action.lastBuild}" />
+    <j:set var="details" value="${action.lastRunDetails}" />
+
+    <link rel="stylesheet" href="${resURL}/plugin/pipeline-horizon/css/horizon-float.css" />
+
+    <div class="horizon-floating-card">
+        <div class="horizon-floating-header">
+            <div class="horizon-floating-title-area">
+                <span class="horizon-floating-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </span>
+                <span class="horizon-floating-title">Pipeline Horizon</span>
+                <j:if test="${lastBuild != null}">
+                    <span class="horizon-floating-run-number">#${lastBuild.number}</span>
+                </j:if>
+            </div>
+            <j:if test="${details != null}">
+                <div class="horizon-floating-meta-area">
+                    <span class="horizon-float-badge status-${details.result != null ? details.result.toLowerCase() : (details.building ? 'in_progress' : 'unknown')}">
+                        ${details.building ? 'BUILDING' : (details.result != null ? details.result : 'COMPLETED')}
+                    </span>
+                    <span class="horizon-floating-duration">${action.formatDuration(details.duration)}</span>
+                </div>
+            </j:if>
+        </div>
+
+        <j:if test="${lastBuild == null}">
+            <div class="horizon-floating-empty">
+                <p>No pipeline runs recorded yet. Start a build to view the real-time DAG graph in Pipeline Horizon.</p>
+            </div>
+        </j:if>
+
+        <j:if test="${details != null and not empty details.stages}">
+            <div class="horizon-float-stage-track">
+                <j:forEach var="st" items="${details.stages}">
+                    <a href="${rootURL}/${action.job.url}${lastBuild.number}/horizon/#stage=${st.id}"
+                       class="horizon-float-stage-pill status-${st.status.toLowerCase()}"
+                       title="${st.name} (${st.status}) - ${action.formatDuration(st.durationMillis)}">
+                        <span class="horizon-float-stage-status-dot"></span>
+                        <span class="horizon-float-stage-name">${st.name}</span>
+                        <span class="horizon-float-stage-duration">${action.formatDuration(st.durationMillis)}</span>
+                    </a>
+                </j:forEach>
+            </div>
+        </j:if>
+
+        <div class="horizon-floating-footer">
+            <j:if test="${lastBuild != null}">
+                <a href="${rootURL}/${action.job.url}lastBuild/horizon/" class="jenkins-button jenkins-button--primary horizon-cta-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:6px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Open in Pipeline Horizon
+                </a>
+            </j:if>
+            <a href="${rootURL}/${action.job.url}horizon/" class="jenkins-button horizon-secondary-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:6px;"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                Job Activity
+            </a>
+        </div>
+    </div>
+</j:jelly>
