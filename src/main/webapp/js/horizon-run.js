@@ -15,6 +15,7 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                 var pendingLineRange = null;
                 var fullLogText = "";
                 var pollTimer = null;
+                var stepLogPollTimer = null;
                 var totalPipelineDuration = 0;
                 var totalActiveStageTimeMs = 0;
                 var totalOverheadDurationMs = 0;
@@ -1277,16 +1278,29 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                                     if (!pollTimer) {
                                         pollTimer = setInterval(fetchGraph, 3000);
                                     }
+                                    if (!stepLogPollTimer) {
+                                        stepLogPollTimer = setInterval(pollActiveStepLogs, 1200);
+                                    }
                                     pollActiveStepLogs();
-                                } else if (pollTimer) {
-                                    clearInterval(pollTimer);
-                                    pollTimer = null;
+                                } else {
+                                    if (pollTimer) {
+                                        clearInterval(pollTimer);
+                                        pollTimer = null;
+                                    }
+                                    if (stepLogPollTimer) {
+                                        clearInterval(stepLogPollTimer);
+                                        stepLogPollTimer = null;
+                                    }
                                 }
                             } else {
                                 document.getElementById('refresh-indicator').innerText = "Finished";
                                 if (pollTimer) {
                                     clearInterval(pollTimer);
                                     pollTimer = null;
+                                }
+                                if (stepLogPollTimer) {
+                                    clearInterval(stepLogPollTimer);
+                                    stepLogPollTimer = null;
                                 }
                                 if (window._horizonWasBuilding) {
                                     // The build just finished: pull the tail end of any open step log.
@@ -1307,6 +1321,10 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                         if (pollTimer) {
                             clearInterval(pollTimer);
                             pollTimer = null;
+                        }
+                        if (stepLogPollTimer) {
+                            clearInterval(stepLogPollTimer);
+                            stepLogPollTimer = null;
                         }
                         var ind = document.getElementById('refresh-indicator');
                         if (ind && graphData && graphData.building) {
