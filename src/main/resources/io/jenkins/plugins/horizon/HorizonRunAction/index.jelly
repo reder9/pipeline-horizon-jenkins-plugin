@@ -8023,6 +8023,267 @@
                         color: #38bdf8;
                     }
 
+                    /* --- UX Polish: Calm Stage Cards, Minimized Graph Strip, Step Micro-Bars &amp; Quick Filters --- */
+                    .horizon-header {
+                        padding: 1.1rem 1.45rem !important;
+                    }
+                    .horizon-breadcrumb-bar {
+                        margin-bottom: 0.65rem !important;
+                        padding-bottom: 0.5rem !important;
+                    }
+                    .horizon-meta-grid {
+                        margin-top: 0.85rem !important;
+                        padding-top: 0.75rem !important;
+                    }
+                    .horizon-meta-grid .meta-item.meta-item-muted {
+                        opacity: 0.56;
+                        transition: opacity 0.15s ease;
+                    }
+                    .horizon-meta-grid .meta-item.meta-item-muted:hover {
+                        opacity: 0.92;
+                    }
+
+                    /* Hover-reveal card utility actions (keep status icon always visible &amp; free title width) */
+                    .stage-node:not(:hover):not(:focus-within):not(.selected) .stage-card-link-btn,
+                    .stage-node:not(:hover):not(:focus-within):not(.selected) .stage-card-restart-btn {
+                        display: none !important;
+                    }
+
+                    /* Proportional Bottom Duration Bar on Stage Cards */
+                    .stage-duration-bar {
+                        height: 3px;
+                        width: 100%;
+                        background: rgba(148, 163, 184, 0.16);
+                        border-radius: 999px;
+                        overflow: hidden;
+                        margin-top: 0.38rem;
+                    }
+                    .horizon-container.theme-dark .stage-duration-bar {
+                        background: rgba(148, 163, 184, 0.12);
+                    }
+                    .stage-duration-bar .stage-duration-bar-fill {
+                        height: 100%;
+                        border-radius: 999px;
+                        background: var(--stage-color, #10b981) !important;
+                        opacity: 0.85;
+                        transition: width 0.25s ease;
+                    }
+                    .pipeline-flow.compact-density .stage-duration-bar {
+                        margin-top: 0.25rem;
+                        height: 2.5px;
+                    }
+
+                    /* Collapsible Pipeline Graph ("Minimize Graph" Interactive Stage Strip) */
+                    .graph-card.is-minimized .graph-canvas-container {
+                        display: none !important;
+                    }
+                    .graph-card.is-minimized .graph-header {
+                        border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+                        padding-bottom: 0.65rem;
+                        margin-bottom: 0.65rem;
+                    }
+                    .graph-minimized-strip {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.38rem;
+                        overflow-x: auto;
+                        padding: 0.25rem 0.2rem 0.4rem 0.2rem;
+                        scrollbar-width: thin;
+                    }
+                    .graph-min-pill {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.38rem;
+                        padding: 0.32rem 0.65rem;
+                        border-radius: 8px;
+                        font-size: 0.76rem;
+                        font-weight: 600;
+                        background: #f8fafc;
+                        border: 1px solid #cbd5e1;
+                        color: #1e293b;
+                        cursor: pointer;
+                        white-space: nowrap;
+                        flex-shrink: 0;
+                        transition: all 0.15s ease;
+                    }
+                    .graph-min-pill:hover {
+                        border-color: #94a3b8;
+                        background: #f1f5f9;
+                        transform: translateY(-1px);
+                    }
+                    .graph-min-pill.is-selected {
+                        border-color: #3b82f6;
+                        background: rgba(59, 130, 246, 0.1);
+                        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.22);
+                    }
+                    .horizon-container.theme-dark .graph-min-pill {
+                        background: #1e293b;
+                        border-color: #334155;
+                        color: #f1f5f9;
+                    }
+                    .horizon-container.theme-dark .graph-min-pill:hover {
+                        background: #26354d;
+                        border-color: #475569;
+                    }
+                    .horizon-container.theme-dark .graph-min-pill.is-selected {
+                        border-color: #38bdf8;
+                        background: rgba(56, 189, 248, 0.14);
+                        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+                    }
+                    .graph-min-pill-dur {
+                        font-size: 0.68rem;
+                        font-weight: 500;
+                        color: #64748b;
+                        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                    }
+                    .horizon-container.theme-dark .graph-min-pill-dur {
+                        color: #94a3b8;
+                    }
+                    .graph-min-arrow {
+                        color: #94a3b8;
+                        font-size: 0.75rem;
+                        flex-shrink: 0;
+                        user-select: none;
+                    }
+                    .horizon-container.theme-dark .graph-min-arrow {
+                        color: #475569;
+                    }
+
+                    /* Inline Reset to Start inside Stage Banner Auto-Jump Badge */
+                    .stage-banner-autojump-reset {
+                        background: rgba(255, 255, 255, 0.18);
+                        border: 1px solid rgba(255, 255, 255, 0.35);
+                        color: inherit;
+                        border-radius: 4px;
+                        padding: 1px 6px;
+                        margin-left: 5px;
+                        font-size: 0.65rem;
+                        font-weight: 700;
+                        cursor: pointer;
+                        transition: background 0.15s ease;
+                    }
+                    .stage-banner-autojump-reset:hover {
+                        background: rgba(255, 255, 255, 0.32);
+                    }
+
+                    /* Clean Monospace Command Pill in Root-Cause Banner */
+                    .root-cause-step-arg-pill {
+                        display: inline-block;
+                        max-width: 100%;
+                        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                        font-size: 0.74rem;
+                        font-weight: 500;
+                        padding: 0.1rem 0.45rem;
+                        margin-left: 0.35rem;
+                        border-radius: 5px;
+                        background: rgba(15, 23, 42, 0.08);
+                        border: 1px solid rgba(15, 23, 42, 0.15);
+                        color: inherit;
+                        vertical-align: middle;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    .horizon-container.theme-dark .root-cause-step-arg-pill {
+                        background: rgba(15, 23, 42, 0.55);
+                        border-color: rgba(248, 113, 113, 0.28);
+                    }
+
+                    /* Step Row Command Pill &amp; Step Duration Micro-Bar */
+                    .step-args {
+                        flex: 0 1 auto !important;
+                        max-width: 540px;
+                        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+                        font-size: 0.73rem !important;
+                        padding: 0.08rem 0.45rem !important;
+                        border-radius: 4px !important;
+                        background: rgba(148, 163, 184, 0.12) !important;
+                        border: 1px solid rgba(148, 163, 184, 0.2) !important;
+                    }
+                    .horizon-container.theme-dark .step-args {
+                        background: rgba(30, 41, 59, 0.75) !important;
+                        border-color: rgba(71, 85, 105, 0.45) !important;
+                        color: #94a3b8 !important;
+                    }
+                    .step-dur-wrap {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.42rem;
+                    }
+                    .step-dur-microbar {
+                        width: 36px;
+                        height: 4px;
+                        border-radius: 999px;
+                        background: rgba(148, 163, 184, 0.18);
+                        overflow: hidden;
+                        display: inline-block;
+                        flex-shrink: 0;
+                    }
+                    .horizon-container.theme-dark .step-dur-microbar {
+                        background: rgba(148, 163, 184, 0.14);
+                    }
+                    .step-dur-microbar-fill {
+                        display: block;
+                        height: 100%;
+                        border-radius: 999px;
+                        background: #38bdf8;
+                        transition: width 0.2s ease;
+                    }
+                    .step-accordion-item[data-status="FAILED"] .step-dur-microbar-fill,
+                    .step-accordion-item[data-status="FAILURE"] .step-dur-microbar-fill {
+                        background: #ef4444;
+                    }
+                    .step-accordion-item[data-status="UNSTABLE"] .step-dur-microbar-fill {
+                        background: #f59e0b;
+                    }
+
+                    /* Quick Step Filter Pills in .step-toolbar */
+                    .step-quick-filters {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.25rem;
+                        background: rgba(148, 163, 184, 0.1);
+                        padding: 2px;
+                        border-radius: 6px;
+                        border: 1px solid rgba(148, 163, 184, 0.18);
+                    }
+                    .horizon-container.theme-dark .step-quick-filters {
+                        background: rgba(15, 23, 42, 0.55);
+                        border-color: rgba(51, 65, 85, 0.7);
+                    }
+                    .step-filter-chip {
+                        border: none;
+                        background: transparent;
+                        color: #64748b;
+                        font-size: 0.7rem;
+                        font-weight: 600;
+                        padding: 2px 7px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        transition: all 0.12s ease;
+                    }
+                    .step-filter-chip:hover {
+                        color: #0f172a;
+                        background: rgba(148, 163, 184, 0.15);
+                    }
+                    .step-filter-chip.active {
+                        background: #ffffff;
+                        color: #0f172a;
+                        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+                    }
+                    .horizon-container.theme-dark .step-filter-chip {
+                        color: #94a3b8;
+                    }
+                    .horizon-container.theme-dark .step-filter-chip:hover {
+                        color: #f8fafc;
+                        background: rgba(255, 255, 255, 0.06);
+                    }
+                    .horizon-container.theme-dark .step-filter-chip.active {
+                        background: #1e293b;
+                        color: #38bdf8;
+                        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+                    }
+
                     @media (prefers-reduced-motion: reduce) {
                         *, *::before, *::after {
                             animation-duration: 0.01ms !important;
@@ -8294,41 +8555,36 @@
                                     </button>
                                 </div>
                             </div>
+                            <button type="button" class="ctrl-btn stage-picker-btn" id="btn-minimize-graph" onclick="toggleGraphMinimized()" aria-pressed="false" title="Minimize pipeline graph into a compact stage breadcrumb bar to maximize step log space">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; flex-shrink:0;"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                                <span id="btn-minimize-graph-label">Minimize Graph</span>
+                            </button>
                         </div>
                     </div>
+                    <div id="graph-minimized-strip" class="graph-minimized-strip" style="display:none;" role="navigation" aria-label="Compact pipeline stage strip"></div>
                     <div class="graph-canvas-container" style="position:relative;">
                         <div id="pipeline-flow" class="pipeline-flow" role="group" aria-label="Pipeline stage flow">
                             <div style="padding: 2rem; color: #64748b;">Loading pipeline graph...</div>
                         </div>
-                        <!-- Floating Canvas Toolbar in Bottom Right (matches Image 2) -->
-                        <div class="flow-canvas-toolbar" role="toolbar" aria-label="Pipeline canvas controls">
-                            <button id="canvas-tool-zoomin-btn" class="canvas-tool-btn" onclick="zoomIn()" title="Zoom In (+)" aria-label="Zoom in">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            </button>
-                            <span id="canvas-zoom-display" class="canvas-zoom-display" onclick="resetZoom()" title="Current zoom level — Click to reset to 100%, scroll wheel over here to zoom">100%</span>
+                        <!-- Floating Canvas Toolbar in Bottom Right -->
+                        <div class="flow-canvas-toolbar" role="toolbar" aria-label="Pipeline canvas zoom controls">
                             <button id="canvas-tool-zoomout-btn" class="canvas-tool-btn" onclick="zoomOut()" title="Zoom Out (-)" aria-label="Zoom out">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             </button>
+                            <span id="canvas-zoom-display" class="canvas-zoom-display" onclick="resetZoom()" title="Current zoom level — Click to reset to 100%, scroll wheel over here to zoom">100%</span>
+                            <button id="canvas-tool-zoomin-btn" class="canvas-tool-btn" onclick="zoomIn()" title="Zoom In (+)" aria-label="Zoom in">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            </button>
                             <span class="canvas-tool-divider" aria-hidden="true"></span>
-                            <button id="canvas-tool-fit-btn" class="canvas-tool-btn" onclick="fitFlowToScreen()" title="Fit entire pipeline to screen" aria-label="Fit pipeline to screen">
+                            <button id="canvas-tool-fit-btn" class="canvas-tool-btn" onclick="fitFlowToScreen()" title="Fit entire pipeline to screen (f)" aria-label="Fit pipeline to screen">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
                             </button>
-                            <button id="canvas-tool-reset-btn" class="canvas-tool-btn" onclick="resetZoom()" title="Reset zoom to 100%" aria-label="Reset zoom">
-                                <span style="font-size:0.7rem; font-weight:700;">1:1</span>
-                            </button>
-                            <span class="canvas-tool-divider" aria-hidden="true"></span>
                             <button id="canvas-tool-grid-btn" class="canvas-tool-btn" onclick="toggleCanvasGrid()" title="Toggle canvas background dots" aria-label="Toggle canvas background dots">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="5" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="19" cy="5" r="1.5" fill="currentColor"/>
                                     <circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/>
                                     <circle cx="5" cy="19" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/><circle cx="19" cy="19" r="1.5" fill="currentColor"/>
                                 </svg>
-                            </button>
-                            <button id="canvas-tool-layout-btn" class="canvas-tool-btn" onclick="toggleLayoutMode()" title="Switch layout (Canvas Flow / Wrap)" aria-label="Switch layout mode">
-                                <svg id="canvas-tool-layout-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg>
-                            </button>
-                            <button id="canvas-tool-screen-btn" class="canvas-tool-btn" onclick="toggleScreenMode()" title="Toggle fullscreen view" aria-label="Toggle fullscreen view">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
                             </button>
                         </div>
                     </div>
@@ -8348,6 +8604,7 @@
                             <span id="stage-banner-autojump-badge" class="stage-banner-badge stage-badge-autojump" style="display:none;" title="Auto-jumped to failed step on initial load">
                                 <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px; margin-right:3px; flex-shrink:0;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                                 <span id="stage-banner-autojump-text">AUTO-JUMP</span>
+                                <button type="button" class="stage-banner-autojump-reset" onclick="event.stopPropagation(); resetPipelineViewToStart();" title="Return to the first stage of the pipeline">Reset to Start</button>
                             </span>
                         </div>
                         <div class="stage-banner-right">
@@ -8409,9 +8666,14 @@
                         </div>
                     </div>
 
-                    <!-- Step Toolbar: live summary, stage search, follow toggle, block collapse -->
+                    <!-- Step Toolbar: live summary, quick filters, stage search, follow toggle, block collapse -->
                     <div id="step-toolbar" class="step-toolbar" style="display:none;" role="toolbar" aria-label="Step list controls">
                         <span id="step-toolbar-summary" class="step-toolbar-summary"></span>
+                        <div class="step-quick-filters" id="step-quick-filters" style="display:none;" role="group" aria-label="Quick step filter">
+                            <button type="button" class="step-filter-chip active" id="step-qfilter-all" onclick="setStepQuickFilter('all')" title="Show all steps in this stage">All</button>
+                            <button type="button" class="step-filter-chip" id="step-qfilter-issues" style="display:none;" onclick="setStepQuickFilter('issues')" title="Show only failed or unstable steps">Failed / Warn</button>
+                            <button type="button" class="step-filter-chip" id="step-qfilter-slow" style="display:none;" onclick="setStepQuickFilter('slow')" title="Show slowest step(s) in this stage">Slowest</button>
+                        </div>
                         <span id="step-now-running" class="step-now-running" style="display:none;" role="button" tabindex="0" title="Scroll to the running step"></span>
                         <div class="step-stage-search-wrap" id="step-stage-search-wrap">
                             <svg class="search-mag-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -8423,6 +8685,7 @@
                             </div>
                         </div>
                         <span class="step-toolbar-spacer"></span>
+                        <button type="button" id="btn-collapse-logs" class="step-tool-btn" onclick="collapseAllStepLogs()" title="Collapse all open step log viewers in this stage">Collapse logs</button>
                         <button type="button" id="btn-step-groups" class="step-tool-btn" style="display:none;" onclick="toggleAllClosureGroups()" title="Collapse or expand closure blocks (withCredentials, dir, timeout, ...)">Collapse blocks</button>
                         <button type="button" id="btn-step-follow" class="step-tool-btn follow-active" style="display:none;" onclick="toggleStepFollow()"></button>
                     </div>
@@ -10473,6 +10736,10 @@
                             paramsMetaEl.innerHTML = '&lt;span class="param-none" title="No parameters were provided for this build"&gt;None&lt;/span&gt;';
                         }
                     }
+                    var paramsMetaItem = document.getElementById('meta-params-item');
+                    if (paramsMetaItem) {
+                        paramsMetaItem.classList.toggle('meta-item-muted', paramsList.length === 0);
+                    }
 
                     if (paramsMenuItem) {
                         if (paramsList.length &gt; 0) {
@@ -10498,6 +10765,10 @@
                         } else {
                             testsMetaEl.innerText = "No tests recorded";
                         }
+                    }
+                    var testsMetaItem = document.getElementById('meta-tests-item');
+                    if (testsMetaItem) {
+                        testsMetaItem.classList.toggle('meta-item-muted', !(data.totalTests &gt; 0));
                     }
 
                     var prevBtn = document.getElementById('btn-prev');
@@ -10570,6 +10841,10 @@
                     var metaArt = document.getElementById('meta-artifacts');
                     if (metaArt) {
                         metaArt.innerText = artCount &gt; 0 ? (artCount + " (" + artSize + ")") : "0 recorded";
+                    }
+                    var metaArtItem = document.getElementById('meta-artifacts-item');
+                    if (metaArtItem) {
+                        metaArtItem.classList.toggle('meta-item-muted', !(artCount &gt; 0));
                     }
                     var headerArtBadge = document.getElementById('header-artifacts-badge');
                     if (headerArtBadge) {
@@ -10805,12 +11080,16 @@
 
                     // Failure Details Row
                     html += '&lt;div class="root-cause-details-row"&gt;';
-                    html += '&lt;div style="display:flex; flex-direction:column; gap:0.35rem; width:100%;"&gt;';
-                    var stepContext = f.stepName ? ('Failing Step: ' + escapeHtml(f.stepName) + (f.stepArgs ? (' (' + escapeHtml(f.stepArgs) + ')') : '')) : ('Stage: ' + escapeHtml(f.stageName));
-                    html += '&lt;div style="font-weight:700; line-height:1.45; word-break:break-word;"&gt;' + stepContext + '&lt;/div&gt;';
+                    html += '&lt;div style="display:flex; flex-direction:column; gap:0.35rem; width:100%; min-width:0;"&gt;';
+                    var cleanBannerArg = f.stepArgs ? formatCleanStepArgsPreview(f.stepArgs, 92) : '';
+                    var stepContext = f.stepName
+                        ? ('Failing Step: ' + escapeHtml(f.stepName) + (cleanBannerArg ? (' &lt;code class="root-cause-step-arg-pill" title="' + escapeHtml(f.stepArgs) + '"&gt;' + escapeHtml(cleanBannerArg) + '&lt;/code&gt;') : ''))
+                        : ('Stage: ' + escapeHtml(f.stageName));
+                    html += '&lt;div style="font-weight:700; line-height:1.45; word-break:break-word; display:flex; align-items:center; flex-wrap:wrap; gap:0.25rem;"&gt;' + stepContext + '&lt;/div&gt;';
 
                     if (f.error) {
-                        html += '&lt;div style="opacity:0.95; line-height:1.45; word-break:break-word;"&gt;&lt;strong&gt;Error:&lt;/strong&gt; ' + escapeHtml(f.error) + '&lt;/div&gt;';
+                        var cleanErr = (f.error === f.stepArgs &amp;&amp; cleanBannerArg) ? cleanBannerArg : f.error;
+                        html += '&lt;div style="opacity:0.95; line-height:1.45; word-break:break-word;"&gt;&lt;strong&gt;Error:&lt;/strong&gt; ' + escapeHtml(cleanErr) + '&lt;/div&gt;';
                     }
                     html += '&lt;/div&gt;';
                     html += '&lt;/div&gt;';
@@ -12149,6 +12428,69 @@
                         }
                     }
                     renderStagePickerList();
+                    renderGraphMinimizedStrip();
+                }
+
+                var isGraphMinimized = false;
+
+                function toggleGraphMinimized() {
+                    isGraphMinimized = !isGraphMinimized;
+                    var card = document.querySelector('.graph-card');
+                    var strip = document.getElementById('graph-minimized-strip');
+                    var btn = document.getElementById('btn-minimize-graph');
+                    var lbl = document.getElementById('btn-minimize-graph-label');
+                    if (card) card.classList.toggle('is-minimized', isGraphMinimized);
+                    if (strip) strip.style.display = isGraphMinimized ? 'flex' : 'none';
+                    if (btn) btn.setAttribute('aria-pressed', isGraphMinimized ? 'true' : 'false');
+                    if (lbl) lbl.textContent = isGraphMinimized ? 'Expand Graph' : 'Minimize Graph';
+                    if (isGraphMinimized) {
+                        renderGraphMinimizedStrip();
+                    } else {
+                        setTimeout(scheduleDrawFlowConnectors, 30);
+                    }
+                }
+
+                function renderGraphMinimizedStrip() {
+                    var strip = document.getElementById('graph-minimized-strip');
+                    if (!strip || !graphData || !graphData.stages) return;
+                    var allLeafStages = [];
+                    function collectLeafs(list) {
+                        for (var i = 0; i &lt; list.length; i++) {
+                            var s = list[i];
+                            if (s.children &amp;&amp; s.children.length &gt; 0) {
+                                collectLeafs(s.children);
+                            } else {
+                                if (hideSkipped &amp;&amp; s.status &amp;&amp; s.status.indexOf('SKIPPED') !== -1) continue;
+                                allLeafStages.push(s);
+                            }
+                        }
+                    }
+                    collectLeafs(graphData.stages);
+                    var html = '';
+                    for (var idx = 0; idx &lt; allLeafStages.length; idx++) {
+                        var st = allLeafStages[idx];
+                        var stat = (st.status || 'SUCCESS').toUpperCase();
+                        var dotCls = 'dot-success';
+                        if (stat === 'FAILED' || stat === 'FAILURE') dotCls = 'dot-failed';
+                        else if (stat === 'UNSTABLE') dotCls = 'dot-unstable';
+                        else if (stat === 'IN_PROGRESS') dotCls = 'dot-in-progress';
+                        else if (stat === 'PAUSED_INPUT') dotCls = 'dot-paused-input';
+                        else if (stat.indexOf('SKIPPED') !== -1 || stat === 'NOT_EXECUTED') dotCls = 'dot-skipped';
+
+                        var isSel = (st.id === selectedStageId);
+                        var durFmt = st.durationMillis ? formatStepDuration(st.durationMillis) : '';
+                        if (idx &gt; 0) {
+                            html += '&lt;span class="graph-min-arrow" aria-hidden="true"&gt;\u2192&lt;/span&gt;';
+                        }
+                        html += '&lt;button type="button" class="graph-min-pill' + (isSel ? ' is-selected' : '') + '" id="graph-min-pill-' + st.id + '" onclick="selectStage(\'' + st.id + '\')" title="' + escapeHtml(st.name + ' (' + stat + (durFmt ? ', ' + durFmt : '') + ')') + '"&gt;';
+                        html += '&lt;span class="stage-picker-dot ' + dotCls + '" aria-hidden="true"&gt;&lt;/span&gt;';
+                        html += '&lt;span&gt;' + escapeHtml(st.name) + '&lt;/span&gt;';
+                        if (durFmt) {
+                            html += '&lt;span class="graph-min-pill-dur"&gt;' + durFmt + '&lt;/span&gt;';
+                        }
+                        html += '&lt;/button&gt;';
+                    }
+                    strip.innerHTML = html;
                 }
 
                 function getFlowStatusClass(srcStatus, tgtStatus) {
@@ -12651,20 +12993,25 @@
                         variancePillHtml = ' &lt;span class="stage-variance-pill ' + vClass + '" title="' + vTitle.replace(/"/g, '&amp;quot;') + '"&gt;' + vIcon + stage.formattedVariance + '&lt;/span&gt;';
                     }
 
+                    var escapedAgent = agentStr.replace(/'/g, "\\'");
+                    var hasMultipleAgents = !!(graphData &amp;&amp; graphData.agentsUsed &amp;&amp; graphData.agentsUsed.length &gt; 1);
+                    var hasAgentWaitInfo = !!(stage.isWaitingForAgent || (stage.agentAllocationMillis &amp;&amp; stage.agentAllocationMillis &gt;= 500));
+
                     card += '&lt;div class="stage-body"&gt;';
                     card += '&lt;div class="stage-meta-row"&gt;';
                     card += '&lt;span&gt;Duration:&lt;/span&gt;&lt;strong class="stage-duration-val" title="' + durationTooltip.replace(/"/g, '&amp;quot;') + '"&gt;' + durationLabelHtml + '&lt;/strong&gt;' + variancePillHtml;
                     card += '&lt;/div&gt;';
-                    card += '&lt;div class="stage-meta-row"&gt;';
-                    var escapedAgent = agentStr.replace(/'/g, "\\'");
-                    card += '&lt;span&gt;Agent:&lt;/span&gt;&lt;span class="stage-agent-badge" title="Agent: ' + agentStr.replace(/"/g, '&amp;quot;') + ' \u2014 Click for agent details" onclick="event.stopPropagation(); openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\');}" role="button" tabindex="0" aria-label="View agent details for ' + agentStr.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_SERVER + agentStr + '&lt;/span&gt;';
-                    if (stage.isWaitingForAgent) {
-                        var waitReason = stage.agentQueueReason || "Waiting for agent executor...";
-                        card += ' &lt;span class="stage-agent-waiting-chip" title="' + waitReason.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_HOURGLASS + 'Waiting for Agent&lt;/span&gt;';
-                    } else if (stage.agentAllocationMillis &amp;&amp; stage.agentAllocationMillis &gt;= 500) {
-                        card += ' &lt;span class="stage-agent-alloc-chip" title="Agent allocation wait: ' + (stage.formattedAgentAllocation || formatDuration(stage.agentAllocationMillis)) + ' (' + stage.agentAllocationMillis + 'ms)"&gt;Alloc: ' + (stage.formattedAgentAllocation || formatDuration(stage.agentAllocationMillis)) + '&lt;/span&gt;';
+                    if (hasMultipleAgents || hasAgentWaitInfo) {
+                        card += '&lt;div class="stage-meta-row"&gt;';
+                        card += '&lt;span&gt;Agent:&lt;/span&gt;&lt;span class="stage-agent-badge" title="Agent: ' + agentStr.replace(/"/g, '&amp;quot;') + ' \u2014 Click for agent details" onclick="event.stopPropagation(); openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\');}" role="button" tabindex="0" aria-label="View agent details for ' + agentStr.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_SERVER + agentStr + '&lt;/span&gt;';
+                        if (stage.isWaitingForAgent) {
+                            var waitReason = stage.agentQueueReason || "Waiting for agent executor...";
+                            card += ' &lt;span class="stage-agent-waiting-chip" title="' + waitReason.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_HOURGLASS + 'Waiting for Agent&lt;/span&gt;';
+                        } else if (stage.agentAllocationMillis &amp;&amp; stage.agentAllocationMillis &gt;= 500) {
+                            card += ' &lt;span class="stage-agent-alloc-chip" title="Agent allocation wait: ' + (stage.formattedAgentAllocation || formatDuration(stage.agentAllocationMillis)) + ' (' + stage.agentAllocationMillis + 'ms)"&gt;Alloc: ' + (stage.formattedAgentAllocation || formatDuration(stage.agentAllocationMillis)) + '&lt;/span&gt;';
+                        }
+                        card += '&lt;/div&gt;';
                     }
-                    card += '&lt;/div&gt;';
 
                     if (stage.skippedStepsCount &amp;&amp; stage.skippedStepsCount &gt; 0) {
                         card += '&lt;div class="stage-meta-row" style="margin-top:2px;"&gt;';
@@ -12698,23 +13045,31 @@
                     card += '&lt;/div&gt;';
 
                     var displayAgent = stage.agent ? stage.agent : 'Built-in';
-                    card += '&lt;div class="stage-compact-agent-row"&gt;';
-                    card += '&lt;span class="stage-agent-badge" style="max-width:125px;" title="Agent: ' + agentStr.replace(/"/g, '&amp;quot;') + ' \u2014 Click for agent details" onclick="event.stopPropagation(); openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\');}" role="button" tabindex="0" aria-label="View agent details for ' + agentStr.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_SERVER + displayAgent + '&lt;/span&gt;';
-                    if (stage.isWaitingForAgent) {
-                        var waitReasonCompact = stage.agentQueueReason || "Waiting for agent executor...";
-                        card += ' &lt;span class="stage-agent-waiting-chip" style="font-size:0.64rem; padding:0 4px;" title="' + waitReasonCompact.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_HOURGLASS + 'Wait&lt;/span&gt;';
-                    } else if (stage.agentAllocationMillis &amp;&amp; stage.agentAllocationMillis &gt;= 500) {
-                        card += ' &lt;span class="stage-agent-alloc-chip" style="font-size:0.64rem; padding:0 4px;" title="Agent allocation wait: ' + (stage.formattedAgentAllocation || formatDuration(stage.agentAllocationMillis)) + '"&gt;Alloc: ' + (stage.formattedAgentAllocation || formatDuration(stage.agentAllocationMillis)) + '&lt;/span&gt;';
+                    if (hasMultipleAgents || hasAgentWaitInfo || (stage.hasArtifacts &amp;&amp; stage.artifactCount &gt; 0)) {
+                        card += '&lt;div class="stage-compact-agent-row"&gt;';
+                        if (hasMultipleAgents || hasAgentWaitInfo) {
+                            card += '&lt;span class="stage-agent-badge" style="max-width:125px;" title="Agent: ' + agentStr.replace(/"/g, '&amp;quot;') + ' \u2014 Click for agent details" onclick="event.stopPropagation(); openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openAgentModal(\'' + stage.id + '\', \'' + escapedAgent + '\');}" role="button" tabindex="0" aria-label="View agent details for ' + agentStr.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_SERVER + displayAgent + '&lt;/span&gt;';
+                        }
+                        if (stage.isWaitingForAgent) {
+                            var waitReasonCompact = stage.agentQueueReason || "Waiting for agent executor...";
+                            card += ' &lt;span class="stage-agent-waiting-chip" style="font-size:0.64rem; padding:0 4px;" title="' + waitReasonCompact.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_HOURGLASS + 'Wait&lt;/span&gt;';
+                        } else if (stage.agentAllocationMillis &amp;&amp; stage.agentAllocationMillis &gt;= 500) {
+                            card += ' &lt;span class="stage-agent-alloc-chip" style="font-size:0.64rem; padding:0 4px;" title="Agent allocation wait: ' + (stage.formattedAgentAllocation || formatDuration(stage.agentAllocationMillis)) + '"&gt;Alloc: ' + (stage.formattedAgentAllocation || formatDuration(stage.agentAllocationMillis)) + '&lt;/span&gt;';
+                        }
+                        if (stage.hasArtifacts &amp;&amp; stage.artifactCount &gt; 0) {
+                            card += '&lt;span class="stage-artifacts-badge" style="padding:0 4px;" title="' + stage.artifactCount + ' artifacts" onclick="event.stopPropagation(); openArtifactsModal(\'' + stage.id + '\')"&gt;';
+                            card += '&lt;svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;"&gt;&lt;path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/&gt;&lt;/svg&gt; ' + stage.artifactCount;
+                            card += '&lt;/span&gt;';
+                        }
+                        card += '&lt;/div&gt;';
                     }
-                    if (stage.hasArtifacts &amp;&amp; stage.artifactCount &gt; 0) {
-                        card += '&lt;span class="stage-artifacts-badge" style="padding:0 4px;" title="' + stage.artifactCount + ' artifacts" onclick="event.stopPropagation(); openArtifactsModal(\'' + stage.id + '\')"&gt;';
-                        card += '&lt;svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;"&gt;&lt;path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/&gt;&lt;/svg&gt; ' + stage.artifactCount;
-                        card += '&lt;/span&gt;';
-                    }
-                    card += '&lt;/div&gt;';
 
                     if (stage.skipReason) {
                         card += '&lt;div class="stage-skip-reason" title="' + stage.skipReason.replace(/"/g, '&amp;quot;') + '"&gt;' + ICON_WARNING + stage.skipReason + '&lt;/div&gt;';
+                    }
+
+                    if (!isSkipped &amp;&amp; barWidthPct &gt; 0) {
+                        card += '&lt;div class="stage-duration-bar" aria-hidden="true" title="' + durationTooltip.replace(/"/g, '&amp;quot;') + '"&gt;&lt;div class="stage-duration-bar-fill" style="width:' + barWidthPct + '%;"&gt;&lt;/div&gt;&lt;/div&gt;';
                     }
 
                     card += '&lt;/div&gt;&lt;/div&gt;';
@@ -13348,6 +13703,11 @@
                         pickerLabel.innerText = stage.name;
                         pickerLabel.title = "Current Stage: " + stage.name + " (Click or press 's' to switch)";
                     }
+                    var minPills = document.querySelectorAll('#graph-minimized-strip .graph-min-pill');
+                    for (var mp = 0; mp &lt; minPills.length; mp++) {
+                        var isThisPill = (minPills[mp].id === 'graph-min-pill-' + stageId);
+                        minPills[mp].classList.toggle('is-selected', isThisPill);
+                    }
                 }
 
                 function renderStageHeaderBanner(stage) {
@@ -13635,8 +13995,37 @@
                         total: steps.length,
                         failed: failed,
                         unstable: unstable,
+                        maxLeafDur: maxLeafDur,
                         slowestStepId: slowestStepId
                     };
+                }
+
+                function formatCleanStepArgsPreview(rawArgs, maxLen) {
+                    if (!rawArgs) return '';
+                    var limit = maxLen || 84;
+                    var lines = String(rawArgs).split(/\r?\n/);
+                    var meaningful = [];
+                    for (var i = 0; i &lt; lines.length; i++) {
+                        var ln = lines[i].trim();
+                        if (!ln) continue;
+                        if (/^(set\s+[+-][euxo]|#!\/)/.test(ln)) continue;
+                        if (/^echo\s+["']?[=\-+*#_]{4,}["']?$/i.test(ln)) continue;
+                        if (/^[=\-+*#_]{4,}$/.test(ln)) continue;
+                        var echoMatch = ln.match(/^echo\s+["'](.+)["']$/);
+                        if (echoMatch) {
+                            var inner = echoMatch[1].trim();
+                            if (/^[=\-+*#_]{4,}$/.test(inner)) continue;
+                            ln = inner;
+                        }
+                        meaningful.push(ln);
+                        if (meaningful.length &gt;= 2) break;
+                    }
+                    var joined = (meaningful.length &gt; 0 ? meaningful.join(' \u00b7 ') : String(rawArgs).replace(/\s+/g, ' ').trim());
+                    joined = joined.replace(/[=\-+]{5,}/g, '').replace(/\s+/g, ' ').trim();
+                    if (joined.length &gt; limit) {
+                        return joined.substring(0, limit - 1) + '\u2026';
+                    }
+                    return joined;
                 }
 
                 function getStepStatusIconHtml(step, rt) {
@@ -13651,7 +14040,7 @@
                     return ICON_ACCORDION_SUCCESS;
                 }
 
-                function buildStepDurationHtml(step) {
+                function buildStepDurationHtml(step, rt) {
                     if ((step.closure || step.block) &amp;&amp; (step.childStepsCount &gt; 0 || (step.durationMillis &gt; 0 &amp;&amp; step.selfDurationMillis !== undefined &amp;&amp; step.selfDurationMillis &lt; step.durationMillis))) {
                         var totalFmt = formatStepDuration(step.durationMillis);
                         var selfFmt = formatStepDuration(step.selfDurationMillis || 0);
@@ -13661,7 +14050,13 @@
                                '&lt;span class="step-total-dur"&gt;(' + totalFmt + ' total)&lt;/span&gt;' +
                                '&lt;/span&gt;';
                     }
-                    return '&lt;span class="step-duration"&gt;' + formatStepDuration(step.durationMillis) + '&lt;/span&gt;';
+                    var microBarHtml = '';
+                    var stepDur = step.durationMillis || 0;
+                    if (!isStepGroup(step) &amp;&amp; rt &amp;&amp; rt.total &gt;= 2 &amp;&amp; rt.maxLeafDur &gt;= 100 &amp;&amp; stepDur &gt; 0) {
+                        var pct = Math.min(100, Math.max(6, Math.round((stepDur / rt.maxLeafDur) * 100)));
+                        microBarHtml = '&lt;span class="step-dur-microbar" aria-hidden="true" title="' + pct + '% of slowest step in stage"&gt;&lt;span class="step-dur-microbar-fill" style="width:' + pct + '%;"&gt;&lt;/span&gt;&lt;/span&gt;';
+                    }
+                    return microBarHtml + '&lt;span class="step-duration"&gt;' + formatStepDuration(step.durationMillis) + '&lt;/span&gt;';
                 }
 
                 function buildClosureBadgeHtml(step) {
@@ -13715,8 +14110,9 @@
                         html += '&lt;span class="step-glyph"&gt;' + glyphSvg + '&lt;/span&gt;';
                     }
                     html += '&lt;span class="step-title" title="' + escapeHtml(titleStr) + '"&gt;' + escapeHtml(titleStr) + '&lt;/span&gt;';
-                    if (argsStr) {
-                        html += '&lt;span class="step-args" title="' + escapeHtml(argsStr) + '"&gt;' + escapeHtml(argsStr) + '&lt;/span&gt;';
+                    var cleanArgsPreview = argsStr ? formatCleanStepArgsPreview(argsStr, 84) : '';
+                    if (cleanArgsPreview) {
+                        html += '&lt;span class="step-args" title="' + escapeHtml(argsStr) + '"&gt;' + escapeHtml(cleanArgsPreview) + '&lt;/span&gt;';
                     }
                     html += optBadge + pausedBadge + closureBadge + slowestBadge + livePill;
                     html += '&lt;span class="step-chevron"&gt;&lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;polyline points="9 18 15 12 9 6"/&gt;&lt;/svg&gt;&lt;/span&gt;';
@@ -13724,7 +14120,7 @@
 
                     html += '&lt;div class="accordion-step-right"&gt;';
                     html += '&lt;span class="step-row-match-badge" id="step-row-match-' + step.id + '" style="display:none;"&gt;&lt;/span&gt;';
-                    html += '&lt;span class="step-dur-wrap" id="step-dur-' + step.id + '"&gt;' + buildStepDurationHtml(step) + '&lt;/span&gt;';
+                    html += '&lt;span class="step-dur-wrap" id="step-dur-' + step.id + '"&gt;' + buildStepDurationHtml(step, rt) + '&lt;/span&gt;';
                     html += '&lt;a href="' + classicLogUrl + '" target="_blank" class="step-external-link" title="Open classic step log in new tab" onclick="event.stopPropagation();"&gt;';
                     html += '&lt;svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;&lt;path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/&gt;&lt;polyline points="15 3 21 3 21 9"/&gt;&lt;line x1="10" y1="14" x2="21" y2="3"/&gt;&lt;/svg&gt;';
                     html += '&lt;/a&gt;';
@@ -13805,7 +14201,7 @@
                         }
                     }
                     var durEl = document.getElementById('step-dur-' + step.id);
-                    if (durEl) durEl.innerHTML = buildStepDurationHtml(step);
+                    if (durEl) durEl.innerHTML = buildStepDurationHtml(step, rt);
 
                     var pill = document.getElementById('step-live-pill-' + step.id);
                     if (pill) pill.style.display = isRunningLeaf ? '' : 'none';
@@ -14063,12 +14459,73 @@
                         }
                     }
 
+                    var qFilters = document.getElementById('step-quick-filters');
+                    var qIssues = document.getElementById('step-qfilter-issues');
+                    var qSlow = document.getElementById('step-qfilter-slow');
+                    if (qFilters) {
+                        var hasIssues = (rt.failed + rt.unstable) &gt; 0;
+                        var hasSlow = !!rt.slowestStepId;
+                        if (rt.total &gt;= 4 &amp;&amp; (hasIssues || hasSlow)) {
+                            qFilters.style.display = 'inline-flex';
+                            if (qIssues) {
+                                qIssues.style.display = hasIssues ? '' : 'none';
+                                qIssues.textContent = 'Failed / Warn (' + (rt.failed + rt.unstable) + ')';
+                            }
+                            if (qSlow) {
+                                qSlow.style.display = hasSlow ? '' : 'none';
+                            }
+                        } else {
+                            qFilters.style.display = 'none';
+                        }
+                    }
+
                     var followBtn = document.getElementById('btn-step-follow');
                     if (followBtn) {
                         followBtn.style.display = isRunLive() ? '' : 'none';
                         updateFollowButton();
                     }
                     updateGroupsButton();
+                }
+
+                var currentStepQuickFilter = 'all';
+
+                function setStepQuickFilter(mode) {
+                    currentStepQuickFilter = mode || 'all';
+                    var allBtn = document.getElementById('step-qfilter-all');
+                    var issBtn = document.getElementById('step-qfilter-issues');
+                    var slowBtn = document.getElementById('step-qfilter-slow');
+                    if (allBtn) allBtn.classList.toggle('active', currentStepQuickFilter === 'all');
+                    if (issBtn) issBtn.classList.toggle('active', currentStepQuickFilter === 'issues');
+                    if (slowBtn) slowBtn.classList.toggle('active', currentStepQuickFilter === 'slow');
+
+                    var stage = (graphData &amp;&amp; selectedStageId) ? findStage(graphData.stages, selectedStageId) : null;
+                    var rt = stage ? computeStepRuntime(stage) : null;
+                    var items = document.querySelectorAll('#step-accordion-container .step-accordion-item');
+                    for (var i = 0; i &lt; items.length; i++) {
+                        var it = items[i];
+                        var id = it.id.replace('step-item-', '');
+                        var st = (it.getAttribute('data-status') || '').toUpperCase();
+                        if (currentStepQuickFilter === 'all') {
+                            it.style.display = '';
+                        } else if (currentStepQuickFilter === 'issues') {
+                            var isIssue = (st === 'FAILED' || st === 'FAILURE' || st === 'UNSTABLE');
+                            it.style.display = isIssue ? '' : 'none';
+                        } else if (currentStepQuickFilter === 'slow') {
+                            var isSlow = (rt &amp;&amp; rt.slowestStepId === id);
+                            it.style.display = isSlow ? '' : 'none';
+                        }
+                    }
+                    if (currentStepQuickFilter === 'all') {
+                        applyClosureCollapse();
+                    }
+                }
+
+                function collapseAllStepLogs() {
+                    var items = document.querySelectorAll('#step-accordion-container .step-accordion-item.expanded');
+                    for (var i = 0; i &lt; items.length; i++) {
+                        var id = items[i].id.replace('step-item-', '');
+                        toggleStepAccordion(id, null, false, true);
+                    }
                 }
 
                 function renderStepAccordionList(stage, targetStepId, targetLineRange) {
@@ -14109,6 +14566,13 @@
                     stepAutoExpanded = {};
                     collapsedClosures = {};
                     lastFollowedStepId = null;
+                    currentStepQuickFilter = 'all';
+                    var qAllBtn = document.getElementById('step-qfilter-all');
+                    var qIssBtn = document.getElementById('step-qfilter-issues');
+                    var qSlwBtn = document.getElementById('step-qfilter-slow');
+                    if (qAllBtn) qAllBtn.classList.add('active');
+                    if (qIssBtn) qIssBtn.classList.remove('active');
+                    if (qSlwBtn) qSlwBtn.classList.remove('active');
                     container.setAttribute('data-stage-id', String(stage.id));
 
                     var html = '';
@@ -15979,20 +16443,17 @@
 
                 function showAutoJumpNotice(autoTarget) {
                     var noticeBar = document.getElementById('autojump-notice-bar');
-                    var noticeText = document.getElementById('autojump-notice-text');
                     var badge = document.getElementById('stage-banner-autojump-badge');
                     var badgeText = document.getElementById('stage-banner-autojump-text');
-                    if (!noticeBar || !noticeText) return;
+                    if (noticeBar) noticeBar.style.display = 'none';
 
                     var stName = autoTarget.stage ? autoTarget.stage.name : '';
                     var spName = autoTarget.step ? (autoTarget.step.displayName || autoTarget.step.name) : '';
                     var targetDesc = spName ? ('step "' + spName + '" in stage "' + stName + '"') : ('stage "' + stName + '"');
 
-                    noticeText.innerHTML = '&lt;strong&gt;Failure Auto-Jump:&lt;/strong&gt; Landed directly on failed ' + escapeHtml(targetDesc);
-                    noticeBar.style.display = 'flex';
-
                     if (badge) {
                         badge.style.display = 'inline-flex';
+                        badge.title = 'Failure Auto-Jump: Landed directly on failed ' + targetDesc;
                         if (badgeText) badgeText.innerText = 'AUTO-JUMP';
                     }
                 }
