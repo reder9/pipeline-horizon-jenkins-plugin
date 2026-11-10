@@ -5411,6 +5411,20 @@
                         justify-content: center;
                     }
 
+                    /* Wrap layout: everything fits on one row at this zoom, so never let rounding split it */
+                    .pipeline-flow.wrap-mode .pipeline-flow-canvas.wrap-single-row {
+                        flex-wrap: nowrap;
+                    }
+
+                    /* Measurement-only state: the width the whole pipeline needs on a single row */
+                    .pipeline-flow.wrap-mode .pipeline-flow-canvas.wrap-measuring {
+                        flex-wrap: nowrap !important;
+                        flex-shrink: 0 !important;
+                        width: max-content !important;
+                        max-width: none !important;
+                        transform: none !important;
+                    }
+
                     .horizon-container:not(.theme-dark) .step-toolbar {
                         background: #f8fafc;
                         border-color: #cbd5e1;

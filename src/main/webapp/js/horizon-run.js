@@ -394,6 +394,21 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                     }
                 }
 
+                // Smallest zoom at which wrap mode is still willing to shrink the graph in order to keep
+                // every stage on a single row. Below this the cards become hard to read, so we wrap instead.
+                var WRAP_MIN_SINGLE_ROW_SCALE = 0.70;
+
+                // Width (in unscaled layout px, including canvas padding) the whole pipeline needs when laid
+                // out on ONE row. Measured with wrapping disabled and shrinking prevented, so the answer does
+                // not depend on whether the browser had already wrapped the canvas.
+                function measureCanvasNaturalWidth(canvas) {
+                    if (!canvas) return 0;
+                    canvas.classList.add('wrap-measuring');
+                    var w = canvas.offsetWidth;
+                    canvas.classList.remove('wrap-measuring');
+                    return w;
+                }
+
                 function resetFlowSvgDimensions() {
                     var svg = document.getElementById('pipeline-flow-svg');
                     if (svg) {
@@ -487,25 +502,16 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                     }
 
                     if (currentLayoutMode === 'wrap') {
-                        // A single row of stages is centred as a block; multi-row graphs keep the
-                        // left-to-right serpentine reading order.
-                        var cols = canvas.querySelectorAll('.stage-column');
-                        var firstTop = null;
-                        var singleRow = true;
-                        for (var i = 0; i < cols.length; i++) {
-                            var t = cols[i].offsetTop;
-                            if (firstTop === null) {
-                                firstTop = t;
-                            } else if (Math.abs(t - firstTop) > 6) {
-                                singleRow = false;
-                                break;
-                            }
-                        }
-
-                        var fitsSingleRow = singleRow && (contentSpanW * zoom <= availableW + 4);
+                        // Everything goes on ONE row whenever it fits at the current zoom; only when the whole
+                        // pipeline is genuinely wider than the viewport at this zoom do we wrap. The decision
+                        // uses an exact one-row measurement (not the browser's possibly-already-wrapped layout)
+                        // and then forces nowrap so sub-pixel rounding can never split a row that fits.
+                        var naturalRowW = measureCanvasNaturalWidth(canvas);
+                        var fitsSingleRow = naturalRowW > 0 && (naturalRowW * zoom <= availableW + 1);
 
                         if (fitsSingleRow) {
                             canvas.classList.add('wrap-center');
+                            canvas.classList.add('wrap-single-row');
                             canvas.style.setProperty('min-width', '0px', 'important');
                             canvas.style.setProperty('width', 'max-content', 'important');
                             canvas.style.setProperty('max-width', 'none', 'important');
@@ -526,6 +532,7 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                             canvas.style.marginBottom = (wrapBaseBottom - wrapTopOffset) + 'px';
                         } else {
                             canvas.classList.remove('wrap-center');
+                            canvas.classList.remove('wrap-single-row');
                             canvas.style.setProperty('min-width', '0px', 'important');
                             if (zoom !== 1.0 && availableW > 0) {
                                 var wrapW = (availableW / zoom) + 'px';
@@ -612,6 +619,7 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                     canvas.style.removeProperty('width');
                     canvas.style.removeProperty('max-width');
                     canvas.classList.remove('wrap-center');
+                    canvas.classList.remove('wrap-single-row');
                 }
 
                 var settledRefitTimers = [];
@@ -692,23 +700,40 @@ var horizonBaseUrl = runBaseUrl + "horizon/";
                             fitScale = 1.0;
                         }
 
-                        // On very narrow viewports where a single card or stage column exceeds available width,
-                        // scale down gracefully so it doesn't clip
-                        var maxColW = 0;
-                        for (var i = 0; i < columns.length; i++) {
-                            var cw = columns[i].offsetWidth;
-                            if (cw > maxColW) maxColW = cw;
+                        // Prefer ONE row. If the whole pipeline would fit on a single row at a slightly smaller
+                        // (still readable) zoom, use exactly that zoom instead of spilling onto extra rows.
+                        var oneRowNaturalW = measureCanvasNaturalWidth(canvas);
+                        var oneRowScale = (oneRowNaturalW > 0 && availableW > 0)
+                            ? (Math.floor((availableW / oneRowNaturalW) * 100) / 100)
+                            : 0;
+                        var keepsSingleRow = false;
+                        if (oneRowNaturalW > 0 && oneRowNaturalW * fitScale <= availableW + 1) {
+                            keepsSingleRow = true;
+                        } else if (oneRowScale >= WRAP_MIN_SINGLE_ROW_SCALE) {
+                            fitScale = Math.min(fitScale, oneRowScale);
+                            keepsSingleRow = true;
                         }
-                        if (maxColW > 0 && availableW < maxColW + 64) {
-                            var minWrapScale = (availableW / (maxColW + 64));
-                            fitScale = Math.min(fitScale, Math.max(0.6, minWrapScale));
-                        }
-                        // Fit the whole wrapped graph into the visible height when possible without
-                        // becoming unreadable (floor 0.7), leaving 16px vertical breathing room so
-                        // bottom pointers never clip or cramp against scrollbars.
-                        var wrapNaturalH = canvas.scrollHeight;
-                        if (wrapNaturalH > 0 && availableH > 0 && wrapNaturalH * fitScale > (availableH - 16)) {
-                            fitScale = Math.min(fitScale, Math.max(0.7, (availableH - 16) / wrapNaturalH));
+
+                        if (!keepsSingleRow) {
+                            // Genuinely too wide for one row even at the minimum readable zoom: wrap.
+                            // On very narrow viewports where a single card or stage column exceeds available width,
+                            // scale down gracefully so it doesn't clip
+                            var maxColW = 0;
+                            for (var i = 0; i < columns.length; i++) {
+                                var cw = columns[i].offsetWidth;
+                                if (cw > maxColW) maxColW = cw;
+                            }
+                            if (maxColW > 0 && availableW < maxColW + 64) {
+                                var minWrapScale = (availableW / (maxColW + 64));
+                                fitScale = Math.min(fitScale, Math.max(0.6, minWrapScale));
+                            }
+                            // Fit the whole wrapped graph into the visible height when possible without
+                            // becoming unreadable (floor 0.7), leaving 16px vertical breathing room so
+                            // bottom pointers never clip or cramp against scrollbars.
+                            var wrapNaturalH = canvas.scrollHeight;
+                            if (wrapNaturalH > 0 && availableH > 0 && wrapNaturalH * fitScale > (availableH - 16)) {
+                                fitScale = Math.min(fitScale, Math.max(0.7, (availableH - 16) / wrapNaturalH));
+                            }
                         }
                     } else {
                         // In Canvas Flow (horizontal scroll) view:
