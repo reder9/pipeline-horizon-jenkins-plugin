@@ -1,0 +1,10 @@
+{
+  "name": "pipeline-horizon-jenkins-plugin",
+  "version": "1.3.1",
+  "description": "Frontend layout and visualizer regression test suite for Pipeline Horizon",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/**/*.test.mjs"
+  }
+}
