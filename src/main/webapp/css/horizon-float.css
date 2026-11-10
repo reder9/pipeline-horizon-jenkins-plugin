@@ -1,5 +1,19 @@
 /* Pipeline Horizon Floating Card & Summary Widget */
-.horizon-floating-card,
+.horizon-floating-card {
+    background: var(--card-background, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0 1.25rem 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    font-family: inherit;
+    color: var(--text-color, #1e293b);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    clear: both;
+}
+
 .horizon-summary-card {
     background: var(--card-background, #ffffff);
     border: 1px solid var(--border-color, #e2e8f0);
@@ -55,6 +69,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .horizon-floating-duration,
@@ -106,6 +121,43 @@
     background: rgba(148, 163, 184, 0.15);
     color: #94a3b8;
     border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.horizon-float-badge.status-tests {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    text-transform: none;
+    font-weight: 600;
+}
+
+.horizon-float-badge.status-tests.tests-failed {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.horizon-float-badge.status-artifacts {
+    background: rgba(2, 132, 199, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(2, 132, 199, 0.3);
+    text-transform: none;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.horizon-float-badge.status-artifacts:hover {
+    background: rgba(2, 132, 199, 0.25);
+    border-color: #38bdf8;
+    text-decoration: none;
+}
+
+.horizon-float-artifact-size {
+    font-size: 0.68rem;
+    color: var(--text-color-secondary, #94a3b8);
+    font-weight: 500;
+    margin-left: 3px;
 }
 
 /* Horizontal Stage Track */
@@ -188,10 +240,101 @@
     font-weight: 500;
 }
 
+.horizon-float-stage-artifact-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-color-secondary, #94a3b8);
+    margin-left: 1px;
+}
+
 .horizon-float-stage-duration {
     font-size: 0.72rem;
     font-family: monospace;
     color: var(--text-color-secondary, #64748b);
+}
+
+/* Quick Artifacts Strip */
+.horizon-float-artifacts-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0 0.5rem 0;
+    margin-top: 0.25rem;
+    border-top: 1px dashed var(--border-color, rgba(148, 163, 184, 0.2));
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.horizon-float-artifacts-strip::-webkit-scrollbar {
+    height: 3px;
+}
+
+.horizon-float-artifacts-strip::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 3px;
+}
+
+.horizon-float-artifacts-strip-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-color-secondary, #94a3b8);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.horizon-float-artifacts-list {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: nowrap;
+}
+
+.horizon-float-artifact-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: var(--background, rgba(0, 0, 0, 0.04));
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 0.72rem;
+    color: var(--text-color, #334155);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.horizon-float-artifact-chip:hover {
+    border-color: #0284c7;
+    background: rgba(2, 132, 199, 0.06);
+    color: #0284c7;
+    text-decoration: none;
+}
+
+.horizon-float-artifact-name {
+    font-family: monospace;
+    font-size: 0.72rem;
+}
+
+.horizon-float-artifact-chip-size {
+    font-size: 0.68rem;
+    color: var(--text-color-secondary, #94a3b8);
+}
+
+.horizon-float-artifact-more-link {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #0284c7;
+    text-decoration: none;
+    white-space: nowrap;
+    padding: 2px 4px;
+}
+
+.horizon-float-artifact-more-link:hover {
+    text-decoration: underline;
 }
 
 /* Footer Actions */

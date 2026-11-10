@@ -6,7 +6,7 @@
 
     <link rel="stylesheet" href="${resURL}/plugin/pipeline-horizon/css/horizon-float.css" />
 
-    <div class="horizon-floating-card">
+    <div id="horizon-job-floating-card" class="horizon-floating-card">
         <div class="horizon-floating-header">
             <div class="horizon-floating-title-area">
                 <span class="horizon-floating-icon" aria-hidden="true">
@@ -23,6 +23,24 @@
                         ${details.building ? 'BUILDING' : (details.result != null ? details.result : 'COMPLETED')}
                     </span>
                     <span class="horizon-floating-duration">${action.formatDuration(details.duration)}</span>
+                    <j:if test="${details.totalTests &gt; 0}">
+                        <span class="horizon-float-badge status-tests ${details.failedTests &gt; 0 ? 'tests-failed' : 'tests-passed'}"
+                              title="${details.totalTests} tests (${details.failedTests} failed, ${details.skippedTests} skipped)">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:4px;"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><line x1="8" y1="2" x2="16" y2="2"/><line x1="7" y1="16" x2="17" y2="16"/></svg>
+                            ${details.totalTests} Tests
+                        </span>
+                    </j:if>
+                    <j:if test="${details.artifactCount &gt; 0}">
+                        <a href="${rootURL}/${action.job.url}${lastBuild.number}/artifact/"
+                           class="horizon-float-badge status-artifacts"
+                           title="${details.artifactCount} artifacts (${details.formattedTotalArtifactSize})">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:4px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                            ${details.artifactCount} Artifacts
+                            <j:if test="${not empty details.formattedTotalArtifactSize}">
+                                <span class="horizon-float-artifact-size">(${details.formattedTotalArtifactSize})</span>
+                            </j:if>
+                        </a>
+                    </j:if>
                 </div>
             </j:if>
         </div>
@@ -38,12 +56,44 @@
                 <j:forEach var="st" items="${details.stages}">
                     <a href="${rootURL}/${action.job.url}${lastBuild.number}/horizon/#stage=${st.id}"
                        class="horizon-float-stage-pill status-${st.status.toLowerCase()}"
-                       title="${st.name} (${st.status}) - ${action.formatDuration(st.durationMillis)}">
+                       title="${st.name} (${st.status}) - ${action.formatDuration(st.durationMillis)}${st.hasArtifacts ? ' - ' + st.artifactCount + ' artifacts' : ''}">
                         <span class="horizon-float-stage-status-dot"></span>
                         <span class="horizon-float-stage-name">${st.name}</span>
+                        <j:if test="${st.hasArtifacts}">
+                            <span class="horizon-float-stage-artifact-icon" title="${st.artifactCount} artifacts in this stage" aria-hidden="true">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                            </span>
+                        </j:if>
                         <span class="horizon-float-stage-duration">${action.formatDuration(st.durationMillis)}</span>
                     </a>
                 </j:forEach>
+            </div>
+        </j:if>
+
+        <j:if test="${details != null and not empty details.artifacts}">
+            <div class="horizon-float-artifacts-strip">
+                <span class="horizon-float-artifacts-strip-label" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    Artifacts:
+                </span>
+                <div class="horizon-float-artifacts-list">
+                    <j:forEach var="art" items="${details.artifacts}" varStatus="loop">
+                        <j:if test="${loop.index &lt; 5}">
+                            <a href="${rootURL}/${action.job.url}${lastBuild.number}/artifact/${art.relativePath}"
+                               class="horizon-float-artifact-chip"
+                               title="${art.displayPath} (${art.formattedSize})">
+                                <span class="horizon-float-artifact-name">${art.name}</span>
+                                <span class="horizon-float-artifact-chip-size">${art.formattedSize}</span>
+                            </a>
+                        </j:if>
+                    </j:forEach>
+                    <j:if test="${details.artifacts.size() &gt; 5}">
+                        <a href="${rootURL}/${action.job.url}${lastBuild.number}/artifact/"
+                           class="horizon-float-artifact-more-link">
+                            +${details.artifacts.size() - 5} more
+                        </a>
+                    </j:if>
+                </div>
             </div>
         </j:if>
 
@@ -53,6 +103,12 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:6px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                     Open in Pipeline Horizon
                 </a>
+                <j:if test="${details != null and details.artifactCount &gt; 0}">
+                    <a href="${rootURL}/${action.job.url}${lastBuild.number}/artifact/" class="jenkins-button horizon-secondary-btn horizon-artifacts-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:6px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                        Browse Artifacts (${details.artifactCount})
+                    </a>
+                </j:if>
             </j:if>
             <a href="${rootURL}/${action.job.url}horizon/" class="jenkins-button horizon-secondary-btn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:6px;"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
@@ -60,4 +116,33 @@
             </a>
         </div>
     </div>
+
+    <script type="text/javascript">
+        (function() {
+            function hoistHorizonCard() {
+                var card = document.getElementById('horizon-job-floating-card');
+                if (!card) return;
+                var parent = card.parentElement;
+                if (!parent) return;
+                var isFloated = (parent.style &amp;&amp; parent.style.float === 'right') ||
+                                (window.getComputedStyle &amp;&amp; window.getComputedStyle(parent).float === 'right');
+                if (isFloated) {
+                    var mainPanel = document.getElementById('main-panel');
+                    if (mainPanel) {
+                        var desc = document.getElementById('description');
+                        if (desc &amp;&amp; desc.parentElement === mainPanel) {
+                            desc.insertAdjacentElement('afterend', card);
+                        } else {
+                            parent.parentElement.insertBefore(card, parent);
+                        }
+                    }
+                }
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', hoistHorizonCard);
+            } else {
+                hoistHorizonCard();
+            }
+        })();
+    </script>
 </j:jelly>

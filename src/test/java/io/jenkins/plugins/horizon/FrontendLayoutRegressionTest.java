@@ -24,6 +24,8 @@ public class FrontendLayoutRegressionTest {
 
     private final Path jsPath = Path.of("src", "main", "webapp", "js", "horizon-run.js");
     private final Path cssPath = Path.of("src", "main", "webapp", "css", "horizon-run.css");
+    private final Path floatCssPath = Path.of("src", "main", "webapp", "css", "horizon-float.css");
+    private final Path floatingBoxJellyPath = Path.of("src", "main", "resources", "io", "jenkins", "plugins", "horizon", "HorizonJobAction", "floatingBox.jelly");
     private final Path testScriptPath = Path.of("test", "layout-wrap.test.mjs");
 
     @Test
@@ -78,6 +80,33 @@ public class FrontendLayoutRegressionTest {
                 ".wrap-measuring must have flex-shrink: 0 !important");
         assertTrue(probeBody.contains("width: max-content !important"),
                 ".wrap-measuring must have width: max-content !important");
+    }
+
+    @Test
+    public void testJobRootFloatingBoxAndArtifactIntegration() throws Exception {
+        assertTrue(Files.exists(floatingBoxJellyPath), "floatingBox.jelly must exist");
+        String jelly = Files.readString(floatingBoxJellyPath, StandardCharsets.UTF_8);
+
+        assertTrue(jelly.contains("id=\"horizon-job-floating-card\""),
+                "floatingBox.jelly must provide id horizon-job-floating-card for layout hoisting");
+        assertTrue(jelly.contains("function hoistHorizonCard()"),
+                "floatingBox.jelly must include hoistHorizonCard to break out of Jenkins float:right container");
+        assertTrue(jelly.contains("details.artifactCount"),
+                "floatingBox.jelly must check artifactCount to display artifacts badge and actions");
+        assertTrue(jelly.contains("horizon-float-artifacts-strip"),
+                "floatingBox.jelly must render the quick artifacts strip when artifacts are present");
+
+        assertTrue(Files.exists(floatCssPath), "horizon-float.css must exist");
+        String floatCss = Files.readString(floatCssPath, StandardCharsets.UTF_8);
+
+        assertTrue(floatCss.contains("width: 100%"), "horizon-float.css must set width: 100% on floating card");
+        assertTrue(floatCss.contains("clear: both"), "horizon-float.css must set clear: both on floating card");
+        assertTrue(floatCss.contains(".horizon-float-badge.status-artifacts"),
+                "horizon-float.css must style status-artifacts badge");
+        assertTrue(floatCss.contains(".horizon-float-artifacts-strip"),
+                "horizon-float.css must style horizon-float-artifacts-strip");
+        assertTrue(floatCss.contains(".horizon-float-artifact-chip"),
+                "horizon-float.css must style horizon-float-artifact-chip");
     }
 
     @Test
