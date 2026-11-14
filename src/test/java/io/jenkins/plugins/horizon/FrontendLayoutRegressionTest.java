@@ -92,9 +92,18 @@ public class FrontendLayoutRegressionTest {
         assertTrue(jelly.contains("function hoistHorizonCard()"),
                 "floatingBox.jelly must include hoistHorizonCard to break out of Jenkins float:right container");
         assertTrue(jelly.contains("details.artifactCount"),
-                "floatingBox.jelly must check artifactCount to display artifacts badge and actions");
-        assertTrue(jelly.contains("horizon-float-artifacts-strip"),
-                "floatingBox.jelly must render the quick artifacts strip when artifacts are present");
+                "floatingBox.jelly must check artifactCount to display artifacts badge");
+        assertTrue(jelly.contains("status-artifacts"),
+                "floatingBox.jelly must render the status-artifacts badge in the compact header");
+        assertTrue(jelly.contains("horizon-floating-actions"),
+                "floatingBox.jelly must integrate actions into the compact header");
+        assertTrue(jelly.contains("horizon-float-rail-track"),
+                "floatingBox.jelly must render segmented rail track for high stage counts");
+        assertTrue(jelly.contains("horizon-float-stage-track"),
+                "floatingBox.jelly must render compact connected pills for standard stage counts");
+        // Verify elimination of redundant file chips that overloaded the view and duplicated the Last Successful Artifacts section below
+        assertFalse(jelly.contains("horizon-float-artifacts-strip"),
+                "floatingBox.jelly must not render redundant artifact strip which bloats the view");
 
         assertTrue(Files.exists(floatCssPath), "horizon-float.css must exist");
         String floatCss = Files.readString(floatCssPath, StandardCharsets.UTF_8);
@@ -103,10 +112,12 @@ public class FrontendLayoutRegressionTest {
         assertTrue(floatCss.contains("clear: both"), "horizon-float.css must set clear: both on floating card");
         assertTrue(floatCss.contains(".horizon-float-badge.status-artifacts"),
                 "horizon-float.css must style status-artifacts badge");
-        assertTrue(floatCss.contains(".horizon-float-artifacts-strip"),
-                "horizon-float.css must style horizon-float-artifacts-strip");
-        assertTrue(floatCss.contains(".horizon-float-artifact-chip"),
-                "horizon-float.css must style horizon-float-artifact-chip");
+        assertTrue(floatCss.contains(".horizon-float-rail-track"),
+                "horizon-float.css must style segmented rail track");
+        assertTrue(floatCss.contains(".horizon-float-rail-seg"),
+                "horizon-float.css must style segmented rail individual blocks");
+        assertTrue(floatCss.contains(".horizon-float-stage-pill"),
+                "horizon-float.css must style stage pills");
     }
 
     @Test
