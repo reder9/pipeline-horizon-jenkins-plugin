@@ -1,11 +1,18 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     <j:set var="action" value="${from != null ? from : it}" />
-    <j:set var="details" value="${action.runDetails}" />
+    <j:set var="details" value="${action.cachedRunPreview}" />
+    <j:set var="headerSummary" value="${details != null ? details : action.fastRunSummary}" />
+    <j:set var="isPreviewPending" value="${details == null and headerSummary != null}" />
 
     <t:summary icon="symbol-pulse-outline plugin-ionicons-api">
         <link rel="stylesheet" href="${resURL}/plugin/pipeline-horizon/css/horizon-float.css" />
-        <div class="horizon-summary-card">
+        <div class="horizon-summary-card"
+             data-horizon-preview-state="${isPreviewPending ? 'pending' : 'ready'}"
+             data-compact-summary="true"
+             data-show-artifacts="false"
+             data-preview-url="${rootURL}/${action.run.url}horizon/apiRunPreview"
+             data-run-url="horizon/">
             <div class="horizon-summary-header">
                 <div class="horizon-floating-title-area">
                     <span class="horizon-floating-icon" aria-hidden="true">
@@ -13,30 +20,79 @@
                     </span>
                     <span class="horizon-summary-title">Pipeline Horizon</span>
                 </div>
-                <j:if test="${details != null}">
+                <j:if test="${headerSummary != null}">
                     <div class="horizon-floating-meta-area">
-                        <span class="horizon-float-badge status-${details.result != null ? details.result.toLowerCase() : (details.building ? 'in_progress' : 'unknown')}">
-                            ${details.building ? 'BUILDING' : (details.result != null ? details.result : 'COMPLETED')}
+                        <span class="horizon-float-badge status-${headerSummary.result != null ? headerSummary.result.toLowerCase() : (headerSummary.building ? 'in_progress' : 'unknown')}"
+                              data-horizon-status-badge="true">
+                            ${headerSummary.building ? 'BUILDING' : (headerSummary.result != null ? headerSummary.result : 'COMPLETED')}
                         </span>
-                        <span class="horizon-summary-meta">
-                            ${details.stageCount} stages • ${action.formatDuration(details.duration)}
+                        <span class="horizon-float-dynamic-badges" data-horizon-dynamic-badges="true">
+                            <j:choose>
+                                <j:when test="${details != null}">
+                                    <span class="horizon-summary-meta">
+                                        ${details.stageCount} stages • ${action.formatDuration(details.duration)}
+                                    </span>
+                                </j:when>
+                                <j:otherwise>
+                                    <span class="horizon-summary-meta" data-horizon-duration="true">
+                                        ${action.formatDuration(headerSummary.duration)}
+                                    </span>
+                                </j:otherwise>
+                            </j:choose>
                         </span>
                     </div>
                 </j:if>
             </div>
-            <j:if test="${details != null and not empty details.stages}">
-                <div class="horizon-float-stage-track">
-                    <j:forEach var="st" items="${details.stages}">
-                        <a href="horizon/#stage=${st.id}"
-                           class="horizon-float-stage-pill status-${st.status.toLowerCase()}"
-                           title="${st.name} (${st.status}) - ${action.formatDuration(st.durationMillis)}">
-                            <span class="horizon-float-stage-status-dot"></span>
-                            <span class="horizon-float-stage-name">${st.name}</span>
-                            <span class="horizon-float-stage-duration">${action.formatDuration(st.durationMillis)}</span>
-                        </a>
-                    </j:forEach>
-                </div>
-            </j:if>
+            <div class="horizon-float-stage-host" data-horizon-stage-host="true">
+                <j:choose>
+                    <j:when test="${details != null and not empty details.stages}">
+                        <j:choose>
+                            <j:when test="${details.stages.size() &gt; 8}">
+                                <div class="horizon-float-rail-wrapper">
+                                    <div class="horizon-float-rail-track">
+                                        <j:forEach var="st" items="${details.stages}">
+                                            <a href="horizon/#stage=${st.id}"
+                                               class="horizon-float-rail-seg status-${st.status.toLowerCase()}"
+                                               title="${st.name} (${st.status}) - ${action.formatDuration(st.durationMillis)}">
+                                            </a>
+                                        </j:forEach>
+                                    </div>
+                                    <div class="horizon-float-rail-meta">
+                                        <span class="horizon-float-rail-first">Stage 1: ${details.stages[0].name}</span>
+                                        <span class="horizon-float-rail-summary">
+                                            ${details.stages.size()} stages total (${details.failedStageCount &gt; 0 ? details.failedStageCount + ' failed' : (details.building ? 'in progress' : (details.result == 'SUCCESS' ? 'all passed' : (details.result != null ? details.result.toLowerCase() : 'completed')))})
+                                        </span>
+                                        <span class="horizon-float-rail-last">Stage ${details.stages.size()}: ${details.stages[details.stages.size() - 1].name}</span>
+                                    </div>
+                                </div>
+                            </j:when>
+                            <j:otherwise>
+                                <div class="horizon-float-stage-track">
+                                    <j:forEach var="st" items="${details.stages}" varStatus="loop">
+                                        <div class="horizon-float-stage-wrapper">
+                                            <a href="horizon/#stage=${st.id}"
+                                               class="horizon-float-stage-pill status-${st.status.toLowerCase()}"
+                                               title="${st.name} (${st.status}) - ${action.formatDuration(st.durationMillis)}">
+                                                <span class="horizon-float-stage-status-dot"></span>
+                                                <span class="horizon-float-stage-name">${st.name}</span>
+                                                <span class="horizon-float-stage-duration">${action.formatDuration(st.durationMillis)}</span>
+                                            </a>
+                                            <j:if test="${!loop.last}">
+                                                <span class="horizon-float-stage-arrow" aria-hidden="true">&#8594;</span>
+                                            </j:if>
+                                        </div>
+                                    </j:forEach>
+                                </div>
+                            </j:otherwise>
+                        </j:choose>
+                    </j:when>
+                    <j:when test="${isPreviewPending}">
+                        <div class="horizon-float-stage-skeleton" aria-label="Loading pipeline stages">
+                            <span class="horizon-float-skeleton-bar"></span>
+                        </div>
+                    </j:when>
+                </j:choose>
+            </div>
             <div class="horizon-summary-actions">
                 <a href="horizon/" class="jenkins-button jenkins-button--primary horizon-summary-cta">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:6px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -44,5 +100,8 @@
                 </a>
             </div>
         </div>
+        <j:if test="${isPreviewPending}">
+            <script defer="defer" src="${resURL}/plugin/pipeline-horizon/js/horizon-float.js"></script>
+        </j:if>
     </t:summary>
 </j:jelly>

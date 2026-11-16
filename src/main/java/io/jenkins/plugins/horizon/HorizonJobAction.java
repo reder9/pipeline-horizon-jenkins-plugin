@@ -47,16 +47,58 @@ public class HorizonJobAction implements Action {
         return null;
     }
 
+    /**
+     * Returns an already-cached lightweight preview of the latest build without
+     * blocking job homepage SSR on FlowGraph/artifact/test XML parsing. Returns
+     * {@code null} on cache miss or while the latest build is in progress.
+     */
+    public io.jenkins.plugins.horizon.model.RunDetailsModel getCachedLastRunPreview() {
+        org.jenkinsci.plugins.workflow.job.WorkflowRun last = getLastBuild();
+        return last != null ? HorizonRunAction.getCachedRunPreviewIfPresent(last) : null;
+    }
+
+    /**
+     * Zero-FlowGraph header summary safe for instant SSR on cold cache or active builds.
+     */
+    public io.jenkins.plugins.horizon.model.RunDetailsModel getFastLastRunSummary() {
+        org.jenkinsci.plugins.workflow.job.WorkflowRun last = getLastBuild();
+        return last != null ? HorizonRunAction.buildFastRunSummary(last) : null;
+    }
+
     public io.jenkins.plugins.horizon.model.RunDetailsModel getLastRunDetails() {
         org.jenkinsci.plugins.workflow.job.WorkflowRun last = getLastBuild();
         if (last != null) {
-            return io.jenkins.plugins.horizon.analysis.PipelineGraphAnalyzer.buildRunDetails(last);
+            return HorizonRunAction.getOrBuildRunPreview(last);
         }
         return null;
     }
 
     public String formatDuration(long millis) {
         return io.jenkins.plugins.horizon.analysis.PipelineGraphAnalyzer.formatDuration(millis);
+    }
+
+    /**
+     * REST API: Returns lightweight preview metadata and stages for the latest build
+     * to hydrate {@code floatingBox.jelly} asynchronously on cold cache or active runs.
+     */
+    public void doApiLastRunPreview(StaplerRequest2 req, StaplerResponse2 rsp) throws IOException {
+        rsp.setContentType("application/json;charset=UTF-8");
+        rsp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        if (job != null) {
+            job.checkPermission(Item.READ);
+        }
+        if (!(job instanceof WorkflowJob)) {
+            rsp.setStatus(400);
+            rsp.getWriter().write("{\"error\": \"Horizon only supports Pipeline (WorkflowJob) jobs\"}");
+            return;
+        }
+        long startedAt = System.nanoTime();
+        org.jenkinsci.plugins.workflow.job.WorkflowRun last = getLastBuild();
+        io.jenkins.plugins.horizon.model.RunDetailsModel preview = last != null
+                ? HorizonRunAction.getOrBuildRunPreview(last)
+                : null;
+        HorizonRunAction.setAnalysisTimingHeader(rsp, startedAt);
+        HorizonRunAction.serializePreviewJson(preview).write(rsp.getWriter());
     }
 
     /**

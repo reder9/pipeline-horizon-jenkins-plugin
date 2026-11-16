@@ -444,5 +444,106 @@ class HorizonPipelineIntegrationTest {
         assertEquals("Migrate \u2192 Verify", backendBranch.getBranchName());
         assertEquals("SUCCESS", backendBranch.getStatus());
     }
+
+    @Test
+    void testLightweightPreviewCacheFirstSsrAndAsyncHydration(JenkinsRule jenkins) throws Exception {
+        WorkflowJob job = jenkins.createProject(WorkflowJob.class, "preview-cache-perf-job");
+        job.setDefinition(new CpsFlowDefinition(
+                "node {\n" +
+                "    stage('Prepare') { echo 'step 1'; echo 'step 2' }\n" +
+                "    stage('Archive') {\n" +
+                "        writeFile file: 'dist/out.txt', text: 'artifact body'\n" +
+                "        archiveArtifacts artifacts: 'dist/**'\n" +
+                "    }\n" +
+                "    stage('Failing Stage') { error('boom') }\n" +
+                "}", true));
+
+        WorkflowRun build = jenkins.buildAndAssertStatus(Result.FAILURE, job);
+        assertNotNull(build);
+
+        HorizonRunAction.clearRunDetailsCache();
+        HorizonJobAction jobAction = job.getAction(HorizonJobAction.class);
+        HorizonRunAction runAction = build.getAction(HorizonRunAction.class);
+        assertNotNull(jobAction);
+        assertNotNull(runAction);
+
+        // 1. Cold cache: cached preview must return null immediately (zero I/O), while fast header is populated
+        assertEquals(null, jobAction.getCachedLastRunPreview(),
+                "Cold cache must not synchronously scan FlowGraph during SSR");
+        RunDetailsModel fastSummary = jobAction.getFastLastRunSummary();
+        assertNotNull(fastSummary);
+        assertEquals(1, fastSummary.getNumber());
+        assertEquals("FAILURE", fastSummary.getResult());
+
+        // 2. Direct lightweight preview builder omits heavy step/trend/script/artifact lists while keeping stages & failure count
+        RunDetailsModel builtPreview = PipelineGraphAnalyzer.buildPreviewDetails(build);
+        assertNotNull(builtPreview);
+        assertEquals(3, builtPreview.getStageCount());
+        assertEquals(1, builtPreview.getFailedStageCount(), "Failed stage count must be accurately computed");
+        assertEquals(1, builtPreview.getArtifactCount());
+        assertTrue(builtPreview.getTotalArtifactSize() > 0);
+        assertFalse(builtPreview.isTestCasesLoaded());
+        assertFalse(builtPreview.isArtifactsLoaded());
+        assertFalse(builtPreview.isReplayScriptLoaded());
+        assertFalse(builtPreview.isStageTrendsLoaded());
+        assertTrue(builtPreview.getArtifacts().isEmpty(), "Preview must not retain full ArtifactModel list");
+        for (StageModel st : builtPreview.getStages()) {
+            assertTrue(st.getSteps().isEmpty(), "Preview stages must omit heavy StepModel lists");
+        }
+
+        // Clear again and test HTTP SSR -> async endpoint -> warm SSR flow
+        HorizonRunAction.clearRunDetailsCache();
+        JenkinsRule.WebClient wc = jenkins.createWebClient();
+        wc.getOptions().setJavaScriptEnabled(false);
+
+        // 3. Cold HTTP GET of job homepage must emit non-blocking pending shell without synchronous stage scan
+        String coldHtml = wc.goTo("job/preview-cache-perf-job/").getWebResponse().getContentAsString();
+        assertTrue(coldHtml.contains("data-horizon-preview-state=\"pending\""),
+                "Cold homepage must render non-blocking pending preview shell");
+        assertTrue(coldHtml.contains("horizon-float-stage-skeleton"),
+                "Cold homepage must render zero-CLS skeleton loader");
+        assertEquals(null, jobAction.getCachedLastRunPreview(),
+                "Cold homepage SSR must not synchronously populate preview cache");
+
+        // 4. Async preview endpoint populates preview cache and returns lightweight JSON + Server-Timing
+        var apiResp = wc.goTo("job/preview-cache-perf-job/horizon/apiLastRunPreview", "application/json")
+                .getWebResponse();
+        assertNotNull(apiResp.getResponseHeaderValue("Server-Timing"), "Server-Timing header should be set");
+        net.sf.json.JSONObject previewJson = net.sf.json.JSONObject.fromObject(apiResp.getContentAsString());
+        assertTrue(previewJson.getBoolean("hasBuild"));
+        assertEquals(1, previewJson.getInt("number"));
+        assertEquals("FAILURE", previewJson.getString("result"));
+        assertEquals(3, previewJson.getInt("stageCount"));
+        assertEquals(1, previewJson.getInt("failedStageCount"));
+        assertEquals(1, previewJson.getInt("artifactCount"));
+        assertEquals(3, previewJson.getJSONArray("stages").size());
+
+        // 5. Subsequent job homepage and run summary requests now hit cache cleanly in full SSR
+        assertNotNull(jobAction.getCachedLastRunPreview(),
+                "Preview cache must be warm after apiLastRunPreview");
+        assertNotNull(runAction.getCachedRunPreview(),
+                "Run summary must share the same preview cache entry");
+
+        String warmHtml = wc.goTo("job/preview-cache-perf-job/").getWebResponse().getContentAsString();
+        assertTrue(warmHtml.contains("data-horizon-preview-state=\"ready\""),
+                "Warm homepage must render full SSR preview without pending state");
+        assertTrue(warmHtml.contains("Failing Stage"),
+                "Warm homepage must render stage pills directly in SSR HTML");
+        assertFalse(warmHtml.contains("horizon-float-stage-skeleton"),
+                "Warm homepage must not render loading skeleton");
+
+        // 6. Verify run-level apiRunPreview endpoint
+        var runApiResp = wc.goTo("job/preview-cache-perf-job/1/horizon/apiRunPreview", "application/json")
+                .getWebResponse();
+        net.sf.json.JSONObject runPreviewJson = net.sf.json.JSONObject.fromObject(runApiResp.getContentAsString());
+        assertEquals(3, runPreviewJson.getInt("stageCount"));
+
+        // 7. Deleting the build must invalidate preview cache via HorizonCacheListener
+        String extId = build.getExternalizableId();
+        build.delete();
+        assertEquals(null, HorizonRunAction.getCachedRunPreviewIfPresent(build),
+                "Deleted run preview cache entry must be invalidated");
+        assertNotNull(extId);
+    }
 }
 

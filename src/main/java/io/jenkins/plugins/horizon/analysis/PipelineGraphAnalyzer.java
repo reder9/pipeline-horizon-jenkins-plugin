@@ -59,6 +59,8 @@ public class PipelineGraphAnalyzer {
     private static final Logger LOGGER = Logger.getLogger(PipelineGraphAnalyzer.class.getName());
     private static final Pattern ARCHIVE_ARTIFACTS_ARGUMENT = Pattern.compile(
             "(?i)(?:^|[,\\s{])artifacts\\s*[:=]\\s*(?:'([^']*)'|\\\"([^\\\"]*)\\\"|([^,}]+))");
+    private static final int MAX_PREVIEW_ARTIFACT_STAT_COUNT = 500;
+    private static final long MAX_PREVIEW_ARTIFACT_STAT_NANOS = 150_000_000L;
 
     /**
      * Historical stage averages are shared by live polling requests. The previous implementation
@@ -163,6 +165,192 @@ public class PipelineGraphAnalyzer {
         return buildRunDetails(run, AnalysisScope.CANVAS);
     }
 
+    /**
+     * Builds a zero-FlowGraph, zero-artifact-scan header summary from metadata
+     * already present on the {@link WorkflowRun} object. Safe for instant SSR even
+     * on cold large jobs.
+     */
+    public static RunDetailsModel buildFastRunSummary(WorkflowRun run) {
+        RunDetailsModel summary = new RunDetailsModel();
+        if (run == null) {
+            return summary;
+        }
+        populateFastHeaderMetadata(run, summary);
+        return summary;
+    }
+
+    /**
+     * Derives a slim, cache-friendly preview copy from an already-computed
+     * {@link RunDetailsModel} (for example, when full build details are already cached)
+     * without re-traversing the FlowGraph or enumerating artifacts.
+     */
+    public static RunDetailsModel extractPreviewFromDetails(RunDetailsModel source) {
+        if (source == null) {
+            return null;
+        }
+        RunDetailsModel preview = new RunDetailsModel();
+        preview.setNumber(source.getNumber());
+        preview.setId(source.getId());
+        preview.setDisplayName(source.getDisplayName());
+        preview.setBuilding(source.isBuilding());
+        preview.setPausedForInput(source.isPausedForInput());
+        preview.setTimestamp(source.getTimestamp());
+        preview.setDuration(source.getDuration());
+        preview.setResult(source.getResult());
+        preview.setUrl(source.getUrl());
+        preview.setHorizonUrl(source.getHorizonUrl());
+        preview.setTotalTests(source.getTotalTests());
+        preview.setFailedTests(source.getFailedTests());
+        preview.setSkippedTests(source.getSkippedTests());
+        preview.setArtifactCount(source.getArtifactCount());
+        preview.setTotalArtifactSize(source.getTotalArtifactSize());
+        preview.setFormattedTotalArtifactSize(source.getFormattedTotalArtifactSize());
+        List<StageModel> slimStages = copySlimStages(source.getStages());
+        preview.setStages(slimStages);
+        preview.setStageCount(slimStages.size());
+        preview.setFailedStageCount(countFailedStages(slimStages));
+        return preview;
+    }
+
+    private static List<StageModel> copySlimStages(List<StageModel> sourceStages) {
+        if (sourceStages == null || sourceStages.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<StageModel> slimList = new ArrayList<>(sourceStages.size());
+        for (StageModel s : sourceStages) {
+            if (s == null) {
+                continue;
+            }
+            StageModel slim = new StageModel();
+            slim.setId(s.getId());
+            slim.setName(s.getName());
+            slim.setStatus(s.getStatus());
+            slim.setDurationMillis(s.getDurationMillis());
+            slim.setParallelBranch(s.isParallelBranch());
+            slim.setBranchName(s.getBranchName());
+            slim.setOptional(s.isOptional());
+            slim.setPausedForInput(s.isPausedForInput());
+            slim.setHasArtifacts(s.isHasArtifacts());
+            slim.setArtifactCount(s.getArtifactCount());
+            if (s.getChildren() != null && !s.getChildren().isEmpty()) {
+                slim.setChildren(copySlimStages(s.getChildren()));
+            }
+            slimList.add(slim);
+        }
+        return slimList;
+    }
+
+    /**
+     * Builds an ultra-lightweight stage-only preview representation for job homepage
+     * and build summary widgets ({@code floatingBox.jelly} and {@code summary.jelly}).
+     * Skips step extraction, step argument deserialization, JUnit XML case loading,
+     * changelog/SCM reflection, and historical multi-build trend traversal.
+     */
+    public static RunDetailsModel buildPreviewDetails(WorkflowRun run) {
+        if (run == null) {
+            return new RunDetailsModel();
+        }
+        RunDetailsModel details = new RunDetailsModel();
+        details.setTestCasesLoaded(false);
+        details.setArtifactsLoaded(false);
+        details.setReplayScriptLoaded(false);
+        details.setStageTrendsLoaded(false);
+        populateFastHeaderMetadata(run, details);
+        populateTestSummaryCounts(run, details, false);
+
+        FlowExecution exec = run.getExecution();
+        boolean hasArtifacts = false;
+        try {
+            hasArtifacts = run.getHasArtifacts();
+        } catch (Throwable ignored) {
+        }
+
+        if (exec == null) {
+            if (hasArtifacts) {
+                collectPreviewArtifacts(run, details, Collections.emptyList(), Collections.emptyMap());
+            }
+            return details;
+        }
+
+        List<FlowNode> allNodes = new DepthFirstScanner().allNodes(exec);
+        if (allNodes.isEmpty()) {
+            if (hasArtifacts) {
+                collectPreviewArtifacts(run, details, Collections.emptyList(), Collections.emptyMap());
+            }
+            return details;
+        }
+
+        Collections.reverse(allNodes);
+
+        Map<String, FlowNode> blockNodeMap = new HashMap<>();
+        Map<String, BlockEndNode> startToEndMap = new HashMap<>();
+        List<BlockStartNode> blockStartNodes = new ArrayList<>();
+        List<FlowNode> warningNodes = new ArrayList<>();
+        List<FlowNode> archiverNodes = new ArrayList<>();
+
+        for (FlowNode n : allNodes) {
+            if (n instanceof BlockStartNode) {
+                blockNodeMap.put(n.getId(), n);
+                blockStartNodes.add((BlockStartNode) n);
+            } else if (n instanceof BlockEndNode) {
+                BlockEndNode end = (BlockEndNode) n;
+                startToEndMap.put(end.getStartNode().getId(), end);
+            }
+
+            if (n.getPersistentAction(org.jenkinsci.plugins.workflow.actions.WarningAction.class) != null) {
+                warningNodes.add(n);
+            }
+            if (hasArtifacts && n instanceof StepNode && isArchiveArtifactsStep(n)) {
+                archiverNodes.add(n);
+            }
+        }
+
+        Map<String, Integer> branchDirectInnerStageCount = computeBranchDirectInnerStageCounts(blockStartNodes);
+        Set<String> ignoredAgents = new HashSet<>();
+        List<StageModel> rawStages = extractRawStages(
+                blockStartNodes, startToEndMap, branchDirectInnerStageCount, null, ignoredAgents);
+        sortStagesChronologically(rawStages);
+
+        Map<String, List<String>> stageArtifactPatterns = new HashMap<>();
+        if (!warningNodes.isEmpty() || !archiverNodes.isEmpty()) {
+            Map<String, StageModel> stageById = new HashMap<>(rawStages.size() * 2);
+            for (StageModel stage : rawStages) {
+                stageById.put(stage.getId(), stage);
+            }
+            for (FlowNode wNode : warningNodes) {
+                List<StageModel> enclosingStages = resolveEnclosingStages(
+                        wNode, stageById, rawStages, blockNodeMap, startToEndMap);
+                for (StageModel stage : enclosingStages) {
+                    applyWarningToStage(wNode, stage);
+                }
+            }
+            for (FlowNode aNode : archiverNodes) {
+                List<StageModel> enclosingStages = resolveEnclosingStages(
+                        aNode, stageById, rawStages, blockNodeMap, startToEndMap);
+                if (!enclosingStages.isEmpty()) {
+                    String pattern = extractArchivePattern(aNode);
+                    for (StageModel stage : enclosingStages) {
+                        stageArtifactPatterns.computeIfAbsent(stage.getId(), k -> new ArrayList<>()).add(pattern);
+                    }
+                }
+            }
+        }
+
+        if (hasArtifacts) {
+            collectPreviewArtifacts(run, details, rawStages, stageArtifactPatterns);
+        }
+
+        if (details.isBuilding()) {
+            populatePendingInputs(run, details, rawStages, startToEndMap);
+        }
+
+        List<StageModel> consolidatedStages = consolidateStages(rawStages, blockNodeMap, startToEndMap);
+        details.setStages(consolidatedStages);
+        details.setStageCount(consolidatedStages.size());
+        details.setFailedStageCount(countFailedStages(consolidatedStages));
+        return details;
+    }
+
     public static RunDetailsModel buildRunDetails(WorkflowRun run, AnalysisScope scope) {
         if (run == null) {
             return new RunDetailsModel();
@@ -189,18 +377,7 @@ public class PipelineGraphAnalyzer {
         }
 
         // Test results if JUnit or similar test reporting plugin was run
-        try {
-            AbstractTestResultAction<?> testAction = run.getAction(AbstractTestResultAction.class);
-            if (testAction != null) {
-                details.setTotalTests(testAction.getTotalCount());
-                details.setFailedTests(testAction.getFailCount());
-                details.setSkippedTests(testAction.getSkipCount());
-                if (scope.includeTestCases) {
-                    details.setTestCases(extractTestCases(testAction));
-                }
-            }
-        } catch (Throwable ignored) {
-        }
+        populateTestSummaryCounts(run, details, scope.includeTestCases);
 
         FlowExecution exec = run.getExecution();
         if (exec == null) {
@@ -226,9 +403,12 @@ public class PipelineGraphAnalyzer {
         // Map start and end block nodes
         Map<String, FlowNode> nodeMap = new HashMap<>();
         Map<String, BlockEndNode> startToEndMap = new HashMap<>();
+        List<BlockStartNode> blockStartNodes = new ArrayList<>();
         for (FlowNode n : allNodes) {
             nodeMap.put(n.getId(), n);
-            if (n instanceof BlockEndNode) {
+            if (n instanceof BlockStartNode) {
+                blockStartNodes.add((BlockStartNode) n);
+            } else if (n instanceof BlockEndNode) {
                 BlockEndNode end = (BlockEndNode) n;
                 startToEndMap.put(end.getStartNode().getId(), end);
             }
@@ -245,97 +425,15 @@ public class PipelineGraphAnalyzer {
         }
 
         // Identify Stages & Branches
-        List<StageModel> rawStages = new ArrayList<>();
         Set<String> allAgentsUsed = new HashSet<>();
         if (defaultAgent != null) {
             allAgentsUsed.add(defaultAgent);
         }
 
-        // Pre-scan to find how many direct inner stages each branch node encloses.
-        // If a "Branch: ..." node wraps a single direct stage, we skip the wrapper and let
-        // that inner stage represent the branch. If it directly encloses 2+ sequential stages
-        // (e.g. multi-stage Declarative Matrix cell or scripted parallel branch with multiple stages),
-        // we keep the branch node so consolidateStages() groups those sub-stages into one branch card.
-        Map<String, Integer> branchDirectInnerStageCount = new HashMap<>();
-        for (FlowNode node : allNodes) {
-            if (!(node instanceof BlockStartNode)) {
-                continue;
-            }
-            LabelAction la = node.getAction(LabelAction.class);
-            String laDisp = la != null ? la.getDisplayName() : null;
-            if (laDisp != null && !laDisp.trim().startsWith("Branch: ")) {
-                try {
-                    for (BlockStartNode bsn : node.iterateEnclosingBlocks()) {
-                        if (bsn.getAction(ThreadNameAction.class) != null) {
-                            branchDirectInnerStageCount.merge(bsn.getId(), 1, Integer::sum);
-                            break;
-                        }
-                        LabelAction parentLa = bsn.getAction(LabelAction.class);
-                        String parentLaDisp = parentLa != null ? parentLa.getDisplayName() : null;
-                        if (parentLaDisp != null && !parentLaDisp.trim().startsWith("Branch: ")) {
-                            break;
-                        }
-                    }
-                } catch (Throwable ignored) {}
-            }
-        }
-
-        for (FlowNode node : allNodes) {
-            // Atomic steps (e.g. `sh label: '...'`) carry a LabelAction too, but are not stages
-            if (!(node instanceof BlockStartNode)) {
-                continue;
-            }
-            LabelAction labelAction = node.getAction(LabelAction.class);
-            ThreadNameAction threadNameAction = node.getAction(ThreadNameAction.class);
-
-            String rawLabelName = labelAction != null ? labelAction.getDisplayName() : null;
-            if (rawLabelName != null) {
-                String labelName = rawLabelName.trim();
-
-                // If this is a branch launcher wrapper (e.g. "Branch: Unit Tests")
-                if (labelName.startsWith("Branch: ")) {
-                    // Only skip if the branch wraps a single direct inner stage
-                    if (branchDirectInnerStageCount.getOrDefault(node.getId(), 0) == 1) {
-                        continue;
-                    }
-                    // Otherwise, use the branch name as the stage name
-                    labelName = labelName.substring("Branch: ".length()).trim();
-                }
-
-                StageModel stage = createStageModel(node, labelName, startToEndMap.get(node.getId()), defaultAgent);
-
-                // Detect parallel branch name from ThreadNameAction on node or its enclosing blocks
-                ThreadNameAction tna = threadNameAction;
-                if (tna == null) {
-                    try {
-                        for (BlockStartNode bsn : node.iterateEnclosingBlocks()) {
-                            tna = bsn.getAction(ThreadNameAction.class);
-                            if (tna != null) break;
-                        }
-                    } catch (Throwable ignored) {}
-                }
-
-                if (tna != null) {
-                    stage.setParallelBranch(true);
-                    stage.setBranchName(EncodingUtils.fixMojibake(tna.getThreadName()));
-                }
-
-                if (stage.getAgent() != null) {
-                    allAgentsUsed.add(stage.getAgent());
-                }
-
-                rawStages.add(stage);
-            }
-        }
-
-        // Sort stages chronologically by FlowNode ID
-        rawStages.sort(Comparator.comparingLong(s -> {
-            try {
-                return Long.parseLong(s.getId());
-            } catch (NumberFormatException e) {
-                return 0L;
-            }
-        }));
+        Map<String, Integer> branchDirectInnerStageCount = computeBranchDirectInnerStageCounts(blockStartNodes);
+        List<StageModel> rawStages = extractRawStages(
+                blockStartNodes, startToEndMap, branchDirectInnerStageCount, defaultAgent, allAgentsUsed);
+        sortStagesChronologically(rawStages);
 
         if (!run.isBuilding()) {
             try {
@@ -372,44 +470,15 @@ public class PipelineGraphAnalyzer {
             }
         }
 
+        long[] nextStrictlyGreaterTime = computeNextStrictlyGreaterTimes(allNodes);
+
         Map<String, List<String>> stageArtifactPatterns = new HashMap<>();
 
         // Collect steps within each stage
         for (int i = 0; i < allNodes.size(); i++) {
             FlowNode n = allNodes.get(i);
-            List<StageModel> enclosingStages = new ArrayList<>();
-            List<String> enclosingIds = enclosingIdsByNode.get(n.getId());
-            if (enclosingIds != null && !enclosingIds.isEmpty()) {
-                for (String enclosingId : enclosingIds) {
-                    StageModel stage = stageById.get(enclosingId);
-                    if (stage != null && (stage.getStatus() == null || !stage.getStatus().startsWith("SKIPPED"))) {
-                        enclosingStages.add(stage);
-                    }
-                }
-            } else {
-                // Preserve the old numeric-range fallback for synthetic/incomplete FlowGraphs.
-                long currentId;
-                try {
-                    currentId = Long.parseLong(n.getId());
-                } catch (NumberFormatException e) {
-                    continue;
-                }
-                for (StageModel stage : rawStages) {
-                    if (stage.getStatus() != null && stage.getStatus().startsWith("SKIPPED")) {
-                        continue;
-                    }
-                    try {
-                        FlowNode startNode = nodeMap.get(stage.getId());
-                        BlockEndNode endNode = startToEndMap.get(stage.getId());
-                        long stageStartIndex = Long.parseLong(startNode.getId());
-                        long stageEndIndex = endNode != null ? Long.parseLong(endNode.getId()) : Long.MAX_VALUE;
-                        if (currentId > stageStartIndex && currentId < stageEndIndex) {
-                            enclosingStages.add(stage);
-                        }
-                    } catch (RuntimeException ignored) {
-                    }
-                }
-            }
+            List<StageModel> enclosingStages = resolveEnclosingStagesFromCache(
+                    n, enclosingIdsByNode, stageById, rawStages, nodeMap, startToEndMap);
 
             for (StageModel stage : enclosingStages) {
                     WorkspaceAction wa = n.getAction(WorkspaceAction.class);
@@ -425,7 +494,7 @@ public class PipelineGraphAnalyzer {
                     }
 
                     if (isStepNode(n)) {
-                        StepModel step = createStepModel(n, startToEndMap, allNodes, i);
+                        StepModel step = createStepModel(n, startToEndMap, nextStrictlyGreaterTime, i);
                         stage.addStep(step);
                         if ("SKIPPED".equalsIgnoreCase(step.getStatus()) || "NOT_EXECUTED".equalsIgnoreCase(step.getStatus())) {
                             stage.setSkippedStepsCount(stage.getSkippedStepsCount() + 1);
@@ -433,16 +502,7 @@ public class PipelineGraphAnalyzer {
                     }
 
                     // Check for WarningAction indicating unstable execution in stage
-                    org.jenkinsci.plugins.workflow.actions.WarningAction warningAction = n.getAction(org.jenkinsci.plugins.workflow.actions.WarningAction.class);
-                    if (warningAction != null) {
-                        if (!"FAILED".equals(stage.getStatus())) {
-                            stage.setStatus("UNSTABLE");
-                        }
-                        String warnMsg = warningAction.getMessage();
-                        if (warnMsg != null && warnMsg.toLowerCase(java.util.Locale.ROOT).contains("optional")) {
-                            stage.setOptional(true);
-                        }
-                    }
+                    applyWarningToStage(n, stage);
             }
         }
 
@@ -644,6 +704,7 @@ public class PipelineGraphAnalyzer {
 
         details.setStages(consolidatedStages);
         details.setStageCount(consolidatedStages.size());
+        details.setFailedStageCount(countFailedStages(consolidatedStages));
         details.setTotalSteps(totalStepsCount);
         details.setFailedSteps(failedStepsCount);
         details.setAgentsUsed(new ArrayList<>(allAgentsUsed));
@@ -694,6 +755,230 @@ public class PipelineGraphAnalyzer {
         details.setRebuildEnabled(run.getParent().isBuildable());
 
         return details;
+    }
+
+    private static void populateTestSummaryCounts(WorkflowRun run, RunDetailsModel details, boolean includeTestCases) {
+        try {
+            AbstractTestResultAction<?> testAction = run.getAction(AbstractTestResultAction.class);
+            if (testAction != null) {
+                details.setTotalTests(testAction.getTotalCount());
+                details.setFailedTests(testAction.getFailCount());
+                details.setSkippedTests(testAction.getSkipCount());
+                if (includeTestCases) {
+                    details.setTestCases(extractTestCases(testAction));
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /**
+     * Pre-scans candidate stage nodes to count how many direct inner stages each branch node encloses.
+     * If a {@code Branch: ...} node wraps a single direct stage, we skip the wrapper and let that
+     * inner stage represent the branch; if it encloses multiple sequential stages, we preserve it.
+     */
+    private static Map<String, Integer> computeBranchDirectInnerStageCounts(List<? extends FlowNode> blockStartNodes) {
+        Map<String, Integer> counts = new HashMap<>();
+        for (FlowNode node : blockStartNodes) {
+            LabelAction la = node.getAction(LabelAction.class);
+            String laDisp = la != null ? la.getDisplayName() : null;
+            if (laDisp != null && !laDisp.trim().startsWith("Branch: ")) {
+                try {
+                    for (BlockStartNode bsn : node.iterateEnclosingBlocks()) {
+                        if (bsn.getAction(ThreadNameAction.class) != null) {
+                            counts.merge(bsn.getId(), 1, Integer::sum);
+                            break;
+                        }
+                        LabelAction parentLa = bsn.getAction(LabelAction.class);
+                        String parentLaDisp = parentLa != null ? parentLa.getDisplayName() : null;
+                        if (parentLaDisp != null && !parentLaDisp.trim().startsWith("Branch: ")) {
+                            break;
+                        }
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+        return counts;
+    }
+
+    private static List<StageModel> extractRawStages(
+            List<? extends FlowNode> blockStartNodes,
+            Map<String, BlockEndNode> startToEndMap,
+            Map<String, Integer> branchDirectInnerStageCount,
+            String defaultAgent,
+            Set<String> allAgentsUsed) {
+        List<StageModel> rawStages = new ArrayList<>();
+        for (FlowNode node : blockStartNodes) {
+            LabelAction labelAction = node.getAction(LabelAction.class);
+            ThreadNameAction threadNameAction = node.getAction(ThreadNameAction.class);
+
+            String rawLabelName = labelAction != null ? labelAction.getDisplayName() : null;
+            if (rawLabelName != null) {
+                String labelName = rawLabelName.trim();
+                if (labelName.startsWith("Branch: ")) {
+                    if (branchDirectInnerStageCount.getOrDefault(node.getId(), 0) == 1) {
+                        continue;
+                    }
+                    labelName = labelName.substring("Branch: ".length()).trim();
+                }
+
+                StageModel stage = createStageModel(node, labelName, startToEndMap.get(node.getId()), defaultAgent);
+
+                ThreadNameAction tna = threadNameAction;
+                if (tna == null) {
+                    try {
+                        for (BlockStartNode bsn : node.iterateEnclosingBlocks()) {
+                            tna = bsn.getAction(ThreadNameAction.class);
+                            if (tna != null) break;
+                        }
+                    } catch (Throwable ignored) {
+                    }
+                }
+
+                if (tna != null) {
+                    stage.setParallelBranch(true);
+                    stage.setBranchName(EncodingUtils.fixMojibake(tna.getThreadName()));
+                }
+
+                if (stage.getAgent() != null && allAgentsUsed != null) {
+                    allAgentsUsed.add(stage.getAgent());
+                }
+
+                rawStages.add(stage);
+            }
+        }
+        return rawStages;
+    }
+
+    private static void sortStagesChronologically(List<StageModel> rawStages) {
+        rawStages.sort(Comparator.comparingLong(s -> {
+            try {
+                return Long.parseLong(s.getId());
+            } catch (NumberFormatException e) {
+                return 0L;
+            }
+        }));
+    }
+
+    private static List<StageModel> resolveEnclosingStages(
+            FlowNode node,
+            Map<String, StageModel> stageById,
+            List<StageModel> rawStages,
+            Map<String, FlowNode> nodeMap,
+            Map<String, BlockEndNode> startToEndMap) {
+        List<String> enclosingIds = Collections.emptyList();
+        try {
+            List<String> ids = node.getAllEnclosingIds();
+            if (!ids.isEmpty()) {
+                enclosingIds = ids;
+            }
+        } catch (Throwable ignored) {
+        }
+        return resolveStagesForIdsOrRange(node, enclosingIds, stageById, rawStages, nodeMap, startToEndMap);
+    }
+
+    private static List<StageModel> resolveEnclosingStagesFromCache(
+            FlowNode node,
+            Map<String, List<String>> enclosingIdsByNode,
+            Map<String, StageModel> stageById,
+            List<StageModel> rawStages,
+            Map<String, FlowNode> nodeMap,
+            Map<String, BlockEndNode> startToEndMap) {
+        return resolveStagesForIdsOrRange(
+                node, enclosingIdsByNode.get(node.getId()), stageById, rawStages, nodeMap, startToEndMap);
+    }
+
+    private static List<StageModel> resolveStagesForIdsOrRange(
+            FlowNode node,
+            List<String> enclosingIds,
+            Map<String, StageModel> stageById,
+            List<StageModel> rawStages,
+            Map<String, FlowNode> nodeMap,
+            Map<String, BlockEndNode> startToEndMap) {
+        List<StageModel> enclosingStages = new ArrayList<>();
+        if (enclosingIds != null && !enclosingIds.isEmpty()) {
+            for (String enclosingId : enclosingIds) {
+                StageModel stage = stageById.get(enclosingId);
+                if (stage != null && (stage.getStatus() == null || !stage.getStatus().startsWith("SKIPPED"))) {
+                    enclosingStages.add(stage);
+                }
+            }
+            return enclosingStages;
+        }
+        // Fallback for synthetic/incomplete FlowGraphs without enclosing IDs
+        long currentId;
+        try {
+            currentId = Long.parseLong(node.getId());
+        } catch (NumberFormatException e) {
+            return enclosingStages;
+        }
+        for (StageModel stage : rawStages) {
+            if (stage.getStatus() != null && stage.getStatus().startsWith("SKIPPED")) {
+                continue;
+            }
+            try {
+                FlowNode startNode = nodeMap.get(stage.getId());
+                BlockEndNode endNode = startToEndMap.get(stage.getId());
+                long stageStartIndex = Long.parseLong(startNode.getId());
+                long stageEndIndex = endNode != null ? Long.parseLong(endNode.getId()) : Long.MAX_VALUE;
+                if (currentId > stageStartIndex && currentId < stageEndIndex) {
+                    enclosingStages.add(stage);
+                }
+            } catch (RuntimeException ignored) {
+            }
+        }
+        return enclosingStages;
+    }
+
+    private static void applyWarningToStage(FlowNode node, StageModel stage) {
+        org.jenkinsci.plugins.workflow.actions.WarningAction warningAction =
+                node.getPersistentAction(org.jenkinsci.plugins.workflow.actions.WarningAction.class);
+        if (warningAction != null) {
+            if (!"FAILED".equals(stage.getStatus())) {
+                stage.setStatus("UNSTABLE");
+            }
+            String warnMsg = warningAction.getMessage();
+            if (warnMsg != null && warnMsg.toLowerCase(java.util.Locale.ROOT).contains("optional")) {
+                stage.setOptional(true);
+            }
+        }
+    }
+
+    private static int countFailedStages(List<StageModel> stages) {
+        if (stages == null || stages.isEmpty()) {
+            return 0;
+        }
+        int failed = 0;
+        for (StageModel st : stages) {
+            if (st != null && ("FAILED".equalsIgnoreCase(st.getStatus()) || "FAILURE".equalsIgnoreCase(st.getStatus()))) {
+                failed++;
+            }
+        }
+        return failed;
+    }
+
+    /**
+     * Computes, for each FlowNode index {@code i}, the timestamp of the next node {@code k > i}
+     * with strictly greater start time, in strict O(N) time via jump pointers.
+     */
+    private static long[] computeNextStrictlyGreaterTimes(List<FlowNode> allNodes) {
+        int n = allNodes.size();
+        long[] times = new long[n];
+        for (int i = 0; i < n; i++) {
+            times[i] = TimingAction.getStartTime(allNodes.get(i));
+        }
+        int[] nextIdx = new int[n];
+        long[] nextGreater = new long[n];
+        for (int i = n - 1; i >= 0; i--) {
+            int j = i + 1;
+            while (j < n && times[j] <= times[i]) {
+                j = nextIdx[j];
+            }
+            nextIdx[i] = j;
+            nextGreater[i] = (j < n) ? times[j] : 0L;
+        }
+        return nextGreater;
     }
 
     /**
@@ -1092,26 +1377,30 @@ public class PipelineGraphAnalyzer {
                 return cached;
             }
         }
+        boolean wasCompletedBefore = !run.isBuilding();
         RunSummaryModel summary = new RunSummaryModel();
         populateSummaryMetadata(run, summary);
-        if (!run.isBuilding() && cacheKey != null) {
+        if (wasCompletedBefore && !run.isBuilding() && cacheKey != null) {
             COMPLETED_RUN_SUMMARY_CACHE.put(cacheKey, summary);
         }
         return summary;
     }
 
-    private static void populateSummaryMetadata(WorkflowRun run, RunSummaryModel summary) {
+    private static void populateFastHeaderMetadata(WorkflowRun run, RunSummaryModel summary) {
         summary.setNumber(run.getNumber());
         summary.setId(run.getId());
         summary.setDisplayName(run.getDisplayName());
-        summary.setBuilding(run.isBuilding());
-        summary.setTimestamp(run.getStartTimeInMillis());
-        summary.setDuration(run.getDuration() > 0 ? run.getDuration() : (System.currentTimeMillis() - run.getStartTimeInMillis()));
+        boolean building = run.isBuilding();
+        summary.setBuilding(building);
+        long startTime = run.getStartTimeInMillis();
+        summary.setTimestamp(startTime);
+        long runDuration = run.getDuration();
+        summary.setDuration(runDuration > 0L ? runDuration : (startTime > 0L ? Math.max(0L, System.currentTimeMillis() - startTime) : 0L));
         summary.setUrl(run.getUrl());
         summary.setHorizonUrl(run.getUrl() + "horizon/");
 
         Result result = run.getResult();
-        if (run.isBuilding()) {
+        if (building) {
             summary.setResult("IN_PROGRESS");
             try {
                 org.jenkinsci.plugins.workflow.support.steps.input.InputAction inputAction =
@@ -1129,6 +1418,10 @@ public class PipelineGraphAnalyzer {
         } else {
             summary.setResult("UNKNOWN");
         }
+    }
+
+    private static void populateSummaryMetadata(WorkflowRun run, RunSummaryModel summary) {
+        populateFastHeaderMetadata(run, summary);
 
         // Causes & Trigger Identity
         for (hudson.model.Cause c : run.getCauses()) {
@@ -1434,7 +1727,7 @@ public class PipelineGraphAnalyzer {
         return null;
     }
 
-    private static StepModel createStepModel(FlowNode node, Map<String, BlockEndNode> startToEndMap, List<FlowNode> allNodes, int nodeIndex) {
+    private static StepModel createStepModel(FlowNode node, Map<String, BlockEndNode> startToEndMap, long[] nextStrictlyGreaterTime, int nodeIndex) {
         StepModel step = new StepModel();
         step.setId(node.getId());
         step.setName(EncodingUtils.fixMojibake(node.getDisplayFunctionName()));
@@ -1495,14 +1788,10 @@ public class PipelineGraphAnalyzer {
                 long endTime = TimingAction.getStartTime(end);
                 duration = Math.max(0, endTime - startTime);
             }
-        } else if (allNodes != null && nodeIndex >= 0 && nodeIndex < allNodes.size() - 1) {
-            for (int k = nodeIndex + 1; k < allNodes.size(); k++) {
-                FlowNode next = allNodes.get(k);
-                long nextTime = TimingAction.getStartTime(next);
-                if (nextTime > startTime) {
-                    duration = Math.max(0, nextTime - startTime);
-                    break;
-                }
+        } else if (nextStrictlyGreaterTime != null && nodeIndex >= 0 && nodeIndex < nextStrictlyGreaterTime.length) {
+            long nextTime = nextStrictlyGreaterTime[nodeIndex];
+            if (nextTime > startTime) {
+                duration = nextTime - startTime;
             }
         }
         if (duration == 0 && node.isActive()) {
@@ -2398,44 +2687,7 @@ public class PipelineGraphAnalyzer {
             st.setArtifactCount(0);
         }
 
-        if (archiverStages.size() == 1) {
-            StageModel stage = archiverStages.values().iterator().next();
-            for (ArtifactModel artifact : artifacts) {
-                artifact.setStageId(stage.getId());
-                artifact.setStageName(stage.getName());
-                stage.addArtifact(artifact);
-            }
-            stage.setHasArtifacts(true);
-            stage.setArtifactCount(stage.getArtifacts().size());
-            return;
-        }
-
-        for (ArtifactModel artifact : artifacts) {
-            StageModel matchedStage = null;
-            for (Map.Entry<String, StageModel> entry : archiverStages.entrySet()) {
-                List<String> patterns = stagePatterns.get(entry.getKey());
-                if (patterns == null) {
-                    continue;
-                }
-                for (String pattern : patterns) {
-                    if (matchesAntPattern(pattern, artifact.getRelativePath())) {
-                        matchedStage = entry.getValue();
-                        break;
-                    }
-                }
-                if (matchedStage != null) {
-                    break;
-                }
-            }
-            if (matchedStage == null) {
-                matchedStage = archiverStages.values().iterator().next();
-            }
-            artifact.setStageId(matchedStage.getId());
-            artifact.setStageName(matchedStage.getName());
-            matchedStage.addArtifact(artifact);
-            matchedStage.setHasArtifacts(true);
-            matchedStage.setArtifactCount(matchedStage.getArtifacts().size());
-        }
+        assignArtifactsToStages(artifacts, archiverStages, stagePatterns);
     }
 
     private static void collectArtifactStages(List<StageModel> stages, Map<String, StageModel> archiverStages,
@@ -2506,59 +2758,138 @@ public class PipelineGraphAnalyzer {
         }
 
         // Filter stages that actually executed archiveArtifacts
-        Map<String, StageModel> archiverStages = new HashMap<>();
+        Map<String, StageModel> archiverStages = new LinkedHashMap<>();
         for (StageModel stage : rawStages) {
             if (stageArtifactPatterns.containsKey(stage.getId())) {
                 archiverStages.put(stage.getId(), stage);
             }
         }
+        assignArtifactsToStages(artifacts, archiverStages, stageArtifactPatterns);
+    }
 
-        if (archiverStages.isEmpty()) {
+    private static void assignArtifactsToStages(
+            List<ArtifactModel> artifacts,
+            Map<String, StageModel> archiverStages,
+            Map<String, List<String>> stageArtifactPatterns) {
+        if (archiverStages == null || archiverStages.isEmpty() || artifacts == null || artifacts.isEmpty()) {
             return;
         }
 
-        // If only one stage archived artifacts, all artifacts belong to this stage
         if (archiverStages.size() == 1) {
             StageModel stage = archiverStages.values().iterator().next();
-            for (ArtifactModel a : artifacts) {
-                a.setStageId(stage.getId());
-                a.setStageName(stage.getName());
-                stage.addArtifact(a);
+            for (ArtifactModel artifact : artifacts) {
+                artifact.setStageId(stage.getId());
+                artifact.setStageName(stage.getName());
+                stage.addArtifact(artifact);
             }
             stage.setHasArtifacts(true);
             stage.setArtifactCount(stage.getArtifacts().size());
             return;
         }
 
-        // If multiple stages archived artifacts, match by pattern or path
-        for (ArtifactModel a : artifacts) {
-            StageModel matchedStage = null;
-            for (Map.Entry<String, StageModel> entry : archiverStages.entrySet()) {
-                List<String> patterns = stageArtifactPatterns.get(entry.getKey());
-                if (patterns != null) {
-                    for (String p : patterns) {
-                        if (matchesAntPattern(p, a.getRelativePath())) {
-                            matchedStage = entry.getValue();
-                            break;
-                        }
-                    }
-                }
-                if (matchedStage != null) {
-                    break;
-                }
-            }
-
-            if (matchedStage == null) {
-                matchedStage = archiverStages.values().iterator().next();
-            }
-
+        for (ArtifactModel artifact : artifacts) {
+            StageModel matchedStage = matchArchiverStage(
+                    artifact.getRelativePath(), archiverStages, stageArtifactPatterns);
             if (matchedStage != null) {
-                a.setStageId(matchedStage.getId());
-                a.setStageName(matchedStage.getName());
-                matchedStage.addArtifact(a);
+                artifact.setStageId(matchedStage.getId());
+                artifact.setStageName(matchedStage.getName());
+                matchedStage.addArtifact(artifact);
                 matchedStage.setHasArtifacts(true);
                 matchedStage.setArtifactCount(matchedStage.getArtifacts().size());
             }
+        }
+    }
+
+    private static StageModel matchArchiverStage(
+            String relativePath,
+            Map<String, StageModel> archiverStages,
+            Map<String, List<String>> stageArtifactPatterns) {
+        if (archiverStages.isEmpty()) {
+            return null;
+        }
+        for (Map.Entry<String, StageModel> entry : archiverStages.entrySet()) {
+            List<String> patterns = stageArtifactPatterns != null ? stageArtifactPatterns.get(entry.getKey()) : null;
+            if (patterns != null) {
+                for (String pattern : patterns) {
+                    if (matchesAntPattern(pattern, relativePath)) {
+                        return entry.getValue();
+                    }
+                }
+            }
+        }
+        return archiverStages.values().iterator().next();
+    }
+
+    /**
+     * Collects lightweight artifact counts and stage attribution for preview widgets
+     * without retaining full {@link ArtifactModel} lists and with bounded stat() work on huge archives.
+     */
+    private static void collectPreviewArtifacts(
+            WorkflowRun run,
+            RunDetailsModel details,
+            List<StageModel> rawStages,
+            Map<String, List<String>> stageArtifactPatterns) {
+        if (run == null || details == null) {
+            return;
+        }
+        try {
+            List<? extends hudson.model.Run<?, ?>.Artifact> rawArtifacts = run.getArtifacts();
+            if (rawArtifacts.isEmpty()) {
+                return;
+            }
+            int totalCount = rawArtifacts.size();
+            details.setArtifactCount(totalCount);
+
+            long totalSize = 0L;
+            boolean sizedAll = totalCount <= MAX_PREVIEW_ARTIFACT_STAT_COUNT;
+            if (sizedAll) {
+                long startedAt = System.nanoTime();
+                int idx = 0;
+                for (hudson.model.Run<?, ?>.Artifact artifact : rawArtifacts) {
+                    if ((idx++ & 31) == 31 && (System.nanoTime() - startedAt) > MAX_PREVIEW_ARTIFACT_STAT_NANOS) {
+                        sizedAll = false;
+                        break;
+                    }
+                    long size = artifact.getFileSize();
+                    if (size > 0L) {
+                        totalSize += size;
+                    }
+                }
+            }
+            if (sizedAll) {
+                details.setTotalArtifactSize(totalSize);
+                details.setFormattedTotalArtifactSize(formatBytes(totalSize));
+            }
+
+            if (rawStages == null || rawStages.isEmpty() || stageArtifactPatterns == null || stageArtifactPatterns.isEmpty()) {
+                return;
+            }
+
+            Map<String, StageModel> archiverStages = new LinkedHashMap<>();
+            for (StageModel stage : rawStages) {
+                if (stageArtifactPatterns.containsKey(stage.getId())) {
+                    archiverStages.put(stage.getId(), stage);
+                }
+            }
+            if (archiverStages.isEmpty()) {
+                return;
+            }
+            if (archiverStages.size() == 1) {
+                StageModel singleStage = archiverStages.values().iterator().next();
+                singleStage.setHasArtifacts(true);
+                singleStage.setArtifactCount(totalCount);
+                return;
+            }
+            for (hudson.model.Run<?, ?>.Artifact artifact : rawArtifacts) {
+                StageModel matchedStage = matchArchiverStage(
+                        artifact.relativePath, archiverStages, stageArtifactPatterns);
+                if (matchedStage != null) {
+                    matchedStage.setHasArtifacts(true);
+                    matchedStage.setArtifactCount(matchedStage.getArtifactCount() + 1);
+                }
+            }
+        } catch (Throwable ignored) {
+            // Remote or unavailable artifact managers must never break the preview card.
         }
     }
 

@@ -25,7 +25,9 @@ public class FrontendLayoutRegressionTest {
     private final Path jsPath = Path.of("src", "main", "webapp", "js", "horizon-run.js");
     private final Path cssPath = Path.of("src", "main", "webapp", "css", "horizon-run.css");
     private final Path floatCssPath = Path.of("src", "main", "webapp", "css", "horizon-float.css");
+    private final Path floatJsPath = Path.of("src", "main", "webapp", "js", "horizon-float.js");
     private final Path floatingBoxJellyPath = Path.of("src", "main", "resources", "io", "jenkins", "plugins", "horizon", "HorizonJobAction", "floatingBox.jelly");
+    private final Path summaryJellyPath = Path.of("src", "main", "resources", "io", "jenkins", "plugins", "horizon", "HorizonRunAction", "summary.jelly");
     private final Path testScriptPath = Path.of("test", "layout-wrap.test.mjs");
 
     @Test
@@ -105,6 +107,29 @@ public class FrontendLayoutRegressionTest {
         assertFalse(jelly.contains("horizon-float-artifacts-strip"),
                 "floatingBox.jelly must not render redundant artifact strip which bloats the view");
 
+        // Verify cache-first SSR and non-blocking async hydration on cold cache / live builds
+        assertTrue(jelly.contains("cachedLastRunPreview"),
+                "floatingBox.jelly must use cachedLastRunPreview to avoid blocking SSR on cold cache");
+        assertTrue(jelly.contains("fastLastRunSummary"),
+                "floatingBox.jelly must use zero-I/O fastLastRunSummary for immediate SSR shell");
+        assertFalse(jelly.contains("action.lastRunDetails"),
+                "floatingBox.jelly must not synchronously invoke uncached full run details on SSR");
+        assertTrue(jelly.contains("horizon-float-stage-skeleton"),
+                "floatingBox.jelly must provide zero-CLS skeleton while hydrating async preview");
+        assertTrue(jelly.contains("apiLastRunPreview"),
+                "floatingBox.jelly must configure async apiLastRunPreview hydration URL");
+
+        assertTrue(Files.exists(summaryJellyPath), "summary.jelly must exist");
+        String summaryJelly = Files.readString(summaryJellyPath, StandardCharsets.UTF_8);
+        assertTrue(summaryJelly.contains("cachedRunPreview"),
+                "summary.jelly must use cachedRunPreview for non-blocking SSR");
+        assertTrue(summaryJelly.contains("apiRunPreview"),
+                "summary.jelly must support async apiRunPreview hydration");
+
+        assertTrue(Files.exists(floatJsPath), "horizon-float.js must exist");
+        String floatJs = Files.readString(floatJsPath, StandardCharsets.UTF_8);
+        assertTrue(floatJs.contains("hydrateCard"), "horizon-float.js must hydrate pending preview cards");
+
         assertTrue(Files.exists(floatCssPath), "horizon-float.css must exist");
         String floatCss = Files.readString(floatCssPath, StandardCharsets.UTF_8);
 
@@ -118,6 +143,8 @@ public class FrontendLayoutRegressionTest {
                 "horizon-float.css must style segmented rail individual blocks");
         assertTrue(floatCss.contains(".horizon-float-stage-pill"),
                 "horizon-float.css must style stage pills");
+        assertTrue(floatCss.contains(".horizon-float-stage-skeleton"),
+                "horizon-float.css must style loading skeleton");
     }
 
     @Test

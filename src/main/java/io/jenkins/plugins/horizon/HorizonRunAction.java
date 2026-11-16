@@ -9,6 +9,7 @@ import io.jenkins.plugins.horizon.model.StageModel;
 import io.jenkins.plugins.horizon.model.StepModel;
 import io.jenkins.plugins.horizon.util.EncodingUtils;
 import jenkins.model.RunAction2;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.workflow.actions.LogAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
@@ -28,6 +29,9 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,6 +79,28 @@ public class HorizonRunAction implements RunAction2 {
         return null;
     }
 
+    /**
+     * Returns an already-cached lightweight preview for this build without
+     * blocking SSR on cold FlowGraph or artifact scans. Returns {@code null}
+     * on cache miss or while the build is still in progress.
+     */
+    public RunDetailsModel getCachedRunPreview() {
+        if (run instanceof WorkflowRun) {
+            return getCachedRunPreviewIfPresent((WorkflowRun) run);
+        }
+        return null;
+    }
+
+    /**
+     * Zero-FlowGraph header summary safe for instant SSR on cold cache or live runs.
+     */
+    public RunDetailsModel getFastRunSummary() {
+        if (run instanceof WorkflowRun) {
+            return buildFastRunSummary((WorkflowRun) run);
+        }
+        return null;
+    }
+
     public String formatDuration(long millis) {
         return PipelineGraphAnalyzer.formatDuration(millis);
     }
@@ -94,6 +120,22 @@ public class HorizonRunAction implements RunAction2 {
                 }
             });
 
+    /**
+     * Separate larger LRU cache exclusively for compact job/run preview cards
+     * (~2-4 KB each) so viewing hundreds of job homepages neither blocks SSR nor
+     * evicts full run graph caches.
+     */
+    private static final Map<String, RunDetailsModel> COMPLETED_RUN_PREVIEW_CACHE =
+            Collections.synchronizedMap(new LinkedHashMap<String, RunDetailsModel>(256, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, RunDetailsModel> eldest) {
+                    return size() > 1024;
+                }
+            });
+
+    private static final ConcurrentHashMap<String, CompletableFuture<RunDetailsModel>> IN_FLIGHT_PREVIEWS =
+            new ConcurrentHashMap<>();
+
     private static final class CachedRunAnalysis {
         private RunDetailsModel canvasDetails;
         private RunDetailsModel fullDetails;
@@ -103,12 +145,159 @@ public class HorizonRunAction implements RunAction2 {
     public static void invalidateRunDetailsCache(String runExternalizableId) {
         if (runExternalizableId != null) {
             COMPLETED_RUN_DETAILS_CACHE.remove(runExternalizableId);
+            COMPLETED_RUN_PREVIEW_CACHE.remove(runExternalizableId);
         }
     }
 
     public static void clearRunDetailsCache() {
         COMPLETED_RUN_DETAILS_CACHE.clear();
+        COMPLETED_RUN_PREVIEW_CACHE.clear();
         PipelineGraphAnalyzer.clearCaches();
+    }
+
+    public static RunDetailsModel buildFastRunSummary(WorkflowRun wfRun) {
+        return PipelineGraphAnalyzer.buildFastRunSummary(wfRun);
+    }
+
+    public static RunDetailsModel getCachedRunPreviewIfPresent(WorkflowRun wfRun) {
+        if (wfRun == null || wfRun.isBuilding()) {
+            return null;
+        }
+        String cacheKey = wfRun.getExternalizableId();
+        RunDetailsModel preview = COMPLETED_RUN_PREVIEW_CACHE.get(cacheKey);
+        if (preview != null) {
+            return preview;
+        }
+        RunDetailsModel fullCached = null;
+        synchronized (COMPLETED_RUN_DETAILS_CACHE) {
+            CachedRunAnalysis cached = COMPLETED_RUN_DETAILS_CACHE.get(cacheKey);
+            if (cached != null && cached.fullDetails != null) {
+                fullCached = cached.fullDetails;
+            }
+        }
+        if (fullCached != null) {
+            RunDetailsModel derived = PipelineGraphAnalyzer.extractPreviewFromDetails(fullCached);
+            if (derived != null && !wfRun.isBuilding()) {
+                COMPLETED_RUN_PREVIEW_CACHE.put(cacheKey, derived);
+                return derived;
+            }
+        }
+        return null;
+    }
+
+    public static RunDetailsModel getOrBuildRunPreview(WorkflowRun wfRun) {
+        if (wfRun == null) {
+            return null;
+        }
+        RunDetailsModel cached = getCachedRunPreviewIfPresent(wfRun);
+        if (cached != null) {
+            return cached;
+        }
+        if (wfRun.isBuilding()) {
+            return PipelineGraphAnalyzer.buildPreviewDetails(wfRun);
+        }
+
+        String cacheKey = wfRun.getExternalizableId();
+        CompletableFuture<RunDetailsModel> existing = IN_FLIGHT_PREVIEWS.get(cacheKey);
+        if (existing != null) {
+            RunDetailsModel joined = awaitInFlightPreview(existing);
+            return joined != null ? joined : PipelineGraphAnalyzer.buildPreviewDetails(wfRun);
+        }
+
+        CompletableFuture<RunDetailsModel> ours = new CompletableFuture<>();
+        CompletableFuture<RunDetailsModel> racer = IN_FLIGHT_PREVIEWS.putIfAbsent(cacheKey, ours);
+        if (racer != null) {
+            RunDetailsModel joined = awaitInFlightPreview(racer);
+            return joined != null ? joined : PipelineGraphAnalyzer.buildPreviewDetails(wfRun);
+        }
+
+        try {
+            RunDetailsModel builtPreview = PipelineGraphAnalyzer.buildPreviewDetails(wfRun);
+            if (!wfRun.isBuilding()) {
+                COMPLETED_RUN_PREVIEW_CACHE.put(cacheKey, builtPreview);
+            }
+            ours.complete(builtPreview);
+            return builtPreview;
+        } catch (RuntimeException | Error t) {
+            ours.completeExceptionally(t);
+            throw t;
+        } finally {
+            IN_FLIGHT_PREVIEWS.remove(cacheKey, ours);
+        }
+    }
+
+    private static RunDetailsModel awaitInFlightPreview(CompletableFuture<RunDetailsModel> future) {
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (ExecutionException e) {
+            return null;
+        }
+    }
+
+    public static JSONObject serializePreviewJson(RunDetailsModel details) {
+        JSONObject json = new JSONObject();
+        if (details == null) {
+            json.put("hasBuild", false);
+            return json;
+        }
+        json.put("hasBuild", true);
+        json.put("number", details.getNumber());
+        json.put("result", details.getResult());
+        json.put("building", details.isBuilding());
+        json.put("pausedForInput", details.isPausedForInput());
+        json.put("duration", details.getDuration());
+        json.put("formattedDuration", PipelineGraphAnalyzer.formatDuration(details.getDuration()));
+        json.put("stageCount", details.getStageCount());
+        json.put("failedStageCount", details.getFailedStageCount());
+        json.put("totalTests", details.getTotalTests());
+        json.put("failedTests", details.getFailedTests());
+        json.put("skippedTests", details.getSkippedTests());
+        json.put("artifactCount", details.getArtifactCount());
+        json.put("formattedTotalArtifactSize", details.getFormattedTotalArtifactSize());
+
+        JSONArray stagesArr = new JSONArray();
+        if (details.getStages() != null) {
+            for (StageModel st : details.getStages()) {
+                if (st == null) {
+                    continue;
+                }
+                JSONObject stObj = new JSONObject();
+                stObj.put("id", st.getId());
+                stObj.put("name", st.getName());
+                stObj.put("status", st.getStatus());
+                stObj.put("durationMillis", st.getDurationMillis());
+                stObj.put("formattedDuration", PipelineGraphAnalyzer.formatDuration(st.getDurationMillis()));
+                stObj.put("hasArtifacts", st.isHasArtifacts());
+                stObj.put("artifactCount", st.getArtifactCount());
+                stagesArr.add(stObj);
+            }
+        }
+        json.put("stages", stagesArr);
+        return json;
+    }
+
+    /**
+     * REST API: Returns lightweight preview metadata and stages for the classic
+     * build summary widget ({@code summary.jelly}).
+     */
+    public void doApiRunPreview(StaplerRequest2 req, StaplerResponse2 rsp) throws IOException {
+        rsp.setContentType("application/json;charset=UTF-8");
+        rsp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        if (run != null) {
+            run.checkPermission(Item.READ);
+        }
+        if (run instanceof WorkflowRun) {
+            long startedAt = System.nanoTime();
+            RunDetailsModel preview = getOrBuildRunPreview((WorkflowRun) run);
+            setAnalysisTimingHeader(rsp, startedAt);
+            serializePreviewJson(preview).write(rsp.getWriter());
+        } else {
+            rsp.setStatus(400);
+            rsp.getWriter().write("{\"error\": \"Horizon only supports Pipeline (WorkflowRun) builds\"}");
+        }
     }
 
     /**
@@ -230,7 +419,8 @@ public class HorizonRunAction implements RunAction2 {
         if (wfRun == null) {
             return new RunDetailSectionModel();
         }
-        if (!wfRun.isBuilding()) {
+        boolean wasCompletedBefore = !wfRun.isBuilding();
+        if (wasCompletedBefore) {
             String cacheKey = wfRun.getExternalizableId();
             synchronized (COMPLETED_RUN_DETAILS_CACHE) {
                 CachedRunAnalysis cached = COMPLETED_RUN_DETAILS_CACHE.get(cacheKey);
@@ -279,7 +469,7 @@ public class HorizonRunAction implements RunAction2 {
         return null;
     }
 
-    private static void setAnalysisTimingHeader(StaplerResponse2 rsp, long startedAtNanos) {
+    public static void setAnalysisTimingHeader(StaplerResponse2 rsp, long startedAtNanos) {
         long elapsedMillis = Math.max(0L, (System.nanoTime() - startedAtNanos) / 1_000_000L);
         rsp.setHeader("Server-Timing", "horizon;dur=" + elapsedMillis);
     }
